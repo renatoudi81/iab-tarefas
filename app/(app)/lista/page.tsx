@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -271,10 +272,10 @@ export default function ListaPage() {
               {!loadingTasks && filtered.length === 0 && (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={7} className="py-16 text-center text-[#A1A1AA]">
-                    <div className="inline-flex w-14 h-14 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-3">
-                      <Filter size={24} className="text-[#A1A1AA]" />
+                    <div className="flex flex-col items-center">
+                      <EmptyIllustration variant={tasks.length === 0 ? 'tasks' : 'search'} size={104} />
                     </div>
-                    <p className="font-semibold text-[#52525B] mb-1">
+                    <p className="font-semibold text-[#52525B] mb-1 mt-3">
                       {tasks.length === 0 ? 'Sua lista está limpa' : 'Nenhuma tarefa encontrada'}
                     </p>
                     <p className="text-[0.8125rem] max-w-sm mx-auto">

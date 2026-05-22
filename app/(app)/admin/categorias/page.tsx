@@ -16,6 +16,7 @@ import {
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 
 export default function CategoriasPage() {
   const { user } = useAuth()
@@ -106,10 +107,8 @@ export default function CategoriasPage() {
 
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="inline-flex w-14 h-14 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-3">
-              <Tag size={24} className="text-[#A1A1AA]" />
-            </div>
-            <p className="font-semibold text-[#52525B] mb-1">
+            <EmptyIllustration variant={search ? 'search' : 'category'} size={104} />
+            <p className="font-semibold text-[#52525B] mb-1 mt-3">
               {search ? 'Nenhuma categoria encontrada' : 'Sem categorias cadastradas'}
             </p>
             <p className="text-[0.8125rem] text-[#A1A1AA] max-w-sm">

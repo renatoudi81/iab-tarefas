@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 
 type ColorBy = 'status' | 'prioridade'
 
@@ -111,11 +112,9 @@ export default function GanttPage() {
           </p>
         </div>
         <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] p-16 flex flex-col items-center justify-center text-[#A1A1AA]">
-          <div className="inline-flex w-16 h-16 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-4">
-            <GanttChart size={28} className="text-[#A1A1AA]" />
-          </div>
-          <p className="font-semibold text-[#52525B] mb-1">Nenhuma tarefa com datas definidas</p>
-          <p className="text-sm text-[#A1A1AA]">
+          <EmptyIllustration variant="calendar" size={112} />
+          <p className="font-semibold text-[#52525B] mb-1 mt-3">Nenhuma tarefa com datas definidas</p>
+          <p className="text-sm text-[#A1A1AA] max-w-sm text-center">
             Defina data de início e vencimento nas tarefas para visualizá-las aqui.
           </p>
         </div>
