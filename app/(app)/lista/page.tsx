@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
-import { STATUSES, PRIORITIES, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, todayStr } from '@/types'
+import { STATUSES, PRIORITIES, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, todayStr, formatDateBR } from '@/types'
 import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
 import TaskDrawer from '@/components/TaskDrawer'
@@ -326,7 +326,7 @@ export default function ListaPage() {
                               VENC
                             </span>
                           )}
-                          {task.data_prazo}
+                          {formatDateBR(task.data_prazo)}
                         </span>
                       ) : <span className="text-[#A1A1AA]">—</span>}
                     </TableCell>

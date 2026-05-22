@@ -161,3 +161,53 @@ export function formatMinutes(min: number): string {
 export function todayStr(): string {
   return new Date().toISOString().split('T')[0]
 }
+
+/**
+ * Formata uma data para o padrão brasileiro (DD/MM/AAAA).
+ *
+ * Aceita:
+ *  - 'YYYY-MM-DD'              → '25/12/2024'
+ *  - 'YYYY-MM-DDTHH:mm:ss'     → '25/12/2024'
+ *  - Date object               → '25/12/2024'
+ *  - null/undefined/''         → '' (string vazia, seguro para renderização)
+ *
+ * NÃO usa toLocaleDateString() para evitar timezone surprises
+ * (datas armazenadas como 'YYYY-MM-DD' representam dias absolutos,
+ * não instantes no tempo, então parsing direto é mais correto).
+ */
+export function formatDateBR(value: string | Date | null | undefined): string {
+  if (!value) return ''
+
+  let y: number, m: number, d: number
+
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) return ''
+    y = value.getFullYear()
+    m = value.getMonth() + 1
+    d = value.getDate()
+  } else {
+    // String: pega só a parte da data (antes do T se houver timestamp)
+    const dateOnly = value.split('T')[0]
+    const parts = dateOnly.split('-')
+    if (parts.length !== 3) return value // formato desconhecido — devolve original
+    y = Number(parts[0])
+    m = Number(parts[1])
+    d = Number(parts[2])
+    if (!y || !m || !d) return value
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d)}/${pad(m)}/${y}`
+}
+
+/**
+ * Formata data + hora curta (DD/MM/AAAA HH:mm).
+ * Útil para timestamps de comentários, histórico, notificações.
+ */
+export function formatDateTimeBR(value: string | Date | null | undefined): string {
+  if (!value) return ''
+  const date = value instanceof Date ? value : new Date(value)
+  if (isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}

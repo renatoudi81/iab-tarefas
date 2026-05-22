@@ -13,7 +13,8 @@ import { useUsers } from '@/hooks/useUsers'
 import type { Task } from '@/types'
 import {
   getInitials, formatMinutes,
-  STATUS_COLORS, PRIORITY_COLORS
+  STATUS_COLORS, PRIORITY_COLORS,
+  formatDateBR, formatDateTimeBR,
 } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -40,27 +41,16 @@ interface TaskDrawerProps {
   onEdit: (task: Task) => void
 }
 
-/* â”€â”€â”€ helpers â”€â”€â”€ */
+/* ─── helpers ───
+ * Delegam ao helper compartilhado em @/types — single source of truth.
+ * Mantemos a interface local pra não alterar todas as chamadas existentes
+ * + retornam '—' para valores vazios (padrão visual do Drawer). */
 function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return 'â€”'
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return iso
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  return `${dd}/${mm}/${yyyy}`
+  return formatDateBR(iso) || '—'
 }
 
 function fmtDateTime(iso: string | null | undefined): string {
-  if (!iso) return 'â€”'
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return iso
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  const hh = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`
+  return formatDateTimeBR(iso) || '—'
 }
 
 function fmtSeconds(secs: number): string {

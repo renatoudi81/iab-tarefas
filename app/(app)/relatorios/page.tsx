@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { STATUSES, STATUS_COLORS, formatMinutes } from '@/types'
+import { STATUSES, STATUS_COLORS, formatMinutes, formatDateBR } from '@/types'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis,
@@ -252,7 +252,7 @@ export default function RelatoriosPage() {
         const resp = users.find((u) => u.id === t.responsavel_id)
         return [
           t.titulo, t.status, t.prioridade, t.categoria, resp?.nome || '',
-          t.data_prazo || '', String(t.tempo_estimado), String(t.tempo_gasto_total),
+          formatDateBR(t.data_prazo), String(t.tempo_estimado), String(t.tempo_gasto_total),
         ]
       }),
     ]

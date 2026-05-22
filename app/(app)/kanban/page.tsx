@@ -4,7 +4,7 @@ import { flushSync } from 'react-dom'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes } from '@/types'
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, formatDateBR } from '@/types'
 import type { Status, Task } from '@/types'
 import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -390,7 +390,7 @@ export default function KanbanPage() {
                                             'text-[0.72rem]',
                                             overdue ? 'text-[#DC2626] font-semibold' : 'text-[#52525B]'
                                           )}>
-                                            {task.data_prazo}
+                                            {formatDateBR(task.data_prazo)}
                                           </span>
                                         </div>
                                       )}

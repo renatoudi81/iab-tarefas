@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
-import { STATUS_COLORS, PRIORITY_COLORS, todayStr } from '@/types'
+import { STATUS_COLORS, PRIORITY_COLORS, todayStr, formatDateBR } from '@/types'
 import { GanttChart, AlertTriangle, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -289,7 +289,7 @@ export default function GanttPage() {
                     'text-[0.72rem]',
                     overdue ? 'text-[#DC2626] font-semibold' : 'text-[#71717A] font-normal'
                   )}>
-                    {task.data_prazo}
+                    {formatDateBR(task.data_prazo)}
                   </div>
                   {task.tempo_estimado > 0 && (
                     <div className={cn(

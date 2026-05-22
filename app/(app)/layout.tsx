@@ -308,22 +308,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         style={{ marginLeft: SIDEBAR_WIDTH }}
       >
         <div className="p-6 flex-1 max-w-[1600px] mx-auto w-full">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 12, filter: 'blur(4px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
-              transition={{
-                type: 'spring',
-                stiffness: 120,
-                damping: 22,
-                mass: 0.6,
-              }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          {/*
+            Page transition apenas em opacidade — translate/filter criam
+            containing block (transform/filter) que QUEBRA o drag-and-drop
+            do Kanban (clones com position:fixed acompanham o ancestor com
+            transform em vez do viewport). Fade puro é seguro.
+
+            Em /kanban a transição é desligada por completo para evitar
+            qualquer overhead durante drag.
+          */}
+          {pathname === '/kanban' ? (
+            children
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          )}
         </div>
       </main>
     </div>
