@@ -43,6 +43,9 @@ dev-server.log
 *-firebase-adminsdk-*.json
 dump.json
 
+# Backups do Firestore — contém dados de produção, NÃO commitar
+/backups/
+
 # vercel
 .vercel
 

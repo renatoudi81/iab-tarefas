@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "firebase:rules": "firebase-tools deploy --only firestore:rules,firestore:indexes --project iab-tarefas"
+    "firebase:rules": "firebase-tools deploy --only firestore:rules,firestore:indexes --project iab-tarefas",
+    "backup": "tsx scripts/backup-firestore.ts",
+    "restore": "tsx scripts/import-firestore.ts"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
