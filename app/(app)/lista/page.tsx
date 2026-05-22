@@ -10,6 +10,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, X, Filter, MoreHorizontal } from
 import TaskDrawer from '@/components/TaskDrawer'
 import { cn } from '@/lib/utils'
 import { MagneticButton } from '@/components/ui/MagneticButton'
+import { useToast } from '@/contexts/ToastContext'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,6 +60,7 @@ export default function ListaPage() {
   const { tasks, addTask, updateTask, deleteTask, isLoading: loadingTasks } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
+  const { toast } = useToast()
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -109,8 +111,13 @@ export default function ListaPage() {
     if (saving) return
     setSaving(true); setSaveError('')
     try {
-      if (modal.task) await updateTask(modal.task.id, form)
-      else await addTask(form)
+      if (modal.task) {
+        await updateTask(modal.task.id, form)
+        toast.success('Tarefa atualizada')
+      } else {
+        await addTask(form)
+        toast.success('Tarefa criada')
+      }
       closeModal()
     } catch (err: any) { setSaveError(err.message) } finally { setSaving(false) }
   }
@@ -119,8 +126,9 @@ export default function ListaPage() {
     if (!confirm('Excluir esta tarefa e todos os lançamentos de tempo associados?')) return
     try {
       await deleteTask(id)
+      toast.success('Tarefa excluída')
     } catch (err: any) {
-      alert('Erro ao excluir tarefa: ' + (err.message || 'tente novamente'))
+      toast.error('Erro ao excluir tarefa', err.message || 'Tente novamente')
     }
   }
 

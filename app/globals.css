@@ -444,3 +444,50 @@ body {
   font-size: 13px !important;
 }
 .recharts-text { fill: var(--text-muted); font-family: var(--font-sans); }
+
+/* ─── Focus rings premium (a11y) ─────────────────────────────────
+   Padrão Linear/Vercel: anel azul fino com offset, só aparece
+   em navegação por teclado (:focus-visible). Click do mouse não
+   dispara — UX premium.
+*/
+:where(button, a, input, textarea, select, summary, [role="button"], [tabindex]):focus {
+  outline: none;
+}
+:where(button, a, input, textarea, select, summary, [role="button"], [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--primary-hex);
+  outline-offset: 2px;
+  border-radius: 6px;
+  transition: outline-offset 0.12s ease;
+}
+
+/* Inputs: focus ring com glow interno em vez de outline externo */
+:where(input, textarea, select):focus-visible {
+  outline: 2px solid var(--primary-hex);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+/* ─── Text selection premium ─────────────────────────────────── */
+::selection {
+  background: var(--primary-glow);
+  color: var(--primary-hover);
+}
+::-moz-selection {
+  background: var(--primary-glow);
+  color: var(--primary-hover);
+}
+
+/* ─── Smooth scroll global ──────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+/* ─── Reduced motion (a11y) ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

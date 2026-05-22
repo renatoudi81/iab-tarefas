@@ -7,7 +7,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { getInitials } from '@/types'
 import type { User } from '@/types'
 import {
-  Plus, Loader2, Shield, Search, MoreHorizontal, Pencil, Trash2, Mail, CheckCircle2,
+  Plus, Loader2, Shield, Search, MoreHorizontal, Pencil, Trash2, Mail,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { MagneticButton } from '@/components/ui/MagneticButton'
+import { useToast } from '@/contexts/ToastContext'
 
 type UserForm = { nome: string; email: string; perfil: string; ativo: boolean }
 const EMPTY_USER: UserForm = { nome: '', email: '', perfil: 'Usuário', ativo: true }
@@ -39,7 +40,7 @@ export default function UsuariosPage() {
   const [form, setForm] = useState<UserForm>(EMPTY_USER)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [toast, setToast] = useState('')
+  const { toast } = useToast()
 
   if (authUser && authUser.perfil !== 'Administrador') redirect('/dashboard')
 
@@ -56,7 +57,7 @@ export default function UsuariosPage() {
     try {
       if (modal.user) {
         await updateUser(modal.user.id, { nome: form.nome, perfil: form.perfil as any, ativo: form.ativo })
-        setToast('Usuário atualizado')
+        toast.success('Usuário atualizado')
       } else {
         // Onboarding sem senha: o e-mail de definição é enviado automaticamente no hook
         const { passwordResetSent } = await addUser({
@@ -65,14 +66,13 @@ export default function UsuariosPage() {
           perfil: form.perfil as User['perfil'],
           ativo: form.ativo,
         })
-        setToast(
-          passwordResetSent
-            ? `Usuário criado. E-mail enviado para ${form.email.toLowerCase().trim()} definir a senha.`
-            : 'Usuário criado, mas o e-mail de senha não pôde ser enviado.'
-        )
+        if (passwordResetSent) {
+          toast.success('Usuário criado', `E-mail enviado para ${form.email.toLowerCase().trim()} definir a senha.`)
+        } else {
+          toast.warning('Usuário criado', 'O e-mail de definição de senha não pôde ser enviado.')
+        }
       }
       setModal({ open: false, user: null })
-      setTimeout(() => setToast(''), 5000)
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
 
@@ -80,8 +80,9 @@ export default function UsuariosPage() {
     if (!confirm('Excluir este usuário? Esta ação não pode ser desfeita.')) return
     try {
       await deleteUser(id)
+      toast.success('Usuário excluído')
     } catch (err: any) {
-      alert('Erro ao excluir usuário: ' + (err.message || 'tente novamente'))
+      toast.error('Erro ao excluir usuário', err.message || 'Tente novamente')
     }
   }
 
@@ -92,21 +93,6 @@ export default function UsuariosPage() {
 
   return (
     <div>
-      {/* Toast de feedback */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-4 flex items-start gap-2.5 px-4 py-3 rounded-lg bg-[#F0FDF4] border border-[#86EFAC] text-[#15803D]"
-          >
-            <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5" />
-            <span className="text-[0.875rem]">{toast}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Título */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>

@@ -14,6 +14,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MagneticButton } from '@/components/ui/MagneticButton'
+import { useToast } from '@/contexts/ToastContext'
 
 export default function CategoriasPage() {
   const { user } = useAuth()
@@ -21,6 +22,7 @@ export default function CategoriasPage() {
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<{ open: boolean; id: string | null; nome: string }>({ open: false, id: null, nome: '' })
   const [saving, setSaving] = useState(false)
+  const { toast } = useToast()
 
   const openNew = () => setModal({ open: true, id: null, nome: '' })
   const openEdit = (id: string, nome: string) => setModal({ open: true, id, nome })
@@ -37,11 +39,16 @@ export default function CategoriasPage() {
     if (!trimmed || saving) return
     setSaving(true)
     try {
-      if (modal.id) await updateCategory(modal.id, trimmed)
-      else await addCategory(trimmed)
+      if (modal.id) {
+        await updateCategory(modal.id, trimmed)
+        toast.success('Categoria atualizada')
+      } else {
+        await addCategory(trimmed)
+        toast.success('Categoria criada')
+      }
       setModal({ open: false, id: null, nome: '' })
     } catch (err: any) {
-      alert('Erro ao salvar categoria: ' + (err.message || 'tente novamente'))
+      toast.error('Erro ao salvar categoria', err.message || 'Tente novamente')
     } finally {
       setSaving(false)
     }
@@ -151,8 +158,9 @@ export default function CategoriasPage() {
                           if (!confirm(`Excluir a categoria "${c.nome}"?`)) return
                           try {
                             await deleteCategory(c.id)
+                            toast.success('Categoria excluída')
                           } catch (err: any) {
-                            alert(err.message || 'Erro ao excluir categoria')
+                            toast.error('Erro ao excluir categoria', err.message || 'Tente novamente')
                           }
                         }}
                         className="gap-2 cursor-pointer text-[#DC2626] focus:text-[#DC2626] focus:bg-[#FEF2F2]"
