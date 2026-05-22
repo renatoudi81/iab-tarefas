@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // IMPORTANTE: as API routes do Next.js usam Firebase Admin SDK,
+    // que IGNORA estas regras (acesso privilegiado).
+    // Estas regras só se aplicam a acesso DIRETO do cliente — que
+    // este projeto NÃO faz hoje. Mesmo assim, definimos regras
+    // restritivas como camada de defesa em profundidade.
+    // ============================================================
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwnUser(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isAuth() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.perfil == 'Administrador';
+    }
+
+    // Usuários: qualquer logado lê (para mostrar nome/avatar);
+    // só o próprio dono ou admin escreve
+    match /users/{uid} {
+      allow read: if isAuth();
+      allow write: if isOwnUser(uid) || isAdmin();
+    }
+
+    // Categorias: leitura para todos logados; escrita só admin
+    match /categories/{id} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Tarefas + subcoleções: qualquer logado lê e escreve
+    // (a lógica de quem pode editar o quê fica nas API routes)
+    match /tasks/{id} {
+      allow read, write: if isAuth();
+      match /{subcollection}/{docId} {
+        allow read, write: if isAuth();
+      }
+    }
+
+    // Notificações: cada usuário só vê e marca como lida as próprias
+    match /notifications/{id} {
+      allow read, update, delete: if isAuth() &&
+        resource.data.usuario_id == request.auth.uid;
+      allow create: if isAuth();
+    }
+
+    // Config: leitura para logados; escrita só admin
+    match /config/{id} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // Negação padrão para qualquer outro caminho
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

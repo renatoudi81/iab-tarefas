@@ -1,0 +1,185 @@
+'use client'
+import { useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { redirect } from 'next/navigation'
+import { useCategories } from '@/hooks/useCategories'
+import { Tag, Plus, Search, Trash2, MoreHorizontal, Pencil } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+export default function CategoriasPage() {
+  const { user } = useAuth()
+  const { categories, addCategory, updateCategory, deleteCategory } = useCategories()
+  const [search, setSearch] = useState('')
+  const [modal, setModal] = useState<{ open: boolean; id: string | null; nome: string }>({ open: false, id: null, nome: '' })
+  const [saving, setSaving] = useState(false)
+
+  const openNew = () => setModal({ open: true, id: null, nome: '' })
+  const openEdit = (id: string, nome: string) => setModal({ open: true, id, nome })
+
+  if (user && user.perfil !== 'Administrador') redirect('/dashboard')
+
+  const filtered = categories
+    .filter(c => !search || c.nome.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }))
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmed = modal.nome.trim()
+    if (!trimmed || saving) return
+    setSaving(true)
+    try {
+      if (modal.id) await updateCategory(modal.id, trimmed)
+      else await addCategory(trimmed)
+      setModal({ open: false, id: null, nome: '' })
+    } catch (err: any) {
+      alert('Erro ao salvar categoria: ' + (err.message || 'tente novamente'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div>
+      {/* Título */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#111111]">Categorias</h1>
+          <p className="text-[#71717A] text-sm mt-0.5">
+            {categories.length} categoria{categories.length !== 1 ? 's' : ''} disponível{categories.length !== 1 ? 'is' : ''} para classificação de tarefas
+          </p>
+        </div>
+        <button
+          onClick={openNew}
+          className="flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+        >
+          <Plus size={14} strokeWidth={2.5} /> Nova Categoria
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 mb-5">
+        <div className="relative flex-1 min-w-[200px] max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none" />
+          <Input
+            type="text"
+            className="pl-9 h-9 text-sm border-[#E4E4E7]"
+            placeholder="Buscar categoria..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Tabela */}
+      <div className="bg-white border border-[#E4E4E7] rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        {/* Table header */}
+        <div className="grid grid-cols-[1fr_64px] bg-[#F7F8FA] border-b border-[#E4E4E7] px-4 py-2.5">
+          <span className="text-[0.72rem] font-bold uppercase tracking-wider text-[#71717A]">Nome</span>
+          <span className="text-[0.72rem] font-bold uppercase tracking-wider text-[#71717A]">Ações</span>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-[#A1A1AA] gap-2">
+            <Tag size={32} className="opacity-20" />
+            <p className="text-sm">{search ? 'Nenhuma categoria encontrada' : 'Nenhuma categoria cadastrada'}</p>
+            {!search && (
+              <button
+                onClick={openNew}
+                className="flex items-center gap-1.5 border border-[#E4E4E7] bg-white hover:bg-[#F7F8FA] text-[#3F3F46] text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer mt-1"
+              >
+                <Plus size={13} strokeWidth={2.5} /> Adicionar categoria
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {filtered.map(c => (
+              <div
+                key={c.id}
+                className="grid grid-cols-[1fr_64px] items-center px-4 py-3 border-b border-[#F4F4F5] hover:bg-[#FAFAFA] transition-colors"
+              >
+                {/* Nome */}
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0 bg-[#D4D4D8]" />
+                  <span className="text-sm font-medium text-[#111111]">{c.nome}</span>
+                </div>
+
+                {/* Ações */}
+                <div className="flex justify-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#F7F8FA] text-[#71717A] transition-colors cursor-pointer border-0 bg-transparent">
+                        <MoreHorizontal size={16} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36">
+                      <DropdownMenuItem
+                        onClick={() => openEdit(c.id, c.nome)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <Pencil size={13} />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={async () => {
+                          if (!confirm(`Excluir a categoria "${c.nome}"?`)) return
+                          try {
+                            await deleteCategory(c.id)
+                          } catch (err: any) {
+                            alert(err.message || 'Erro ao excluir categoria')
+                          }
+                        }}
+                        className="gap-2 cursor-pointer text-[#DC2626] focus:text-[#DC2626] focus:bg-[#FEF2F2]"
+                      >
+                        <Trash2 size={13} />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Dialog nova / editar categoria */}
+      <Dialog open={modal.open} onOpenChange={open => { if (!open) setModal({ open: false, id: null, nome: '' }) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{modal.id ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="flex flex-col gap-4 pt-1">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="nome-cat">Nome *</Label>
+              <Input
+                id="nome-cat"
+                required
+                autoFocus
+                value={modal.nome}
+                onChange={e => setModal(m => ({ ...m, nome: e.target.value }))}
+                placeholder="Ex.: Marketing, Financeiro, Jurídico..."
+              />
+            </div>
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setModal({ open: false, id: null, nome: '' })}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

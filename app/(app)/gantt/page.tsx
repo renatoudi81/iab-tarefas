@@ -1,0 +1,255 @@
+'use client'
+import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { useTasks } from '@/hooks/useTasks'
+import { STATUS_COLORS, PRIORITY_COLORS, todayStr } from '@/types'
+import { GanttChart, AlertTriangle, Clock } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+type ColorBy = 'status' | 'prioridade'
+
+function getWeeks(minDate: string, maxDate: string): { label: string; left: number }[] {
+  const weeks: { label: string; left: number }[] = []
+  const start = new Date(minDate + 'T00:00:00')
+  const end = new Date(maxDate + 'T00:00:00')
+  const totalMs = end.getTime() - start.getTime() || 1
+  const d = new Date(start)
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  while (d <= end) {
+    const left = Math.max(0, (d.getTime() - start.getTime()) / totalMs * 100)
+    if (left <= 100)
+      weeks.push({ label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), left })
+    d.setDate(d.getDate() + 7)
+  }
+  return weeks
+}
+
+export default function GanttPage() {
+  const { tasks } = useTasks()
+  const today = todayStr()
+  const [colorBy, setColorBy] = useState<ColorBy>('status')
+
+  const tasksWithDates = useMemo(() =>
+    tasks.filter(t => t.data_inicio && t.data_prazo)
+      .sort((a, b) => (a.data_inicio || '') < (b.data_inicio || '') ? -1 : 1),
+    [tasks]
+  )
+
+  if (tasksWithDates.length === 0) {
+    return (
+      <div>
+        <div className="flex justify-between items-end mb-6 flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[#111111]">Gantt</h1>
+            <p className="text-[#71717A] text-sm mt-0.5">Linha do tempo das tarefas</p>
+          </div>
+        </div>
+        <div className="bg-white border border-[#E4E4E7] rounded-lg p-16 flex flex-col items-center justify-center text-[#A1A1AA]">
+          <GanttChart size={44} className="mb-4 opacity-20" />
+          <p className="font-semibold text-[#71717A]">Nenhuma tarefa com datas definidas</p>
+          <p className="text-sm mt-1.5 text-[#A1A1AA]">
+            Defina data de início e vencimento nas tarefas para visualizá-las aqui.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const minDate = tasksWithDates[0].data_inicio!
+  const maxDate = tasksWithDates.reduce((m, t) => t.data_prazo! > m ? t.data_prazo! : m, tasksWithDates[0].data_prazo!)
+  const totalMs = Math.max(1, new Date(maxDate).getTime() - new Date(minDate).getTime())
+  const totalDays = totalMs / 86400000 + 1
+
+  const offset = (date: string) => {
+    const ms = new Date(date).getTime() - new Date(minDate).getTime()
+    return Math.max(0, ms / totalMs * 100)
+  }
+  const width = (start: string, end: string) => {
+    const days = (new Date(end).getTime() - new Date(start).getTime()) / 86400000 + 1
+    return Math.max(1, (days / totalDays) * 100)
+  }
+
+  const todayPct = today >= minDate && today <= maxDate ? offset(today) : null
+  const weeks = getWeeks(minDate, maxDate)
+
+  const getColor = (task: any) =>
+    colorBy === 'status'
+      ? STATUS_COLORS[task.status as keyof typeof STATUS_COLORS]
+      : PRIORITY_COLORS[task.prioridade as keyof typeof PRIORITY_COLORS]
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-5 flex justify-between items-center flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#111111]">Gantt</h1>
+          <p className="text-[#71717A] text-sm mt-0.5">
+            {tasksWithDates.length} tarefa{tasksWithDates.length !== 1 ? 's' : ''} · {minDate} → {maxDate}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-[#71717A] font-medium text-sm">Colorir por:</span>
+          <Select value={colorBy} onValueChange={v => setColorBy(v as ColorBy)}>
+            <SelectTrigger className="w-[140px] h-8 text-sm border-[#E4E4E7] bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="prioridade">Prioridade</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#E4E4E7] rounded-lg overflow-x-auto">
+        <div className="p-6 pb-4" style={{ minWidth: '700px' }}>
+          {/* Timeline ruler */}
+          <div className="flex mb-4 relative h-7" style={{ marginLeft: '240px' }}>
+            {weeks.map((w, i) => (
+              <span
+                key={i}
+                className="absolute text-[0.68rem] text-[#A1A1AA] font-medium whitespace-nowrap"
+                style={{ left: `${w.left}%`, transform: 'translateX(-50%)', top: 0 }}
+              >
+                {w.label}
+              </span>
+            ))}
+            {todayPct !== null && (
+              <span
+                className="absolute text-[0.68rem] text-[#DC2626] font-bold whitespace-nowrap"
+                style={{ left: `${todayPct}%`, top: 0, transform: 'translateX(-50%)' }}
+              >
+                Hoje
+              </span>
+            )}
+          </div>
+
+          {/* Rows */}
+          {tasksWithDates.map((task, idx) => {
+            const color = getColor(task)
+            const pct = task.tempo_estimado > 0
+              ? Math.min(100, (task.tempo_gasto_total / task.tempo_estimado) * 100)
+              : 0
+            const isOver = task.tempo_gasto_total > task.tempo_estimado && task.tempo_estimado > 0
+            const overdue = task.data_prazo && task.data_prazo < today && task.status !== 'Concluída'
+            const shortId = task.id.slice(-5).toUpperCase()
+
+            return (
+              <div key={task.id} className="flex items-center mb-2.5 gap-0">
+                {/* Task name column */}
+                <div className="w-[240px] flex-shrink-0 pr-4">
+                  <div className="flex items-center gap-1 mb-0.5 min-w-0">
+                    <span className="text-[0.63rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0">
+                      #{shortId}
+                    </span>
+                    {task.categoria && (
+                      <span className="text-[0.63rem] px-1.5 py-[2px] rounded font-medium bg-[#F4F4F5] text-[#52525B] truncate min-w-0">
+                        {task.categoria}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[0.8125rem] font-medium text-[#111111] truncate" title={task.titulo}>
+                    {overdue && (
+                      <AlertTriangle size={11} className="inline text-[#DC2626] mr-1 align-middle" />
+                    )}
+                    {task.titulo}
+                  </p>
+                </div>
+
+                {/* Bar track */}
+                <div className="flex-1 relative h-9">
+                  {weeks.map((w, i) => (
+                    <div
+                      key={i}
+                      className="absolute top-0 bottom-0 w-px bg-[#E4E4E7] opacity-60 z-0"
+                      style={{ left: `${w.left}%` }}
+                    />
+                  ))}
+                  {todayPct !== null && (
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-[#DC2626] z-10 opacity-80"
+                      style={{ left: `${todayPct}%` }}
+                    />
+                  )}
+                  <div className="absolute inset-[8px_0] bg-[#F7F8FA] rounded-md" />
+                  <motion.div
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: `${width(task.data_inicio!, task.data_prazo!)}%`, opacity: 1 }}
+                    transition={{ delay: idx * 0.04, duration: 0.45, ease: 'easeOut' }}
+                    style={{
+                      position: 'absolute',
+                      left: `${offset(task.data_inicio!)}%`,
+                      top: '6px',
+                      bottom: '6px',
+                      background: color + 'dd',
+                      borderRadius: '6px',
+                      zIndex: 2,
+                      overflow: 'hidden',
+                      boxShadow: `0 0 0 1.5px ${color}`,
+                    }}
+                  >
+                    {pct > 0 && (
+                      <div
+                        className="absolute left-0 top-0 bottom-0 rounded-[inherit]"
+                        style={{
+                          width: `${pct}%`,
+                          background: isOver ? 'rgba(220,38,38,0.4)' : 'rgba(255,255,255,0.25)',
+                        }}
+                      />
+                    )}
+                    <div className="relative z-10 flex items-center h-full pl-1.5 gap-1">
+                      <span className="text-[0.68rem] font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                        {task.status}
+                      </span>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* End date + time */}
+                <div className="w-[100px] flex-shrink-0 pl-3 text-right">
+                  <div className={cn(
+                    'text-[0.72rem]',
+                    overdue ? 'text-[#DC2626] font-semibold' : 'text-[#71717A] font-normal'
+                  )}>
+                    {task.data_prazo}
+                  </div>
+                  {task.tempo_estimado > 0 && (
+                    <div className={cn(
+                      'text-[0.68rem] flex items-center gap-0.5 justify-end mt-0.5',
+                      isOver ? 'text-[#DC2626]' : 'text-[#A1A1AA]'
+                    )}>
+                      <Clock size={9} />
+                      {Math.round(pct)}%
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Legend */}
+          <div className="border-t border-[#E4E4E7] mt-4 pt-3.5 flex gap-4 flex-wrap items-center">
+            <span className="text-[0.72rem] text-[#71717A] font-medium">Legenda:</span>
+            <div className="flex items-center gap-1 text-[0.72rem] text-[#DC2626]">
+              <div className="w-0.5 h-3 bg-[#DC2626] rounded-sm" /> Hoje
+            </div>
+            <div className="flex items-center gap-1 text-[0.72rem] text-[#71717A]">
+              <div className="w-3 h-2 rounded-sm border border-[#E4E4E7]" style={{ background: 'rgba(255,255,255,0.3)' }} />
+              Tempo usado
+            </div>
+            <div className="flex items-center gap-1 text-[0.72rem] text-[#DC2626]">
+              <AlertTriangle size={11} /> Prazo vencido
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
