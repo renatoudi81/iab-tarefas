@@ -76,17 +76,23 @@
 }
 
 /* ─── Design Tokens ─────────────────────────────────────────────── */
+/* IMPORTANTE: NÃO redefinir --primary, --accent, --border, --secondary,
+ * --muted, --destructive, --ring etc. aqui. Esses são controlados pelo
+ * @layer base (linha 23+) em formato HSL components, que é o que o
+ * shadcn/ui espera (hsl(var(--primary))). Redefini-los como hex aqui
+ * quebra TODOS os botões/inputs/dialogs (background fica transparente).
+ */
 :root {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* Primary — electric blue */
-  --primary: #2563EB;
+  /* Tokens auxiliares do brand (sem conflito com shadcn) */
+  --primary-hex: #2563EB;
   --primary-hover: #1D4ED8;
   --primary-light: #EFF6FF;
   --primary-glow: rgba(37,99,235,0.12);
 
-  /* Amber — IAB brand accent (mantido) */
-  --accent: #F59E0B;
+  /* Amber — IAB brand accent */
+  --accent-hex: #F59E0B;
   --accent-hover: #D97706;
   --accent-light: #FFFBEB;
   --accent-glow: rgba(245,158,11,0.15);
@@ -120,8 +126,8 @@
   --text-secondary: #3F3F46;
   --text-muted: #71717A;
 
-  /* Borda */
-  --border: #E4E4E7;
+  /* Borda — usar --border (do shadcn) ou --border-hex (literal) conforme contexto */
+  --border-hex: #E4E4E7;
   --border-focus: #2563EB;
 
   /* Sombras — mínimas */
@@ -207,7 +213,7 @@ body {
 /* ─── Cards ─────────────────────────────────────────────────────── */
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hex);
   border-radius: 8px;
   padding: 1.25rem;
   transition: border-color 0.15s;
@@ -216,7 +222,7 @@ body {
 
 .kpi-card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hex);
   border-radius: 8px;
   padding: 1.25rem 1.5rem;
   transition: border-color 0.15s;
@@ -243,20 +249,20 @@ body {
   user-select: none;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn:focus-visible { outline: 2px solid var(--primary-hex); outline-offset: 2px; }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--primary-hex);
   color: white;
-  border-color: var(--primary);
+  border-color: var(--primary-hex);
 }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
 .btn-primary:active:not(:disabled) { opacity: 0.9; }
 
 .btn-accent {
-  background: var(--accent);
+  background: var(--accent-hex);
   color: #1C1400;
-  border-color: var(--accent);
+  border-color: var(--accent-hex);
   font-weight: 600;
 }
 .btn-accent:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -264,7 +270,7 @@ body {
 .btn-secondary {
   background: var(--surface);
   color: var(--text-secondary);
-  border-color: var(--border);
+  border-color: var(--border-hex);
 }
 .btn-secondary:hover:not(:disabled) { background: var(--surface-subtle); border-color: #D4D4D8; color: var(--text); }
 
@@ -294,7 +300,7 @@ body {
   border-radius: 6px;
   font-size: 0.875rem;
   font-family: var(--font-sans);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hex);
   background: var(--surface);
   color: var(--text);
   outline: none;
@@ -323,7 +329,7 @@ body {
 .modal {
   background: var(--surface);
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hex);
   padding: 1.5rem;
   width: 100%;
   max-height: 90vh;
@@ -360,14 +366,14 @@ body {
 /* ─── Progress bar ─────────────────────────────────────────────── */
 .progress-track {
   height: 4px;
-  background: var(--border);
+  background: var(--border-hex);
   border-radius: 999px;
   overflow: hidden;
 }
 .progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--primary);
+  background: var(--primary-hex);
   transition: width 0.5s ease;
 }
 .progress-fill.over { background: var(--danger); }
@@ -376,7 +382,7 @@ body {
 .tab-bar {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-hex);
   margin-bottom: 1.25rem;
 }
 .tab-btn {
@@ -410,7 +416,7 @@ body {
 .animate-pulse { animation: pulse 2s ease-in-out infinite; }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--border) 25%, var(--surface-subtle) 50%, var(--border) 75%);
+  background: linear-gradient(90deg, var(--border-hex) 25%, var(--surface-subtle) 50%, var(--border-hex) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
@@ -424,10 +430,10 @@ body {
 
 /* ─── Recharts ──────────────────────────────────────────────────── */
 .recharts-cartesian-grid-horizontal line,
-.recharts-cartesian-grid-vertical line { stroke: var(--border); stroke-opacity: 1; }
+.recharts-cartesian-grid-vertical line { stroke: var(--border-hex); stroke-opacity: 1; }
 .recharts-default-tooltip {
   background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid var(--border-hex) !important;
   border-radius: 8px !important;
   box-shadow: var(--shadow-lg) !important;
   font-family: var(--font-sans) !important;
