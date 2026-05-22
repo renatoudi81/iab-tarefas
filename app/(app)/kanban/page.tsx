@@ -34,7 +34,7 @@ function sortTasks(tasks: Task[]): Task[] {
 }
 
 export default function KanbanPage() {
-  const { tasks: swrTasks, updateTask } = useTasks()
+  const { tasks: swrTasks, updateTask, isLoading } = useTasks()
   const { users } = useUsers()
   const router = useRouter()
 
@@ -88,6 +88,10 @@ export default function KanbanPage() {
   }
 
   const today = new Date().toISOString().split('T')[0]
+
+  if (isLoading && swrTasks.length === 0) {
+    return <KanbanSkeleton />
+  }
 
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
@@ -333,6 +337,61 @@ export default function KanbanPage() {
           })}
         </div>
       </DragDropContext>
+    </div>
+  )
+}
+
+/* ─── Skeleton ──────────────────────────────────────────────── */
+function KanbanSkeleton() {
+  return (
+    <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
+      <div className="mb-6 flex items-end justify-between">
+        <div className="space-y-2">
+          <div className="h-5 w-20 rounded-full bg-[#F4F4F5]" />
+          <div className="h-8 w-32 rounded-md bg-[#F4F4F5]" />
+          <div className="h-3 w-72 rounded-md bg-[#F4F4F5]" />
+        </div>
+        <div className="h-9 w-32 rounded-lg bg-[#F4F4F5]" />
+      </div>
+
+      <div className="flex gap-3 overflow-hidden flex-1">
+        {COLUMNS.map((status, ci) => (
+          <div key={status} className="flex flex-col" style={{ minWidth: '220px', flex: '1 1 0' }}>
+            {/* Header */}
+            <div className="flex items-stretch mb-3 rounded-xl overflow-hidden bg-white border border-[#EDEEF1]">
+              <div className="w-[3px] flex-shrink-0 bg-[#E4E4E7]" />
+              <div className="flex-1 px-3.5 py-3 space-y-2">
+                <div className="h-3 w-20 rounded bg-[#F4F4F5]" />
+                <div className="h-2.5 w-12 rounded bg-[#F4F4F5]" />
+              </div>
+            </div>
+            {/* Cards mock */}
+            <div className="space-y-2">
+              {Array.from({ length: 2 + ((ci * 7) % 3) }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-[#EDEEF1] rounded-xl p-3 space-y-2"
+                  style={{
+                    opacity: 0.6,
+                    animation: `shimmer 1.6s ease-in-out ${i * 0.12}s infinite`,
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-12 rounded bg-[#EFF6FF]" />
+                    <div className="h-3 w-8 rounded bg-[#F4F4F5]" />
+                  </div>
+                  <div className="h-3 w-full rounded bg-[#F4F4F5]" />
+                  <div className="h-3 w-3/4 rounded bg-[#F4F4F5]" />
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="h-5 w-5 rounded-full bg-[#F4F4F5]" />
+                    <div className="h-2.5 w-14 rounded bg-[#F4F4F5]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
