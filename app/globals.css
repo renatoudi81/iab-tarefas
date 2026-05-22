@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&display=swap');
+/* Fontes Geist Sans + Geist Mono carregadas via next/font em app/layout.tsx
+   (Inter foi banido pela skill design-taste-frontend) */
 @import "tailwindcss";
 
 @theme inline {
@@ -83,7 +84,10 @@
  * quebra TODOS os botões/inputs/dialogs (background fica transparente).
  */
 :root {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* --font-sans e --font-mono são populados pelo next/font (variáveis no <html>).
+   * Fallback aqui pra caso o next/font ainda não tenha hidratado. */
+  --font-sans: var(--font-geist-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 
   /* Tokens auxiliares do brand (sem conflito com shadcn) */
   --primary-hex: #2563EB;

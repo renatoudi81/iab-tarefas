@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
 import { STATUSES, todayStr } from '@/types'
@@ -9,16 +9,22 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { TrendingUp, Clock, AlertTriangle, CheckCircle2, BarChart3, Activity } from 'lucide-react'
+import {
+  TrendingUp, Clock, AlertTriangle, CheckCircle2,
+  BarChart3, Activity, Sparkles, ArrowUpRight,
+} from 'lucide-react'
 
+// ──────────────────────────────────────────────────────────────────────
+// Tooltip dark com tipografia mono nos números
+// ──────────────────────────────────────────────────────────────────────
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg bg-[#0F172A] text-white px-3 py-2 text-[0.78rem] shadow-[0_10px_30px_-12px_rgba(37,99,235,0.45)]">
+    <div className="rounded-lg bg-[#0F172A] text-white px-3 py-2 text-[0.78rem] shadow-[0_10px_30px_-12px_rgba(37,99,235,0.45)] border border-white/5">
       <p className="text-[#94A3B8] text-[0.7rem] mb-1.5 font-medium">{label}</p>
       {payload.map((p: any) => (
-        <p key={p.name} className="text-white font-semibold text-[0.85rem] tabular-nums">
-          <span className="text-[#CBD5E1] font-medium">{p.name}:</span>{' '}
+        <p key={p.name} className="text-white font-semibold text-[0.85rem] font-mono tracking-tight">
+          <span className="text-[#CBD5E1] font-medium font-sans">{p.name}:</span>{' '}
           {p.value}
         </p>
       ))}
@@ -27,10 +33,56 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// KPI Card com sombra tintada de azul + hover lift
+// Spring physics motion (skill rule: type:spring, stiffness:100, damping:20)
 // ──────────────────────────────────────────────────────────────────────
-function KpiCard({
-  label, value, icon: Icon, hint, accentColor, accentBg, danger,
+const containerVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+}
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 100, damping: 20 },
+  },
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Bento Tile — substitui o card genérico. Aceita span para layout assimétrico
+// ──────────────────────────────────────────────────────────────────────
+function BentoTile({
+  children,
+  className = '',
+  interactive = true,
+}: {
+  children: React.ReactNode
+  className?: string
+  interactive?: boolean
+}) {
+  return (
+    <motion.div
+      variants={itemVariants}
+      className={
+        'relative bg-white border border-[#EDEEF1] rounded-2xl overflow-hidden ' +
+        'shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)] ' +
+        (interactive
+          ? 'transition-all duration-300 ease-out hover:shadow-[0_18px_40px_-14px_rgba(37,99,235,0.18)] hover:-translate-y-0.5 hover:border-[#DCE3F0] '
+          : '') +
+        className
+      }
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// KPI — tipografia hierárquica via peso + cor (não via tamanho gigante).
+// Numbers em font-mono (Geist Mono) com tabular-nums.
+// ──────────────────────────────────────────────────────────────────────
+function Kpi({
+  label, value, icon: Icon, hint, accentColor, accentBg, danger, pulse,
 }: {
   label: string
   value: string | number
@@ -39,36 +91,45 @@ function KpiCard({
   accentColor: string
   accentBg: string
   danger?: boolean
+  pulse?: boolean
 }) {
-  const valueColor = danger && Number(value) > 0 ? '#DC2626' : '#111111'
+  const isDanger = danger && Number(value) > 0
   return (
-    <div className="bg-white rounded-2xl border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] p-5 transition-all hover:shadow-[0_14px_36px_-12px_rgba(37,99,235,0.18)] hover:-translate-y-0.5">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <span className="text-[0.72rem] font-medium text-[#71717A] uppercase tracking-wider leading-tight">
+    <BentoTile className="p-5">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <span className="text-[0.7rem] font-medium text-[#71717A] uppercase tracking-[0.08em] leading-tight">
           {label}
         </span>
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: accentBg }}
-        >
-          <Icon size={15} style={{ color: accentColor }} strokeWidth={2} />
+        <div className="relative">
+          {pulse && isDanger && (
+            <span
+              className="absolute inset-0 rounded-lg animate-ping opacity-40"
+              style={{ background: accentBg }}
+            />
+          )}
+          <div
+            className="relative w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: accentBg }}
+          >
+            <Icon size={16} style={{ color: accentColor }} strokeWidth={2} />
+          </div>
         </div>
       </div>
       <div
-        className="text-[1.875rem] font-bold leading-none tabular-nums tracking-tight"
-        style={{ color: valueColor }}
+        className="font-mono text-[2rem] font-bold leading-none tabular-nums tracking-[-0.02em]"
+        style={{ color: isDanger ? '#DC2626' : '#0F172A' }}
       >
         {value}
       </div>
-      {hint && <div className="text-[0.72rem] text-[#A1A1AA] mt-2">{hint}</div>}
-    </div>
+      {hint && <div className="text-[0.72rem] text-[#71717A] mt-2.5">{hint}</div>}
+    </BentoTile>
   )
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Section card reutilizável (mesmo padrão de relatorios)
+// Bento Section — para os charts. Header inline minimal, sem card overhead extra.
 // ──────────────────────────────────────────────────────────────────────
-function Section({
+function BentoSection({
   icon: Icon,
   iconColor = '#2563EB',
   iconBg = '#EFF6FF',
@@ -88,23 +149,18 @@ function Section({
   className?: string
 }) {
   return (
-    <section
-      className={
-        'bg-white rounded-2xl border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] overflow-hidden transition-shadow hover:shadow-[0_12px_36px_-12px_rgba(37,99,235,0.15)] ' +
-        className
-      }
-    >
+    <BentoTile className={className}>
       <header className="flex items-center gap-3 px-5 py-4 border-b border-[#F4F4F5]">
         {Icon && (
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: iconBg }}
           >
-            <Icon size={15} style={{ color: iconColor }} strokeWidth={2} />
+            <Icon size={16} style={{ color: iconColor }} strokeWidth={2} />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h2 className="font-semibold text-[0.92rem] text-[#111111] leading-tight tracking-[-0.01em]">
+          <h2 className="font-semibold text-[0.92rem] text-[#0F172A] leading-tight tracking-[-0.01em]">
             {title}
           </h2>
           {subtitle && (
@@ -114,12 +170,42 @@ function Section({
         {action}
       </header>
       {children}
-    </section>
+    </BentoTile>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Skeleton loader matching layout (skill rule: skeletal loaders, no spinners)
+// ──────────────────────────────────────────────────────────────────────
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 pb-10">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-8 w-44 bg-[#F4F4F5] rounded-lg animate-pulse" />
+          <div className="h-4 w-72 bg-[#F4F4F5] rounded animate-pulse" />
+        </div>
+        <div className="h-9 w-64 bg-[#F4F4F5] rounded-lg animate-pulse" />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-32 rounded-2xl bg-white border border-[#EDEEF1] p-5">
+            <div className="h-3 w-24 bg-[#F4F4F5] rounded animate-pulse mb-4" />
+            <div className="h-9 w-16 bg-[#F4F4F5] rounded animate-pulse" />
+            <div className="h-3 w-20 bg-[#F4F4F5] rounded animate-pulse mt-3" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-3 h-72 rounded-2xl bg-white border border-[#EDEEF1] animate-pulse" />
+        <div className="lg:col-span-2 h-72 rounded-2xl bg-white border border-[#EDEEF1] animate-pulse" />
+      </div>
+    </div>
   )
 }
 
 export default function DashboardPage() {
-  const { tasks } = useTasks()
+  const { tasks, isLoading: loadingTasks } = useTasks()
   const { entries } = useTimeEntries()
 
   const [dateFrom, setDateFrom] = useState(() => {
@@ -130,14 +216,14 @@ export default function DashboardPage() {
 
   const metrics = useMemo(() => {
     const inPeriod = tasks.filter(t =>
-      t.criado_em.slice(0, 10) >= dateFrom && t.criado_em.slice(0, 10) <= dateTo
+      t.criado_em.slice(0, 10) >= dateFrom && t.criado_em.slice(0, 10) <= dateTo,
     )
     const periodEntries = entries.filter(e => e.data >= dateFrom && e.data <= dateTo)
     const delayed = tasks.filter(t => t.status === STATUSES.DELAYED).length
     const done = tasks.filter(t => t.status === STATUSES.DONE).length
     const total = tasks.length
     const productivity = total > 0 ? Math.round((done / total) * 100) : 0
-    const hours = Math.round(periodEntries.reduce((s, e) => s + e.duracao, 0) / 60 * 10) / 10
+    const hours = Math.round((periodEntries.reduce((s, e) => s + e.duracao, 0) / 60) * 10) / 10
     return {
       tasksInPeriod: inPeriod.length,
       hoursInPeriod: `${hours}h`,
@@ -159,7 +245,7 @@ export default function DashboardPage() {
         label: ds.slice(5),
         Concluídas: tasks.filter(t => t.data_conclusao?.startsWith(ds)).length,
         Criadas: tasks.filter(t => t.criado_em.startsWith(ds)).length,
-        Horas: Math.round(entries.filter(e => e.data === ds).reduce((s, e) => s + e.duracao, 0) / 60 * 10) / 10,
+        Horas: Math.round((entries.filter(e => e.data === ds).reduce((s, e) => s + e.duracao, 0) / 60) * 10) / 10,
       })
       cur.setDate(cur.getDate() + 1); days++
     }
@@ -174,46 +260,58 @@ export default function DashboardPage() {
     { label: 'Concluída',    color: '#22c55e', key: STATUSES.DONE },
   ]
 
-  return (
-    <div className="flex flex-col gap-6 pb-10">
+  if (loadingTasks && tasks.length === 0) {
+    return <DashboardSkeleton />
+  }
 
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="flex flex-col gap-6 pb-10"
+    >
       {/* ──────────────── Header ──────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"
+      >
         <div>
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <Sparkles size={11} strokeWidth={2.5} />
+              Visão geral
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Dashboard
           </h1>
-          <p className="text-sm text-[#71717A] mt-1">
-            Acompanhe a produtividade da equipe e os indicadores do período.
+          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+            Acompanhe a produtividade da equipe e os indicadores do período selecionado.
           </p>
         </div>
-        <div className="flex items-center gap-1 border border-[#E4E4E7] rounded-lg bg-white px-3 h-9 text-sm text-[#3F3F46] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center gap-1 border border-[#E4E4E7] rounded-lg bg-white px-3 h-9 text-sm text-[#3F3F46] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <input
             type="date"
-            className="border-0 bg-transparent text-sm text-[#3F3F46] outline-none cursor-pointer tabular-nums"
+            className="border-0 bg-transparent text-sm text-[#3F3F46] outline-none cursor-pointer font-mono tabular-nums"
             style={{ colorScheme: 'light' }}
             value={dateFrom}
             onChange={e => setDateFrom(e.target.value)}
           />
-          <span className="text-[#A1A1AA] select-none px-1">–</span>
+          <span className="text-[#A1A1AA] select-none px-1">→</span>
           <input
             type="date"
-            className="border-0 bg-transparent text-sm text-[#3F3F46] outline-none cursor-pointer tabular-nums"
+            className="border-0 bg-transparent text-sm text-[#3F3F46] outline-none cursor-pointer font-mono tabular-nums"
             style={{ colorScheme: 'light' }}
             value={dateTo}
             onChange={e => setDateTo(e.target.value)}
           />
         </div>
-      </div>
+      </motion.div>
 
-      {/* ──────────────── KPIs ──────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="grid grid-cols-2 xl:grid-cols-4 gap-4"
-      >
-        <KpiCard
+      {/* ──────────────── KPIs row ──────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Kpi
           label="Tarefas no período"
           value={metrics.tasksInPeriod}
           icon={TrendingUp}
@@ -221,42 +319,37 @@ export default function DashboardPage() {
           accentBg="#EFF6FF"
           hint={`de ${tasks.length} no total`}
         />
-        <KpiCard
+        <Kpi
           label="Horas registradas"
           value={metrics.hoursInPeriod}
           icon={Clock}
-          accentColor="#A855F7"
-          accentBg="#FAF5FF"
+          accentColor="#7C3AED"
+          accentBg="#F5F3FF"
           hint={`${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`}
         />
-        <KpiCard
+        <Kpi
           label="Tarefas atrasadas"
           value={metrics.delayedTasks}
           icon={AlertTriangle}
           accentColor="#DC2626"
           accentBg="#FEF2F2"
           danger
-          hint={metrics.delayedTasks === 0 ? 'Nenhuma atrasada' : 'Atenção'}
+          pulse
+          hint={metrics.delayedTasks === 0 ? 'Nenhuma atrasada' : 'Requer atenção'}
         />
-        <KpiCard
-          label="Produtividade geral"
+        <Kpi
+          label="Produtividade"
           value={metrics.productivity}
           icon={CheckCircle2}
           accentColor="#16A34A"
           accentBg="#F0FDF4"
           hint={`${metrics.doneCount} de ${tasks.length} concluídas`}
         />
-      </motion.div>
+      </div>
 
-      {/* ──────────────── Gráficos ──────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.12, duration: 0.25 }}
-        className="grid grid-cols-1 lg:grid-cols-5 gap-6"
-      >
-        {/* Produtividade */}
-        <Section
+      {/* ──────────────── Bento grid: asymmetric 3+2 ──────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <BentoSection
           icon={Activity}
           iconColor="#2563EB"
           iconBg="#EFF6FF"
@@ -277,15 +370,15 @@ export default function DashboardPage() {
           }
         >
           <div className="p-5">
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
                 <defs>
                   <linearGradient id="grad-concluidas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#16A34A" stopOpacity={0.15} />
+                    <stop offset="0%" stopColor="#16A34A" stopOpacity={0.18} />
                     <stop offset="100%" stopColor="#16A34A" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="grad-criadas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.12} />
+                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.14} />
                     <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -293,72 +386,81 @@ export default function DashboardPage() {
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#E4E4E7' }} />
-                <Area type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={1.75} fill="url(#grad-concluidas)" dot={false} activeDot={{ r: 4, fill: '#16A34A', strokeWidth: 0 }} />
-                <Area type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={1.75} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={false} activeDot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} />
+                <Area type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#grad-concluidas)" dot={false} activeDot={{ r: 4, fill: '#16A34A', strokeWidth: 0 }} />
+                <Area type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={false} activeDot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </Section>
+        </BentoSection>
 
-        {/* Horas */}
-        <Section
+        <BentoSection
           icon={BarChart3}
-          iconColor="#A855F7"
-          iconBg="#FAF5FF"
+          iconColor="#7C3AED"
+          iconBg="#F5F3FF"
           title="Horas trabalhadas"
           subtitle="Por dia no período"
           className="lg:col-span-2"
         >
           <div className="p-5">
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
                 <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#EDEEF1" />
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F7F8FA' }} />
-                <Bar dataKey="Horas" fill="#A855F7" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="Horas" fill="#7C3AED" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Section>
-      </motion.div>
+        </BentoSection>
+      </div>
 
-      {/* ──────────────── Distribuição por Status ──────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.25 }}
+      {/* ──────────────── Status distribution: divide-y, sem cards individuais (skill rule: anti-card overuse) ──────────────── */}
+      <BentoSection
+        icon={CheckCircle2}
+        iconColor="#475569"
+        iconBg="#F1F5F9"
+        title="Distribuição por status"
+        subtitle={`${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''} categorizadas`}
+        action={
+          tasks.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-[#16A34A]">
+              <ArrowUpRight size={12} strokeWidth={2.5} />
+              {metrics.donePct}% concluído
+            </span>
+          )
+        }
       >
-        <Section
-          icon={CheckCircle2}
-          iconColor="#3F3F46"
-          iconBg="#F4F4F5"
-          title="Distribuição por status"
-          subtitle={`${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''} no total`}
-        >
-          <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-[#F4F4F5]">
-            {STATUS_DIST.map(s => {
-              const count = tasks.filter(t => t.status === s.key).length
-              const pct = tasks.length > 0 ? Math.round((count / tasks.length) * 100) : 0
-              return (
-                <div key={s.key} className="px-5 py-5 flex flex-col gap-1.5 transition-colors hover:bg-[#FAFAFA]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                    <span className="text-[0.72rem] font-medium text-[#71717A] uppercase tracking-wider">
-                      {s.label}
-                    </span>
-                  </div>
-                  <p className="text-[1.625rem] font-bold text-[#111111] tracking-tight tabular-nums leading-none">
-                    {count}
-                  </p>
-                  <p className="text-[0.72rem] text-[#A1A1AA] tabular-nums">{pct}% do total</p>
+        <div className="grid grid-cols-2 sm:grid-cols-5 sm:divide-x divide-y sm:divide-y-0 divide-[#F4F4F5]">
+          {STATUS_DIST.map(s => {
+            const count = tasks.filter(t => t.status === s.key).length
+            const pct = tasks.length > 0 ? Math.round((count / tasks.length) * 100) : 0
+            return (
+              <motion.div
+                key={s.key}
+                variants={itemVariants}
+                className="group relative px-5 py-5 flex flex-col gap-1.5 transition-colors hover:bg-[#FAFAFA]"
+              >
+                {/* Top accent line on hover */}
+                <span
+                  className="absolute top-0 left-0 right-0 h-0.5 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"
+                  style={{ background: s.color }}
+                />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                  <span className="text-[0.7rem] font-medium text-[#71717A] uppercase tracking-[0.08em]">
+                    {s.label}
+                  </span>
                 </div>
-              )
-            })}
-          </div>
-        </Section>
-      </motion.div>
-
-    </div>
+                <p className="text-[1.625rem] font-mono font-bold text-[#0F172A] tracking-[-0.02em] tabular-nums leading-none">
+                  {count}
+                </p>
+                <p className="text-[0.72rem] text-[#A1A1AA] font-mono tabular-nums">{pct}% do total</p>
+              </motion.div>
+            )
+          })}
+        </div>
+      </BentoSection>
+    </motion.div>
   )
 }
