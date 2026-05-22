@@ -51,11 +51,17 @@ export default function CategoriasPage() {
       {/* Título */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <Tag size={11} strokeWidth={2.5} />
+              <span className="font-mono tabular-nums">{categories.length}</span> {categories.length === 1 ? 'categoria' : 'categorias'}
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Categorias
           </h1>
-          <p className="text-sm text-[#71717A] mt-1">
-            <span className="tabular-nums">{categories.length}</span> categoria{categories.length !== 1 ? 's' : ''} disponíve{categories.length !== 1 ? 'is' : 'l'} para classificação de tarefas.
+          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+            Organize as tarefas por área de atuação — Marketing, Financeiro, Jurídico e mais.
           </p>
         </div>
         <button

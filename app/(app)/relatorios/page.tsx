@@ -119,7 +119,7 @@ function Kpi({
           <Icon size={15} style={{ color: accentColor }} strokeWidth={2} />
         </div>
       </div>
-      <div className="text-[1.875rem] font-bold text-[#111111] leading-none tabular-nums tracking-tight">
+      <div className="text-[1.875rem] font-mono font-bold text-[#0F172A] leading-none tabular-nums tracking-[-0.02em]">
         {value}
       </div>
       {hint && <div className="text-[0.72rem] text-[#A1A1AA] mt-2">{hint}</div>}
@@ -229,10 +229,16 @@ export default function RelatoriosPage() {
       {/* ──────────────── Header ──────────────── */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <BarChart2 size={11} strokeWidth={2.5} />
+              <span className="font-mono tabular-nums">{tasks.length}</span> tarefas analisadas
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Relatórios
           </h1>
-          <p className="text-[#71717A] text-sm mt-1">
+          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
             Acompanhe produtividade, distribuição de tarefas e tempo investido pela equipe.
           </p>
         </div>
@@ -503,7 +509,7 @@ export default function RelatoriosPage() {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-1">
-                          <span className="text-[0.65rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded">
+                          <span className="text-[0.65rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded tabular-nums tracking-tight">
                             #{task.id.slice(-5).toUpperCase()}
                           </span>
                           {task.categoria && (

@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes } from '@/types'
 import type { Status, Task } from '@/types'
-import { Calendar, CheckSquare, Clock, Plus, Tag } from 'lucide-react'
+import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
@@ -93,11 +93,17 @@ export default function KanbanPage() {
       {/* Page header */}
       <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4 flex-shrink-0">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <LayoutGrid size={11} strokeWidth={2.5} />
+              <span className="font-mono tabular-nums">{localTasks.length}</span> cards
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Kanban
           </h1>
-          <p className="text-[#71717A] text-sm mt-1">
-            <span className="tabular-nums">{localTasks.length}</span> tarefa{localTasks.length !== 1 ? 's' : ''} no quadro · arraste os cards entre colunas para mudar o status.
+          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+            Arraste os cards entre colunas para atualizar o status — a mudança é persistida automaticamente.
           </p>
         </div>
         <button
@@ -196,7 +202,7 @@ export default function KanbanPage() {
 
                                   {/* ID + Prioridade */}
                                   <div className="flex items-center justify-between gap-2 mb-2.5">
-                                    <span className="text-[0.62rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0">
+                                    <span className="text-[0.62rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0 tabular-nums tracking-tight">
                                       #{shortId}
                                     </span>
                                     <span

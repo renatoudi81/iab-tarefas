@@ -134,11 +134,23 @@ export default function ListaPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <Filter size={11} strokeWidth={2.5} />
+              <span className="font-mono tabular-nums">{tasks.length}</span> total
+            </span>
+            {filtered.length !== tasks.length && (
+              <span className="inline-flex items-center text-[0.7rem] font-medium text-[#71717A] bg-[#F4F4F5] px-2 py-0.5 rounded-full">
+                <span className="font-mono tabular-nums">{filtered.length}</span>
+                <span className="ml-1">filtradas</span>
+              </span>
+            )}
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Lista de Tarefas
           </h1>
-          <p className="text-sm text-[#71717A] mt-1">
-            Gerencie todas as tarefas do projeto em um único lugar.
+          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+            Gerencie todas as tarefas do projeto, filtre por status, prioridade ou responsável.
           </p>
         </div>
         <button
@@ -244,7 +256,7 @@ export default function ListaPage() {
                     {/* Tarefa */}
                     <TableCell className="py-3 max-w-[300px]">
                       <div className="flex items-center gap-1.5 mb-1 min-w-0">
-                        <span className="text-[0.63rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0">
+                        <span className="text-[0.63rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0 tabular-nums tracking-tight">
                           #{task.id.slice(-5).toUpperCase()}
                         </span>
                         {task.categoria && (

@@ -46,10 +46,18 @@ export default function GanttPage() {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <GanttChart size={11} strokeWidth={2.5} />
+              Timeline
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Gantt
           </h1>
-          <p className="text-[#71717A] text-sm mt-1">Linha do tempo das tarefas com data de início e prazo.</p>
+          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+            Visualize a distribuição das tarefas ao longo do tempo, com data de início e prazo.
+          </p>
         </div>
         <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] p-16 flex flex-col items-center justify-center text-[#A1A1AA]">
           <div className="inline-flex w-16 h-16 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-4">
@@ -91,11 +99,20 @@ export default function GanttPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <GanttChart size={11} strokeWidth={2.5} />
+              <span className="font-mono tabular-nums">{tasksWithDates.length}</span> agendadas
+            </span>
+            <span className="inline-flex items-center text-[0.7rem] font-mono tabular-nums text-[#71717A] bg-[#F4F4F5] px-2 py-0.5 rounded-full">
+              {minDate} → {maxDate}
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Gantt
           </h1>
-          <p className="text-[#71717A] text-sm mt-1 tabular-nums">
-            {tasksWithDates.length} tarefa{tasksWithDates.length !== 1 ? 's' : ''} · {minDate} → {maxDate}
+          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+            Acompanhe a linha do tempo do projeto — barras coloridas indicam {colorBy === 'status' ? 'status' : 'prioridade'}.
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm">

@@ -109,11 +109,17 @@ export default function UsuariosPage() {
       {/* Título */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <Shield size={11} strokeWidth={2.5} />
+              <span className="font-mono tabular-nums">{users.length}</span> {users.length === 1 ? 'pessoa' : 'pessoas'}
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Usuários
           </h1>
-          <p className="text-sm text-[#71717A] mt-1">
-            Gerencie as pessoas com acesso ao sistema.
+          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+            Gerencie quem tem acesso ao sistema, defina perfis e ative ou desative contas.
           </p>
         </div>
         <button

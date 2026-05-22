@@ -51,11 +51,17 @@ export default function PerfilPage() {
     <div className="max-w-3xl">
       {/* Header */}
       <div className="mb-7">
-        <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+            <UserIcon size={11} strokeWidth={2.5} />
+            {user.perfil}
+          </span>
+        </div>
+        <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
           Meu Perfil
         </h1>
-        <p className="text-[#71717A] text-sm mt-1">
-          Gerencie suas informações pessoais, foto e senha de acesso.
+        <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+          Gerencie suas informações pessoais, foto e senha de acesso ao sistema.
         </p>
       </div>
 
