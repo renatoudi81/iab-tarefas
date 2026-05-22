@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, Edit2, CheckSquare, MessageSquare, Clock, History,
-  Play, Square, Plus, Trash2, ChevronRight
+  Play, Square, Plus, Trash2, ChevronRight, Loader2
 } from 'lucide-react'
 import { useComments } from '@/hooks/useComments'
 import { useSubtasks } from '@/hooks/useSubtasks'
@@ -284,7 +284,7 @@ function SubtarefasTab({ taskId }: { taskId: string }) {
           onClick={handleAdd}
           disabled={adding || !newTitulo.trim()}
         >
-          <Plus size={15} />
+          {adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
         </Button>
       </div>
     </div>
@@ -380,8 +380,8 @@ function ComentariosTab({ taskId }: { taskId: string }) {
           disabled={sending}
         />
         <div className="flex justify-end">
-          <Button onClick={handleSend} disabled={sending || !texto.trim()}>
-            {sending ? 'Enviando...' : 'Comentar'}
+          <Button onClick={handleSend} disabled={sending || !texto.trim()} className="gap-1.5">
+            {sending ? <><Loader2 size={14} className="animate-spin" /> Enviando...</> : 'Comentar'}
           </Button>
         </div>
       </div>

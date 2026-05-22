@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { redirect } from 'next/navigation'
 import { useCategories } from '@/hooks/useCategories'
-import { Tag, Plus, Search, Trash2, MoreHorizontal, Pencil } from 'lucide-react'
+import { Tag, Plus, Search, Trash2, MoreHorizontal, Pencil, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -206,8 +206,8 @@ export default function CategoriasPage() {
               <Button type="button" variant="outline" onClick={() => setModal({ open: false, id: null, nome: '' })}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={saving}>
-                {saving ? 'Salvando...' : 'Salvar'}
+              <Button type="submit" disabled={saving} className="gap-1.5">
+                {saving ? <><Loader2 size={14} className="animate-spin" /> Salvando...</> : 'Salvar'}
               </Button>
             </DialogFooter>
           </form>
