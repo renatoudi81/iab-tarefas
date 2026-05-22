@@ -49,16 +49,18 @@ export default function CategoriasPage() {
   return (
     <div>
       {/* Título */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#111111]">Categorias</h1>
-          <p className="text-[#71717A] text-sm mt-0.5">
-            {categories.length} categoria{categories.length !== 1 ? 's' : ''} disponível{categories.length !== 1 ? 'is' : ''} para classificação de tarefas
+          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+            Categorias
+          </h1>
+          <p className="text-sm text-[#71717A] mt-1">
+            <span className="tabular-nums">{categories.length}</span> categoria{categories.length !== 1 ? 's' : ''} disponíve{categories.length !== 1 ? 'is' : 'l'} para classificação de tarefas.
           </p>
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+          className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} /> Nova Categoria
         </button>
@@ -79,7 +81,7 @@ export default function CategoriasPage() {
       </div>
 
       {/* Tabela */}
-      <div className="bg-white border border-[#E4E4E7] rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-[#EDEEF1] rounded-2xl overflow-hidden shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]">
         {/* Table header */}
         <div className="grid grid-cols-[1fr_64px] bg-[#F7F8FA] border-b border-[#E4E4E7] px-4 py-2.5">
           <span className="text-[0.72rem] font-bold uppercase tracking-wider text-[#71717A]">Nome</span>

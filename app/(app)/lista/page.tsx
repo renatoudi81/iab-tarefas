@@ -132,11 +132,18 @@ export default function ListaPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-5">
-        <h1 className="text-2xl font-bold text-[#111111]">Lista de Tarefas</h1>
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+            Lista de Tarefas
+          </h1>
+          <p className="text-sm text-[#71717A] mt-1">
+            Gerencie todas as tarefas do projeto em um único lugar.
+          </p>
+        </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+          className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} /> Nova Tarefa
         </button>
@@ -196,7 +203,7 @@ export default function ListaPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#E4E4E7] rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-[#EDEEF1] rounded-2xl overflow-hidden shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]">
         <Table>
           <TableHeader>
             <TableRow className="bg-[#F7F8FA] hover:bg-[#F7F8FA] border-b border-[#E4E4E7]">
@@ -210,11 +217,13 @@ export default function ListaPage() {
           <TableBody>
             <AnimatePresence>
               {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-14 text-center text-[#A1A1AA]">
-                    <Filter size={36} className="mx-auto mb-3.5 opacity-25" />
-                    <p className="font-medium">Nenhuma tarefa encontrada</p>
-                    <p className="text-[0.8125rem] mt-1">Tente ajustar os filtros ou criar uma nova tarefa</p>
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={7} className="py-16 text-center text-[#A1A1AA]">
+                    <div className="inline-flex w-14 h-14 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-3">
+                      <Filter size={24} className="text-[#A1A1AA]" />
+                    </div>
+                    <p className="font-semibold text-[#52525B] mb-1">Nenhuma tarefa encontrada</p>
+                    <p className="text-[0.8125rem]">Ajuste os filtros ou crie uma nova tarefa para começar.</p>
                   </TableCell>
                 </TableRow>
               )}
@@ -307,7 +316,7 @@ export default function ListaPage() {
 
                     {/* Progresso */}
                     <TableCell className="py-3 min-w-[120px]">
-                      <div className="flex justify-between text-xs mb-1">
+                      <div className="flex justify-between text-xs mb-1 tabular-nums">
                         <span className={cn(isOver ? 'font-semibold text-[#DC2626]' : 'text-[#71717A]')}>
                           {formatMinutes(task.tempo_gasto_total)}
                         </span>

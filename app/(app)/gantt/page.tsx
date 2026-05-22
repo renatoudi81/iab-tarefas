@@ -45,16 +45,18 @@ export default function GanttPage() {
   if (tasksWithDates.length === 0) {
     return (
       <div>
-        <div className="flex justify-between items-end mb-6 flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-[#111111]">Gantt</h1>
-            <p className="text-[#71717A] text-sm mt-0.5">Linha do tempo das tarefas</p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+            Gantt
+          </h1>
+          <p className="text-[#71717A] text-sm mt-1">Linha do tempo das tarefas com data de início e prazo.</p>
         </div>
-        <div className="bg-white border border-[#E4E4E7] rounded-lg p-16 flex flex-col items-center justify-center text-[#A1A1AA]">
-          <GanttChart size={44} className="mb-4 opacity-20" />
-          <p className="font-semibold text-[#71717A]">Nenhuma tarefa com datas definidas</p>
-          <p className="text-sm mt-1.5 text-[#A1A1AA]">
+        <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] p-16 flex flex-col items-center justify-center text-[#A1A1AA]">
+          <div className="inline-flex w-16 h-16 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-4">
+            <GanttChart size={28} className="text-[#A1A1AA]" />
+          </div>
+          <p className="font-semibold text-[#52525B] mb-1">Nenhuma tarefa com datas definidas</p>
+          <p className="text-sm text-[#A1A1AA]">
             Defina data de início e vencimento nas tarefas para visualizá-las aqui.
           </p>
         </div>
@@ -87,17 +89,19 @@ export default function GanttPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-5 flex justify-between items-center flex-wrap gap-3">
+      <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#111111]">Gantt</h1>
-          <p className="text-[#71717A] text-sm mt-0.5">
+          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+            Gantt
+          </h1>
+          <p className="text-[#71717A] text-sm mt-1 tabular-nums">
             {tasksWithDates.length} tarefa{tasksWithDates.length !== 1 ? 's' : ''} · {minDate} → {maxDate}
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-[#71717A] font-medium text-sm">Colorir por:</span>
           <Select value={colorBy} onValueChange={v => setColorBy(v as ColorBy)}>
-            <SelectTrigger className="w-[140px] h-8 text-sm border-[#E4E4E7] bg-white">
+            <SelectTrigger className="w-[140px] h-9 text-sm border-[#E4E4E7] bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -108,7 +112,7 @@ export default function GanttPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-[#E4E4E7] rounded-lg overflow-x-auto">
+      <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] overflow-x-auto">
         <div className="p-6 pb-4" style={{ minWidth: '700px' }}>
           {/* Timeline ruler */}
           <div className="flex mb-4 relative h-7" style={{ marginLeft: '240px' }}>

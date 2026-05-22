@@ -91,16 +91,18 @@ export default function KanbanPage() {
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
       {/* Page header */}
-      <div className="mb-5 flex justify-between items-center flex-shrink-0">
+      <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4 flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-[#111111]">Kanban</h1>
-          <p className="text-[#71717A] text-sm mt-0.5">
-            {localTasks.length} tarefas · arraste os cards para mover entre colunas
+          <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+            Kanban
+          </h1>
+          <p className="text-[#71717A] text-sm mt-1">
+            <span className="tabular-nums">{localTasks.length}</span> tarefa{localTasks.length !== 1 ? 's' : ''} no quadro · arraste os cards entre colunas para mudar o status.
           </p>
         </div>
         <button
           onClick={() => router.push('/lista')}
-          className="flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+          className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} />
           Nova Tarefa
@@ -121,22 +123,22 @@ export default function KanbanPage() {
                 style={{ minWidth: '220px', flex: '1 1 0' }}
               >
                 {/* Column header */}
-                <div className="flex items-stretch mb-2.5 sticky top-0 z-10 rounded-lg overflow-hidden bg-white border border-[#E4E4E7] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                  <div className="w-[3.5px] flex-shrink-0" style={{ background: color }} />
-                  <div className="flex-1 px-3 py-2.5">
+                <div className="flex items-stretch mb-3 sticky top-0 z-10 rounded-xl overflow-hidden bg-white border border-[#EDEEF1] shadow-[0_4px_16px_-6px_rgba(37,99,235,0.10)]">
+                  <div className="w-[3px] flex-shrink-0" style={{ background: color }} />
+                  <div className="flex-1 px-3.5 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[0.8125rem] text-[#111111] flex-1">
+                      <span className="font-semibold text-[0.8125rem] text-[#111111] flex-1 tracking-[-0.01em]">
                         {STATUS_LABELS[status]}
                       </span>
                       <span
-                        className="text-[0.65rem] text-white font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 min-w-[20px] text-center"
+                        className="text-[0.65rem] text-white font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 min-w-[20px] text-center tabular-nums"
                         style={{ background: color }}
                       >
                         {col.length}
                       </span>
                     </div>
-                    <p className="text-[0.7rem] text-[#A1A1AA] mt-0.5">
-                      {col.length} issue{col.length !== 1 ? 's' : ''}&nbsp;·&nbsp;
+                    <p className="text-[0.7rem] text-[#A1A1AA] mt-1 tabular-nums">
+                      {col.length} tarefa{col.length !== 1 ? 's' : ''}&nbsp;·&nbsp;
                       {totalMin > 0 ? formatMinutes(totalMin) : '—'}
                     </p>
                   </div>

@@ -51,8 +51,12 @@ export default function PerfilPage() {
     <div className="max-w-3xl">
       {/* Header */}
       <div className="mb-7">
-        <h1 className="text-2xl font-bold text-[#111111]">Meu Perfil</h1>
-        <p className="text-[#71717A] text-sm mt-0.5">Gerencie suas informações e sua senha de acesso.</p>
+        <h1 className="text-[1.75rem] font-bold text-[#111111] tracking-[-0.02em] leading-tight">
+          Meu Perfil
+        </h1>
+        <p className="text-[#71717A] text-sm mt-1">
+          Gerencie suas informações pessoais, foto e senha de acesso.
+        </p>
       </div>
 
       <div className="grid gap-5">
@@ -532,10 +536,12 @@ function PerfilSenhaCard({ userEmail }: { userEmail: string }) {
 // ============================================================
 function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-[#E4E4E7] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[#E4E4E7] bg-[#FAFAFA]">
-        {icon}
-        <h2 className="text-[0.92rem] font-semibold text-[#111111]">{title}</h2>
+    <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] overflow-hidden transition-shadow hover:shadow-[0_12px_36px_-12px_rgba(37,99,235,0.15)]">
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[#F4F4F5]">
+        <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
+          {icon}
+        </div>
+        <h2 className="text-[0.92rem] font-semibold text-[#111111] tracking-[-0.01em]">{title}</h2>
       </div>
       <div className="p-5">{children}</div>
     </div>
