@@ -25,7 +25,14 @@ export async function POST(req: Request) {
 
   if (!nome?.trim()) return NextResponse.json({ error: 'Nome obrigatório' }, { status: 400 })
   if (!email?.trim()) return NextResponse.json({ error: 'E-mail obrigatório' }, { status: 400 })
-  if (!senha || senha.length < 6) return NextResponse.json({ error: 'Senha deve ter mínimo 6 caracteres' }, { status: 400 })
+
+  // Senha é OPCIONAL:
+  // - Com senha: admin define a senha inicial (pode informar ao usuário separadamente)
+  // - Sem senha: usuário será criado sem credencial e o cliente vai disparar
+  //   o e-mail de "definir senha" via sendPasswordResetEmail (fluxo de onboarding)
+  if (senha !== undefined && senha !== '' && senha.length < 6) {
+    return NextResponse.json({ error: 'Senha deve ter mínimo 6 caracteres' }, { status: 400 })
+  }
 
   const emailNorm = email.toLowerCase().trim()
   const nomeNorm = nome.trim()
@@ -35,7 +42,9 @@ export async function POST(req: Request) {
   try {
     authUser = await adminAuth.createUser({
       email: emailNorm,
-      password: senha,
+      // password só é incluído se informado; sem ele, o usuário não consegue logar
+      // até definir uma senha via fluxo de redefinição
+      ...(senha ? { password: senha } : {}),
       displayName: nomeNorm,
       disabled: ativo === false,
     })

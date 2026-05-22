@@ -7,7 +7,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { getInitials } from '@/types'
 import type { User } from '@/types'
 import {
-  Plus, Loader2, Shield, Search, MoreHorizontal, Pencil, Trash2,
+  Plus, Loader2, Shield, Search, MoreHorizontal, Pencil, Trash2, Mail, CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,8 +27,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 
-type UserForm = { nome: string; email: string; senha: string; perfil: string; ativo: boolean }
-const EMPTY_USER: UserForm = { nome: '', email: '', senha: '', perfil: 'Usuário', ativo: true }
+type UserForm = { nome: string; email: string; perfil: string; ativo: boolean }
+const EMPTY_USER: UserForm = { nome: '', email: '', perfil: 'Usuário', ativo: true }
 
 export default function UsuariosPage() {
   const { user: authUser } = useAuth()
@@ -38,12 +38,13 @@ export default function UsuariosPage() {
   const [form, setForm] = useState<UserForm>(EMPTY_USER)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState('')
 
   if (authUser && authUser.perfil !== 'Administrador') redirect('/dashboard')
 
   const openNew = () => { setForm(EMPTY_USER); setModal({ open: true, user: null }); setError('') }
   const openEdit = (u: User) => {
-    setForm({ nome: u.nome, email: u.email, senha: '', perfil: u.perfil, ativo: u.ativo })
+    setForm({ nome: u.nome, email: u.email, perfil: u.perfil, ativo: u.ativo })
     setModal({ open: true, user: u }); setError('')
   }
 
@@ -52,9 +53,25 @@ export default function UsuariosPage() {
     if (saving) return
     setSaving(true); setError('')
     try {
-      if (modal.user) await updateUser(modal.user.id, { nome: form.nome, perfil: form.perfil as any, ativo: form.ativo })
-      else await addUser({ ...form } as any)
+      if (modal.user) {
+        await updateUser(modal.user.id, { nome: form.nome, perfil: form.perfil as any, ativo: form.ativo })
+        setToast('Usuário atualizado')
+      } else {
+        // Onboarding sem senha: o e-mail de definição é enviado automaticamente no hook
+        const { passwordResetSent } = await addUser({
+          nome: form.nome,
+          email: form.email,
+          perfil: form.perfil as User['perfil'],
+          ativo: form.ativo,
+        })
+        setToast(
+          passwordResetSent
+            ? `Usuário criado. E-mail enviado para ${form.email.toLowerCase().trim()} definir a senha.`
+            : 'Usuário criado, mas o e-mail de senha não pôde ser enviado.'
+        )
+      }
       setModal({ open: false, user: null })
+      setTimeout(() => setToast(''), 5000)
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
 
@@ -74,6 +91,21 @@ export default function UsuariosPage() {
 
   return (
     <div>
+      {/* Toast de feedback */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-4 flex items-start gap-2.5 px-4 py-3 rounded-lg bg-[#F0FDF4] border border-[#86EFAC] text-[#15803D]"
+          >
+            <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5" />
+            <span className="text-[0.875rem]">{toast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Título */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#111111]">Usuários</h1>
@@ -215,11 +247,12 @@ export default function UsuariosPage() {
                     onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                     placeholder="usuario@alfaebeto.org.br" />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="senha">Senha inicial *</Label>
-                  <Input id="senha" required type="password" minLength={6} value={form.senha}
-                    onChange={e => setForm(p => ({ ...p, senha: e.target.value }))}
-                    placeholder="Mínimo 6 caracteres" />
+                <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[0.78rem] text-[#1E3A8A]">
+                  <Mail size={14} className="text-[#2563EB] flex-shrink-0 mt-0.5" />
+                  <span>
+                    Será enviado um e-mail para o usuário <b>definir a própria senha</b>.
+                    Ele poderá acessar o sistema após clicar no link.
+                  </span>
                 </div>
               </>
             )}
