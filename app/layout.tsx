@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { ConfirmProvider } from '@/contexts/ConfirmContext'
 import { GrainOverlay } from '@/components/ui/GrainOverlay'
 import { ScrollProgress } from '@/components/ui/ScrollProgress'
 import './globals.css'
@@ -29,10 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <ToastProvider>
-          <AuthProvider>
-            <ScrollProgress />
-            {children}
-          </AuthProvider>
+          <ConfirmProvider>
+            <AuthProvider>
+              <ScrollProgress />
+              {children}
+            </AuthProvider>
+          </ConfirmProvider>
         </ToastProvider>
         <GrainOverlay />
       </body>

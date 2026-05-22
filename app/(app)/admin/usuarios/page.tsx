@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 type UserForm = { nome: string; email: string; perfil: string; ativo: boolean }
 const EMPTY_USER: UserForm = { nome: '', email: '', perfil: 'Usuário', ativo: true }
@@ -41,6 +42,7 @@ export default function UsuariosPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const { toast } = useToast()
+  const { confirm } = useConfirm()
 
   if (authUser && authUser.perfil !== 'Administrador') redirect('/dashboard')
 
@@ -77,7 +79,13 @@ export default function UsuariosPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Excluir este usuário? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Excluir usuário?',
+      description: 'O usuário perderá acesso ao sistema. Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'destructive',
+    })
+    if (!ok) return
     try {
       await deleteUser(id)
       toast.success('Usuário excluído')

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 export default function CategoriasPage() {
   const { user } = useAuth()
@@ -23,6 +24,7 @@ export default function CategoriasPage() {
   const [modal, setModal] = useState<{ open: boolean; id: string | null; nome: string }>({ open: false, id: null, nome: '' })
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
+  const { confirm } = useConfirm()
 
   const openNew = () => setModal({ open: true, id: null, nome: '' })
   const openEdit = (id: string, nome: string) => setModal({ open: true, id, nome })
@@ -155,7 +157,13 @@ export default function CategoriasPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={async () => {
-                          if (!confirm(`Excluir a categoria "${c.nome}"?`)) return
+                          const ok = await confirm({
+                            title: `Excluir "${c.nome}"?`,
+                            description: 'Categorias usadas por tarefas existentes não podem ser excluídas.',
+                            confirmText: 'Excluir',
+                            variant: 'destructive',
+                          })
+                          if (!ok) return
                           try {
                             await deleteCategory(c.id)
                             toast.success('Categoria excluída')

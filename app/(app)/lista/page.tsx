@@ -11,6 +11,7 @@ import TaskDrawer from '@/components/TaskDrawer'
 import { cn } from '@/lib/utils'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -61,6 +62,7 @@ export default function ListaPage() {
   const { users } = useUsers()
   const { categories } = useCategories()
   const { toast } = useToast()
+  const { confirm } = useConfirm()
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -123,7 +125,13 @@ export default function ListaPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Excluir esta tarefa e todos os lançamentos de tempo associados?')) return
+    const ok = await confirm({
+      title: 'Excluir tarefa?',
+      description: 'A tarefa e todos os lançamentos de tempo associados serão removidos. Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      variant: 'destructive',
+    })
+    if (!ok) return
     try {
       await deleteTask(id)
       toast.success('Tarefa excluída')

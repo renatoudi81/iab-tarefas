@@ -29,6 +29,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useToast } from '@/contexts/ToastContext'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 type DrawerTab = 'detalhes' | 'subtarefas' | 'comentarios' | 'tempo' | 'historico'
 
@@ -188,6 +189,7 @@ function SubtarefasTab({ taskId }: { taskId: string }) {
   const [newTitulo, setNewTitulo] = useState('')
   const [adding, setAdding] = useState(false)
   const { toast } = useToast()
+  const { confirm } = useConfirm()
 
   const handleAdd = async () => {
     const t = newTitulo.trim()
@@ -244,7 +246,12 @@ function SubtarefasTab({ taskId }: { taskId: string }) {
                   size="icon"
                   className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
                   onClick={async () => {
-                    if (!confirm('Remover esta subtarefa?')) return
+                    const ok = await confirm({
+                      title: 'Remover subtarefa?',
+                      confirmText: 'Remover',
+                      variant: 'destructive',
+                    })
+                    if (!ok) return
                     try { await deleteSubtask(s.id); toast.success('Subtarefa removida') }
                     catch (err: any) { toast.error('Erro ao remover subtarefa', err.message) }
                   }}
@@ -289,6 +296,7 @@ function ComentariosTab({ taskId }: { taskId: string }) {
   const [texto, setTexto] = useState('')
   const [sending, setSending] = useState(false)
   const { toast } = useToast()
+  const { confirm } = useConfirm()
 
   const handleSend = async () => {
     const t = texto.trim()
@@ -339,7 +347,12 @@ function ComentariosTab({ taskId }: { taskId: string }) {
                         size="icon"
                         className="w-[22px] h-[22px] opacity-50 hover:opacity-100"
                         onClick={async () => {
-                          if (!confirm('Excluir este comentário?')) return
+                          const ok = await confirm({
+                            title: 'Excluir comentário?',
+                            confirmText: 'Excluir',
+                            variant: 'destructive',
+                          })
+                          if (!ok) return
                           try { await deleteComment(c.id); toast.success('Comentário excluído') }
                           catch (err: any) { toast.error('Erro ao excluir comentário', err.message) }
                         }}
@@ -380,6 +393,7 @@ function TempoTab({ task }: { task: Task }) {
   const { entries, addTimeEntry, deleteTimeEntry, isLoading } = useTimeEntries()
   const taskEntries = entries.filter(e => e.tarefa_id === task.id)
   const { toast } = useToast()
+  const { confirm } = useConfirm()
 
   const [running, setRunning] = useState(false)
   const [seconds, setSeconds] = useState(0)
@@ -472,7 +486,12 @@ function TempoTab({ task }: { task: Task }) {
                     size="icon"
                     className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
                     onClick={async () => {
-                      if (!confirm('Excluir este lançamento de tempo?')) return
+                      const ok = await confirm({
+                        title: 'Excluir lançamento de tempo?',
+                        confirmText: 'Excluir',
+                        variant: 'destructive',
+                      })
+                      if (!ok) return
                       try { await deleteTimeEntry(e.id); toast.success('Lançamento excluído') }
                       catch (err: any) { toast.error('Erro ao excluir lançamento', err.message) }
                     }}
