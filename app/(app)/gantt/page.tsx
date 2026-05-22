@@ -15,21 +15,50 @@ import {
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 
 type ColorBy = 'status' | 'prioridade'
+type Granularity = 'week' | 'fortnight' | 'month'
 
-function getWeeks(minDate: string, maxDate: string): { label: string; left: number }[] {
-  const weeks: { label: string; left: number }[] = []
+/**
+ * Gera ticks (marcações) da régua do Gantt conforme granularidade.
+ *  - week     → a cada 7 dias, alinhado a segunda-feira
+ *  - fortnight→ a cada 14 dias, alinhado a segunda-feira
+ *  - month    → 1º dia de cada mês ("abr/24", "mai/24", ...)
+ */
+function getTicks(
+  minDate: string,
+  maxDate: string,
+  granularity: Granularity,
+): { label: string; left: number }[] {
+  const ticks: { label: string; left: number }[] = []
   const start = new Date(minDate + 'T00:00:00')
   const end = new Date(maxDate + 'T00:00:00')
   const totalMs = end.getTime() - start.getTime() || 1
+  const pushTick = (d: Date, label: string) => {
+    const left = Math.max(0, (d.getTime() - start.getTime()) / totalMs * 100)
+    if (left <= 100) ticks.push({ label, left })
+  }
+
+  if (granularity === 'month') {
+    const d = new Date(start.getFullYear(), start.getMonth(), 1)
+    while (d <= end) {
+      const label = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+      pushTick(d, label.replace('.', '').replace(' de ', '/'))
+      d.setMonth(d.getMonth() + 1)
+    }
+    return ticks
+  }
+
+  const stepDays = granularity === 'fortnight' ? 14 : 7
   const d = new Date(start)
+  // alinha a segunda-feira mais próxima para trás
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
   while (d <= end) {
-    const left = Math.max(0, (d.getTime() - start.getTime()) / totalMs * 100)
-    if (left <= 100)
-      weeks.push({ label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), left })
-    d.setDate(d.getDate() + 7)
+    pushTick(
+      d,
+      d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
+    )
+    d.setDate(d.getDate() + stepDays)
   }
-  return weeks
+  return ticks
 }
 
 function GanttSkeleton() {
@@ -83,6 +112,7 @@ export default function GanttPage() {
   const { tasks, isLoading: loadingTasks } = useTasks()
   const today = todayStr()
   const [colorBy, setColorBy] = useState<ColorBy>('status')
+  const [granularity, setGranularity] = useState<Granularity>('week')
 
   const tasksWithDates = useMemo(() =>
     tasks.filter(t => t.data_inicio && t.data_prazo)
@@ -137,7 +167,7 @@ export default function GanttPage() {
   }
 
   const todayPct = today >= minDate && today <= maxDate ? offset(today) : null
-  const weeks = getWeeks(minDate, maxDate)
+  const ticks = getTicks(minDate, maxDate, granularity)
 
   const getColor = (task: any) =>
     colorBy === 'status'
@@ -165,39 +195,63 @@ export default function GanttPage() {
             Acompanhe a linha do tempo do projeto — barras coloridas indicam {colorBy === 'status' ? 'status' : 'prioridade'}.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-[#71717A] font-medium text-sm">Colorir por:</span>
-          <Select value={colorBy} onValueChange={v => setColorBy(v as ColorBy)}>
-            <SelectTrigger className="w-[140px] h-9 text-sm border-[#E4E4E7] bg-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="status">Status</SelectItem>
-              <SelectItem value="prioridade">Prioridade</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-4 text-sm flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-[#71717A] font-medium text-sm">Escala:</span>
+            <Select value={granularity} onValueChange={v => setGranularity(v as Granularity)}>
+              <SelectTrigger className="w-[130px] h-9 text-sm border-[#E4E4E7] bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">Semana</SelectItem>
+                <SelectItem value="fortnight">Quinzena</SelectItem>
+                <SelectItem value="month">Mês</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[#71717A] font-medium text-sm">Colorir por:</span>
+            <Select value={colorBy} onValueChange={v => setColorBy(v as ColorBy)}>
+              <SelectTrigger className="w-[140px] h-9 text-sm border-[#E4E4E7] bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="prioridade">Prioridade</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
       <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] overflow-x-auto">
         <div className="p-6 pb-4" style={{ minWidth: '700px' }}>
-          {/* Timeline ruler */}
-          <div className="flex mb-4 relative h-7" style={{ marginLeft: '240px' }}>
-            {weeks.map((w, i) => (
-              <span
-                key={i}
-                className="absolute text-[0.68rem] text-[#A1A1AA] font-medium whitespace-nowrap"
-                style={{ left: `${w.left}%`, transform: 'translateX(-50%)', top: 0 }}
-              >
-                {w.label}
-              </span>
-            ))}
+          {/*
+            Timeline ruler com 2 fileiras para evitar sobreposição:
+            - Topo: datas das semanas/quinzenas/meses
+            - Base: badge "Hoje" em fila própria (sem encostar nas datas)
+          */}
+          <div className="mb-4 relative" style={{ marginLeft: '240px', height: '42px' }}>
+            {/* Fileira superior — datas */}
+            <div className="absolute inset-x-0 top-0 h-4">
+              {ticks.map((w, i) => (
+                <span
+                  key={i}
+                  className="absolute text-[0.68rem] text-[#A1A1AA] font-medium whitespace-nowrap"
+                  style={{ left: `${w.left}%`, transform: 'translateX(-50%)', top: 0 }}
+                >
+                  {w.label}
+                </span>
+              ))}
+            </div>
+            {/* Fileira inferior — badge HOJE em destaque */}
             {todayPct !== null && (
               <span
-                className="absolute text-[0.68rem] text-[#DC2626] font-bold whitespace-nowrap"
-                style={{ left: `${todayPct}%`, top: 0, transform: 'translateX(-50%)' }}
+                className="absolute inline-flex items-center gap-1 text-[0.62rem] text-white font-bold whitespace-nowrap bg-[#DC2626] px-1.5 py-[2px] rounded-md shadow-[0_2px_6px_-1px_rgba(220,38,38,0.5)]"
+                style={{ left: `${todayPct}%`, top: '22px', transform: 'translateX(-50%)' }}
               >
-                Hoje
+                <span className="w-1 h-1 rounded-full bg-white" />
+                HOJE
               </span>
             )}
           </div>
@@ -236,7 +290,7 @@ export default function GanttPage() {
 
                 {/* Bar track */}
                 <div className="flex-1 relative h-9">
-                  {weeks.map((w, i) => (
+                  {ticks.map((w, i) => (
                     <div
                       key={i}
                       className="absolute top-0 bottom-0 w-px bg-[#E4E4E7] opacity-60 z-0"

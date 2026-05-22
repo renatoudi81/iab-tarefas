@@ -363,7 +363,13 @@ export default function DashboardPage() {
     const done = tasks.filter(t => t.status === STATUSES.DONE).length
     const total = tasks.length
     const productivity = total > 0 ? Math.round((done / total) * 100) : 0
-    const hours = Math.round((periodEntries.reduce((s, e) => s + e.duracao, 0) / 60) * 10) / 10
+    // Horas: prioriza time_entries no período (mais granular). Se não há
+    // lançamentos, cai pro tempo_gasto_total das tarefas (campo editado
+    // direto no modal) — assim o card nunca fica zerado quando há dados.
+    const minutesFromEntries = periodEntries.reduce((s, e) => s + e.duracao, 0)
+    const minutesFromTasks = tasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
+    const minutes = minutesFromEntries > 0 ? minutesFromEntries : minutesFromTasks
+    const hours = Math.round((minutes / 60) * 10) / 10
     return {
       tasksInPeriod: inPeriod.length,
       hoursInPeriod: `${hours}h`,
@@ -371,6 +377,7 @@ export default function DashboardPage() {
       productivity: `${productivity}%`,
       donePct: productivity,
       doneCount: done,
+      hoursSource: minutesFromEntries > 0 ? 'entries' : 'tasks',
     }
   }, [tasks, entries, dateFrom, dateTo])
 
@@ -467,7 +474,11 @@ export default function DashboardPage() {
           icon={Clock}
           accentColor="#7C3AED"
           accentBg="#F5F3FF"
-          hint={`${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`}
+          hint={
+            metrics.hoursSource === 'entries'
+              ? `${entries.length} lançamento${entries.length !== 1 ? 's' : ''} no período`
+              : `tempo total das ${tasks.length} tarefas`
+          }
         />
         <Kpi
           label="Tarefas atrasadas"

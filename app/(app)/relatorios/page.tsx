@@ -191,7 +191,10 @@ export default function RelatoriosPage() {
       .map((u) => {
         const userTasks = tasks.filter((t) => t.responsavel_id === u.id)
         const userEntries = entries.filter((e) => e.usuario_id === u.id)
-        const totalMin = userEntries.reduce((s, e) => s + e.duracao, 0)
+        // Mesma estratégia: prioriza lançamentos; fallback no tempo_gasto_total
+        const minFromEntries = userEntries.reduce((s, e) => s + e.duracao, 0)
+        const minFromTasks = userTasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
+        const totalMin = minFromEntries > 0 ? minFromEntries : minFromTasks
         const done = userTasks.filter((t) => t.status === 'Concluída').length
         return {
           user: u,
@@ -205,18 +208,19 @@ export default function RelatoriosPage() {
       .sort((a, b) => b.done - a.done)
 
     const byCategory = categories
-      .map((c) => ({
-        name: c.nome,
-        total: tasks.filter((t) => t.categoria === c.nome).length,
-        horas:
-          Math.round(
-            (entries
-              .filter((e) => tasks.find((t) => t.id === e.tarefa_id && t.categoria === c.nome))
-              .reduce((s, e) => s + e.duracao, 0) /
-              60) *
-              10,
-          ) / 10,
-      }))
+      .map((c) => {
+        const catTasks = tasks.filter((t) => t.categoria === c.nome)
+        const minFromEntries = entries
+          .filter((e) => catTasks.some((t) => t.id === e.tarefa_id))
+          .reduce((s, e) => s + e.duracao, 0)
+        const minFromTasks = catTasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
+        const totalMin = minFromEntries > 0 ? minFromEntries : minFromTasks
+        return {
+          name: c.nome,
+          total: catTasks.length,
+          horas: Math.round((totalMin / 60) * 10) / 10,
+        }
+      })
       .filter((c) => c.total > 0)
       .sort((a, b) => b.total - a.total)
 
@@ -227,7 +231,14 @@ export default function RelatoriosPage() {
         t.status !== 'Concluída',
     )
 
-    const totalHoras = Math.round((entries.reduce((s, e) => s + e.duracao, 0) / 60) * 10) / 10
+    // Horas totais: prioriza time_entries (mais granular); cai pro
+    // tempo_gasto_total das tarefas quando não há lançamentos (campo
+    // editado direto no modal). Garante que o card nunca mostra 0h
+    // quando o usuário registrou tempo de alguma forma.
+    const minutesFromEntries = entries.reduce((s, e) => s + e.duracao, 0)
+    const minutesFromTasks = tasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
+    const minutesTotal = minutesFromEntries > 0 ? minutesFromEntries : minutesFromTasks
+    const totalHoras = Math.round((minutesTotal / 60) * 10) / 10
     const concluidas = tasks.filter((t) => t.status === 'Concluída').length
     const pctConcluidas =
       tasks.length > 0 ? Math.round((concluidas / tasks.length) * 100) : 0
