@@ -13,6 +13,7 @@ import { Sun, Moon, Bell, ChevronDown, LogOut, User, Search } from 'lucide-react
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { CommandPalette } from '@/components/ui/CommandPalette'
+import { IconTooltip } from '@/components/ui/tooltip'
 
 const SIDEBAR_WIDTH = 220
 
@@ -98,7 +99,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               document.dispatchEvent(ev)
             }}
             className="hidden md:inline-flex items-center gap-2 h-8 px-2.5 mr-2 rounded-lg border border-[#E4E4E7] bg-[#FAFAFA] hover:bg-[#F4F4F5] transition-colors cursor-pointer text-[0.78rem] text-[#71717A]"
-            title="Buscar (⌘K)"
+            aria-label="Buscar (⌘K)"
           >
             <Search size={13} className="text-[#A1A1AA]" />
             <span>Buscar...</span>
@@ -109,20 +110,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Notificações */}
           <div ref={notifRef} className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-8 w-8 text-[#71717A] hover:text-[#111111]"
-              onClick={() => setNotifOpen(o => !o)}
-              title="Notificações"
-            >
-              <Bell size={15} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </Button>
+            <IconTooltip label={unreadCount > 0 ? `${unreadCount} notificações` : 'Notificações'} side="bottom">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-8 w-8 text-[#71717A] hover:text-[#111111]"
+                onClick={() => setNotifOpen(o => !o)}
+              >
+                <Bell size={15} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+            </IconTooltip>
 
             {/* Dropdown notificações */}
             <AnimatePresence>
@@ -192,12 +194,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Tema */}
+          <IconTooltip label={theme === 'light' ? 'Alternar para tema escuro' : 'Alternar para tema claro'} side="bottom">
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-[#71717A] hover:text-[#111111]"
             onClick={toggleTheme}
-            title="Alternar tema"
           >
             <AnimatePresence mode="wait">
               {theme === 'light' ? (
@@ -223,6 +225,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               )}
             </AnimatePresence>
           </Button>
+          </IconTooltip>
         </div>
 
         {/* Lado direito: bloco de usuário */}
