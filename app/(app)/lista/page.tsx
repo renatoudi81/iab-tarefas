@@ -14,6 +14,7 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
+import { stripHtml } from '@/components/ui/RichTextEditor'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -62,7 +63,7 @@ export default function ListaPage() {
       if (filterStatus && t.status !== filterStatus) return false
       if (filterPriority && t.prioridade !== filterPriority) return false
       if (filterUser && t.responsavel_id !== filterUser) return false
-      if (s && !t.titulo.toLowerCase().includes(s) && !(t.descricao || '').toLowerCase().includes(s)) return false
+      if (s && !t.titulo.toLowerCase().includes(s) && !stripHtml(t.descricao).toLowerCase().includes(s)) return false
       return true
     })
   }, [tasks, search, filterStatus, filterPriority, filterUser])
@@ -277,7 +278,7 @@ export default function ListaPage() {
                       </div>
                       {task.descricao && (
                         <div className="text-xs text-[#A1A1AA] mt-0.5 truncate">
-                          {task.descricao}
+                          {stripHtml(task.descricao)}
                         </div>
                       )}
                     </TableCell>

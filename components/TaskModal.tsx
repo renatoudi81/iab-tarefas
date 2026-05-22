@@ -11,8 +11,8 @@ import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -140,15 +140,14 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
               />
             </div>
 
-            {/* Descrição */}
+            {/* Descrição (texto rico) */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="descricao">Descrição</Label>
-              <Textarea
-                id="descricao"
-                rows={3}
-                placeholder="Descreva o objetivo e escopo desta tarefa..."
+              <Label>Descrição</Label>
+              <RichTextEditor
                 value={form.descricao || ''}
-                onChange={(e) => setForm((p) => ({ ...p, descricao: e.target.value }))}
+                onChange={(html) => setForm((p) => ({ ...p, descricao: html }))}
+                placeholder="Descreva o objetivo e escopo desta tarefa..."
+                minHeight={110}
               />
             </div>
 
@@ -267,6 +266,19 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
               )}
             </div>
 
+            {/* Observações (sempre visível em edição — texto rico) */}
+            {isEditing && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Observações</Label>
+                <RichTextEditor
+                  value={form.observacoes || ''}
+                  onChange={(html) => setForm((p) => ({ ...p, observacoes: html }))}
+                  placeholder="Notas adicionais, impedimentos, contexto relevante..."
+                  minHeight={100}
+                />
+              </div>
+            )}
+
             {/* Aguardando retorno */}
             <AnimatePresence>
               {isAguardando && (
@@ -303,7 +315,7 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
               )}
             </AnimatePresence>
 
-            {/* Concluída */}
+            {/* Data de Conclusão (apenas em edição quando status='Concluída') */}
             <AnimatePresence>
               {isEditing && isConcluida && (
                 <motion.div
@@ -314,29 +326,17 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="flex flex-col gap-4 border-t border-dashed border-border pt-3">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="data_conclusao">Data de Conclusão</Label>
-                        <Input
-                          id="data_conclusao"
-                          type="date"
-                          value={form.data_conclusao || ''}
-                          onChange={(e) => setForm((p) => ({ ...p, data_conclusao: e.target.value || null }))}
-                        />
-                      </div>
-                      <div />
-                    </div>
+                  <div className="grid grid-cols-2 gap-4 border-t border-dashed border-border pt-3">
                     <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="observacoes">Observações</Label>
-                      <Textarea
-                        id="observacoes"
-                        rows={3}
-                        placeholder="Notas adicionais, impedimentos, contexto relevante..."
-                        value={form.observacoes || ''}
-                        onChange={(e) => setForm((p) => ({ ...p, observacoes: e.target.value }))}
+                      <Label htmlFor="data_conclusao">Data de Conclusão</Label>
+                      <Input
+                        id="data_conclusao"
+                        type="date"
+                        value={form.data_conclusao || ''}
+                        onChange={(e) => setForm((p) => ({ ...p, data_conclusao: e.target.value || null }))}
                       />
                     </div>
+                    <div />
                   </div>
                 </motion.div>
               )}

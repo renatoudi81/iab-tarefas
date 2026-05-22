@@ -30,6 +30,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { stripHtml } from '@/components/ui/RichTextEditor'
 
 type DrawerTab = 'detalhes' | 'subtarefas' | 'comentarios' | 'tempo' | 'historico'
 
@@ -137,24 +138,30 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
         <div className="text-xs text-[#71717A] mt-1 text-right">{pct}%</div>
       </div>
 
-      {/* DescriÃ§Ã£o */}
-      {task.descricao && (
+      {/* Descrição (HTML rico) */}
+      {task.descricao && stripHtml(task.descricao) && (
         <>
           <Separator />
           <div>
-            <SectionLabel>DescriÃ§Ã£o</SectionLabel>
-            <div className="text-[#71717A] text-sm leading-relaxed whitespace-pre-wrap">{task.descricao}</div>
+            <SectionLabel>Descrição</SectionLabel>
+            <div
+              className="prose-rich text-[#71717A] text-sm leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: task.descricao }}
+            />
           </div>
         </>
       )}
 
-      {/* ObservaÃ§Ãµes */}
-      {task.observacoes && (
+      {/* Observações (HTML rico) */}
+      {task.observacoes && stripHtml(task.observacoes) && (
         <>
           <Separator />
           <div>
-            <SectionLabel>ObservaÃ§Ãµes</SectionLabel>
-            <div className="text-[#71717A] text-sm leading-relaxed whitespace-pre-wrap bg-[#F7F8FA] rounded-lg p-3">{task.observacoes}</div>
+            <SectionLabel>Observações</SectionLabel>
+            <div
+              className="prose-rich text-[#71717A] text-sm leading-relaxed bg-[#F7F8FA] rounded-lg p-3"
+              dangerouslySetInnerHTML={{ __html: task.observacoes }}
+            />
           </div>
         </>
       )}

@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import TaskModal from '@/components/TaskModal'
+import { stripHtml } from '@/components/ui/RichTextEditor'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
@@ -308,8 +309,8 @@ export default function KanbanPage() {
                                     {task.titulo}
                                   </p>
 
-                                  {/* Descrição */}
-                                  {task.descricao && (
+                                  {/* Descrição (preview sem HTML) */}
+                                  {task.descricao && stripHtml(task.descricao) && (
                                     <p
                                       className="text-[0.75rem] text-[#71717A] leading-relaxed mb-2.5"
                                       style={{
@@ -319,7 +320,7 @@ export default function KanbanPage() {
                                         overflow: 'hidden',
                                       }}
                                     >
-                                      {task.descricao}
+                                      {stripHtml(task.descricao)}
                                     </p>
                                   )}
 
