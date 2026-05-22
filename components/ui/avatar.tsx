@@ -22,7 +22,12 @@ const AvatarImage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
-    className={cn('aspect-square h-full w-full', className)}
+    className={cn(
+      'aspect-square h-full w-full object-cover',
+      // Fade-in suave quando a imagem termina de carregar
+      'opacity-0 data-[state=loaded]:opacity-100 transition-opacity duration-300 ease-out',
+      className
+    )}
     {...props}
   />
 ))
