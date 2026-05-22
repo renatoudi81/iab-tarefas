@@ -13,6 +13,7 @@ import {
   TrendingUp, Clock, AlertTriangle, CheckCircle2,
   BarChart3, Activity, Sparkles, ArrowUpRight,
 } from 'lucide-react'
+import { SpotlightCard } from '@/components/ui/SpotlightCard'
 
 // ──────────────────────────────────────────────────────────────────────
 // Tooltip dark com tipografia mono nos números
@@ -55,23 +56,31 @@ function BentoTile({
   children,
   className = '',
   interactive = true,
+  spotlight = false,
 }: {
   children: React.ReactNode
   className?: string
   interactive?: boolean
+  spotlight?: boolean
 }) {
+  const baseClasses =
+    'relative bg-white border border-[#EDEEF1] rounded-2xl overflow-hidden ' +
+    'shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)] ' +
+    (interactive
+      ? 'transition-all duration-300 ease-out hover:shadow-[0_18px_40px_-14px_rgba(37,99,235,0.18)] hover:-translate-y-0.5 hover:border-[#DCE3F0] '
+      : '') +
+    className
+
+  if (spotlight) {
+    return (
+      <motion.div variants={itemVariants}>
+        <SpotlightCard className={baseClasses}>{children}</SpotlightCard>
+      </motion.div>
+    )
+  }
+
   return (
-    <motion.div
-      variants={itemVariants}
-      className={
-        'relative bg-white border border-[#EDEEF1] rounded-2xl overflow-hidden ' +
-        'shadow-[0_8px_30px_-12px_rgba(15,23,42,0.08)] ' +
-        (interactive
-          ? 'transition-all duration-300 ease-out hover:shadow-[0_18px_40px_-14px_rgba(37,99,235,0.18)] hover:-translate-y-0.5 hover:border-[#DCE3F0] '
-          : '') +
-        className
-      }
-    >
+    <motion.div variants={itemVariants} className={baseClasses}>
       {children}
     </motion.div>
   )
@@ -95,7 +104,7 @@ function Kpi({
 }) {
   const isDanger = danger && Number(value) > 0
   return (
-    <BentoTile className="p-5">
+    <BentoTile className="p-5" spotlight>
       <div className="flex items-start justify-between gap-3 mb-4">
         <span className="text-[0.7rem] font-medium text-[#71717A] uppercase tracking-[0.08em] leading-tight">
           {label}
@@ -175,30 +184,142 @@ function BentoSection({
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Skeleton loader matching layout (skill rule: skeletal loaders, no spinners)
+// Chart Skeleton: placeholder específico para AreaChart (linhas) e BarChart (barras).
+// Matching layout = mesma altura/proporção do chart real, com elementos sugestivos.
+// ──────────────────────────────────────────────────────────────────────
+function AreaChartSkeleton() {
+  // SVG curve sugerindo um area chart com gradient
+  return (
+    <div className="h-[240px] relative">
+      <svg viewBox="0 0 400 240" className="w-full h-full" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="skel-area-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#E4E4E7" stopOpacity={0.4} />
+            <stop offset="100%" stopColor="#E4E4E7" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        {/* Y-axis ticks */}
+        {[40, 100, 160, 200].map((y) => (
+          <line key={y} x1="0" y1={y} x2="400" y2={y} stroke="#F4F4F5" strokeDasharray="2 4" />
+        ))}
+        {/* Area path com curva suave */}
+        <path
+          d="M 0,160 C 50,140 100,180 150,120 S 250,90 300,110 S 380,80 400,100 L 400,240 L 0,240 Z"
+          fill="url(#skel-area-grad)"
+          className="animate-pulse"
+        />
+        <path
+          d="M 0,160 C 50,140 100,180 150,120 S 250,90 300,110 S 380,80 400,100"
+          fill="none"
+          stroke="#E4E4E7"
+          strokeWidth={2}
+          className="animate-pulse"
+        />
+      </svg>
+    </div>
+  )
+}
+
+function BarChartSkeleton() {
+  // Barras com alturas variadas pulsando
+  const heights = [60, 90, 45, 110, 75, 130, 95]
+  return (
+    <div className="h-[240px] flex items-end gap-3 px-1 pt-4 pb-2">
+      {heights.map((h, i) => (
+        <div
+          key={i}
+          className="flex-1 bg-[#F4F4F5] rounded-t-md animate-pulse"
+          style={{ height: `${h}%`, animationDelay: `${i * 80}ms` }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Dashboard Skeleton (skill rule: skeletal loaders, no generic spinners)
 // ──────────────────────────────────────────────────────────────────────
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-6 pb-10">
+      {/* Header skeleton */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div className="space-y-2">
+          <div className="h-5 w-24 bg-[#F4F4F5] rounded-full animate-pulse" />
           <div className="h-8 w-44 bg-[#F4F4F5] rounded-lg animate-pulse" />
           <div className="h-4 w-72 bg-[#F4F4F5] rounded animate-pulse" />
         </div>
         <div className="h-9 w-64 bg-[#F4F4F5] rounded-lg animate-pulse" />
       </div>
+
+      {/* KPI skeletons — matching real KPI layout */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-32 rounded-2xl bg-white border border-[#EDEEF1] p-5">
-            <div className="h-3 w-24 bg-[#F4F4F5] rounded animate-pulse mb-4" />
-            <div className="h-9 w-16 bg-[#F4F4F5] rounded animate-pulse" />
-            <div className="h-3 w-20 bg-[#F4F4F5] rounded animate-pulse mt-3" />
+          <div
+            key={i}
+            className="rounded-2xl bg-white border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(15,23,42,0.06)] p-5"
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="h-3 w-24 bg-[#F4F4F5] rounded animate-pulse" />
+              <div className="h-9 w-9 bg-[#F4F4F5] rounded-lg animate-pulse" />
+            </div>
+            <div className="h-8 w-20 bg-[#F4F4F5] rounded animate-pulse" />
+            <div className="h-3 w-28 bg-[#F4F4F5] rounded animate-pulse mt-3" />
           </div>
         ))}
       </div>
+
+      {/* Charts skeletons — matching real chart layout */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3 h-72 rounded-2xl bg-white border border-[#EDEEF1] animate-pulse" />
-        <div className="lg:col-span-2 h-72 rounded-2xl bg-white border border-[#EDEEF1] animate-pulse" />
+        <div className="lg:col-span-3 rounded-2xl bg-white border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(15,23,42,0.06)] overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-[#F4F4F5]">
+            <div className="h-9 w-9 bg-[#F4F4F5] rounded-lg animate-pulse" />
+            <div className="flex-1 space-y-1">
+              <div className="h-4 w-40 bg-[#F4F4F5] rounded animate-pulse" />
+              <div className="h-3 w-56 bg-[#F4F4F5] rounded animate-pulse" />
+            </div>
+            <div className="hidden sm:flex gap-2">
+              <div className="h-3 w-14 bg-[#F4F4F5] rounded animate-pulse" />
+              <div className="h-3 w-16 bg-[#F4F4F5] rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="p-5">
+            <AreaChartSkeleton />
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 rounded-2xl bg-white border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(15,23,42,0.06)] overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-[#F4F4F5]">
+            <div className="h-9 w-9 bg-[#F4F4F5] rounded-lg animate-pulse" />
+            <div className="flex-1 space-y-1">
+              <div className="h-4 w-32 bg-[#F4F4F5] rounded animate-pulse" />
+              <div className="h-3 w-40 bg-[#F4F4F5] rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="p-5">
+            <BarChartSkeleton />
+          </div>
+        </div>
+      </div>
+
+      {/* Status distribution skeleton */}
+      <div className="rounded-2xl bg-white border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(15,23,42,0.06)] overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#F4F4F5]">
+          <div className="h-9 w-9 bg-[#F4F4F5] rounded-lg animate-pulse" />
+          <div className="space-y-1">
+            <div className="h-4 w-44 bg-[#F4F4F5] rounded animate-pulse" />
+            <div className="h-3 w-52 bg-[#F4F4F5] rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 sm:divide-x divide-y sm:divide-y-0 divide-[#F4F4F5]">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="px-5 py-5 space-y-2">
+              <div className="h-3 w-16 bg-[#F4F4F5] rounded animate-pulse" />
+              <div className="h-7 w-10 bg-[#F4F4F5] rounded animate-pulse" />
+              <div className="h-3 w-20 bg-[#F4F4F5] rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

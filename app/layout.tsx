@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { GrainOverlay } from '@/components/ui/GrainOverlay'
 import './globals.css'
 
 // Fontes premium recomendadas pela skill design-taste-frontend:
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           {children}
         </AuthProvider>
+        <GrainOverlay />
       </body>
     </html>
   )

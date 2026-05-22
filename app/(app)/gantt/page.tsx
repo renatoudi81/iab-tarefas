@@ -31,8 +31,55 @@ function getWeeks(minDate: string, maxDate: string): { label: string; left: numb
   return weeks
 }
 
+function GanttSkeleton() {
+  // 6 barras com offsets e larguras variadas pulsando — sugere uma timeline real
+  const bars = [
+    { offset: 5, width: 35 },
+    { offset: 20, width: 50 },
+    { offset: 12, width: 28 },
+    { offset: 35, width: 45 },
+    { offset: 8, width: 60 },
+    { offset: 28, width: 40 },
+  ]
+  return (
+    <div>
+      <div className="mb-6 space-y-2">
+        <div className="h-5 w-32 bg-[#F4F4F5] rounded-full animate-pulse" />
+        <div className="h-8 w-28 bg-[#F4F4F5] rounded-lg animate-pulse" />
+        <div className="h-4 w-72 bg-[#F4F4F5] rounded animate-pulse" />
+      </div>
+      <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(15,23,42,0.06)] p-5">
+        {/* Week ticks */}
+        <div className="flex justify-between mb-4 px-1">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-3 w-12 bg-[#F4F4F5] rounded animate-pulse" />
+          ))}
+        </div>
+        {/* Task bars */}
+        <div className="space-y-3">
+          {bars.map((b, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="h-3 w-28 bg-[#F4F4F5] rounded animate-pulse flex-shrink-0" />
+              <div className="flex-1 h-6 bg-[#F7F8FA] rounded-md relative overflow-hidden">
+                <div
+                  className="absolute top-0 bottom-0 bg-[#E4E4E7] rounded-md animate-pulse"
+                  style={{
+                    left: `${b.offset}%`,
+                    width: `${b.width}%`,
+                    animationDelay: `${i * 100}ms`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function GanttPage() {
-  const { tasks } = useTasks()
+  const { tasks, isLoading: loadingTasks } = useTasks()
   const today = todayStr()
   const [colorBy, setColorBy] = useState<ColorBy>('status')
 
@@ -41,6 +88,10 @@ export default function GanttPage() {
       .sort((a, b) => (a.data_inicio || '') < (b.data_inicio || '') ? -1 : 1),
     [tasks]
   )
+
+  if (loadingTasks && tasks.length === 0) {
+    return <GanttSkeleton />
+  }
 
   if (tasksWithDates.length === 0) {
     return (

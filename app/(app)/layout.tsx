@@ -280,10 +280,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+              initial={{ opacity: 0, y: 12, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
+              transition={{
+                type: 'spring',
+                stiffness: 120,
+                damping: 22,
+                mass: 0.6,
+              }}
             >
               {children}
             </motion.div>

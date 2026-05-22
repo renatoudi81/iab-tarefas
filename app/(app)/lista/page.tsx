@@ -9,6 +9,7 @@ import type { Task, TaskFormData, Status, Prioridade } from '@/types'
 import { Plus, Search, Pencil, Trash2, Loader2, X, Filter, MoreHorizontal } from 'lucide-react'
 import TaskDrawer from '@/components/TaskDrawer'
 import { cn } from '@/lib/utils'
+import { MagneticButton } from '@/components/ui/MagneticButton'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -153,12 +154,12 @@ export default function ListaPage() {
             Gerencie todas as tarefas do projeto, filtre por status, prioridade ou responsável.
           </p>
         </div>
-        <button
+        <MagneticButton
           onClick={openNew}
-          className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
+          className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} /> Nova Tarefa
-        </button>
+        </MagneticButton>
       </div>
 
       {/* Toolbar: busca + filtros */}
