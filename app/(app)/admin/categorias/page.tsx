@@ -71,7 +71,7 @@ export default function CategoriasPage() {
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Categorias
           </h1>
-          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+          <p className="text-sm text-[#71717A] mt-1.5">
             Organize as tarefas por área de atuação — Marketing, Financeiro, Jurídico e mais.
           </p>
         </div>

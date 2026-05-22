@@ -426,7 +426,7 @@ export default function DashboardPage() {
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Dashboard
           </h1>
-          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+          <p className="text-sm text-[#71717A] mt-1.5">
             Acompanhe a produtividade da equipe e os indicadores do período selecionado.
           </p>
         </div>

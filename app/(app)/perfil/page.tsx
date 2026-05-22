@@ -60,7 +60,7 @@ export default function PerfilPage() {
         <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
           Meu Perfil
         </h1>
-        <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+        <p className="text-[#71717A] text-sm mt-1.5">
           Gerencie suas informações pessoais, foto e senha de acesso ao sistema.
         </p>
       </div>

@@ -10,6 +10,9 @@ export function useTasks() {
   )
 
   const tasks = data?.tasks ?? []
+  // True até a primeira resposta (data ou erro) chegar. Mais confiável
+  // que isLoading do SWR para evitar flash de "empty state" antes do load.
+  const isInitialLoad = data === undefined && error === undefined
 
   const addTask = async (taskData: TaskFormData): Promise<Task> => {
     const res = await apiFetch('/api/tasks', {
@@ -62,5 +65,5 @@ export function useTasks() {
     await mutate()
   }
 
-  return { tasks, isLoading, error, mutate, addTask, updateTask, deleteTask }
+  return { tasks, isLoading, isInitialLoad, error, mutate, addTask, updateTask, deleteTask }
 }

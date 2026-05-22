@@ -40,7 +40,7 @@ function sortTasks(tasks: Task[]): Task[] {
 }
 
 export default function KanbanPage() {
-  const { tasks: swrTasks, updateTask, deleteTask, isLoading } = useTasks()
+  const { tasks: swrTasks, updateTask, deleteTask, isLoading, isInitialLoad } = useTasks()
   const { users } = useUsers()
   const { toast } = useToast()
   const { confirm } = useConfirm()
@@ -123,7 +123,7 @@ export default function KanbanPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  if (isLoading && swrTasks.length === 0) {
+  if (isInitialLoad || (isLoading && swrTasks.length === 0)) {
     return <KanbanSkeleton />
   }
 
@@ -141,7 +141,7 @@ export default function KanbanPage() {
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Kanban
           </h1>
-          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+          <p className="text-[#71717A] text-sm mt-1.5">
             Arraste os cards entre colunas para atualizar o status — a mudança é persistida automaticamente.
           </p>
         </div>

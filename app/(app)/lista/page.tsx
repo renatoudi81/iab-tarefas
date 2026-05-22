@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function ListaPage() {
-  const { tasks, deleteTask, isLoading: loadingTasks } = useTasks()
+  const { tasks, deleteTask, isLoading: loadingTasks, isInitialLoad } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
   const { toast } = useToast()
@@ -112,7 +112,7 @@ export default function ListaPage() {
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Lista de Tarefas
           </h1>
-          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+          <p className="text-sm text-[#71717A] mt-1.5">
             Gerencie todas as tarefas do projeto, filtre por status, prioridade ou responsável.
           </p>
         </div>
@@ -191,7 +191,7 @@ export default function ListaPage() {
           </TableHeader>
           <TableBody>
             <AnimatePresence>
-              {loadingTasks && tasks.length === 0 && (
+              {(isInitialLoad || (loadingTasks && tasks.length === 0)) && (
                 <>
                   {[0, 1, 2, 3, 4].map((i) => (
                     <TableRow key={`skeleton-${i}`} className="border-b border-[#F4F4F5] hover:bg-transparent">
@@ -214,7 +214,7 @@ export default function ListaPage() {
                   ))}
                 </>
               )}
-              {!loadingTasks && filtered.length === 0 && (
+              {!isInitialLoad && !loadingTasks && filtered.length === 0 && (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={7} className="py-16 text-center text-[#A1A1AA]">
                     <div className="flex flex-col items-center">

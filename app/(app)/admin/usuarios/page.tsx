@@ -7,8 +7,10 @@ import { useUsers } from '@/hooks/useUsers'
 import { getInitials } from '@/types'
 import type { User } from '@/types'
 import {
-  Plus, Loader2, Shield, Search, MoreHorizontal, Pencil, Trash2, Mail,
+  Plus, Loader2, Shield, Search, MoreHorizontal, Pencil, Trash2, Mail, KeyRound,
 } from 'lucide-react'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { auth } from '@/lib/firebase-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -80,6 +82,28 @@ export default function UsuariosPage() {
     } catch (err: any) { setError(err.message) } finally { setSaving(false) }
   }
 
+  /**
+   * Reenviar e-mail de definição de senha. Útil quando:
+   * - O usuário não recebeu o e-mail inicial
+   * - O link expirou (Firebase: 1 hora de validade)
+   * - O e-mail caiu no spam e o usuário pediu reenvio
+   *
+   * Segurança: usa sendPasswordResetEmail do Firebase Auth — gera token
+   * one-time, time-limited, HTTPS only. O admin não vê e nunca toca na
+   * senha do usuário; ele apenas dispara o e-mail.
+   */
+  const handleResendEmail = async (u: User) => {
+    try {
+      await sendPasswordResetEmail(auth, u.email, {
+        url: `${window.location.origin}/redefinir-senha`,
+        handleCodeInApp: true,
+      })
+      toast.success('E-mail reenviado', `Link de definição de senha enviado para ${u.email}.`)
+    } catch (err: any) {
+      toast.error('Falha ao reenviar e-mail', err.message || 'Verifique a conexão e tente novamente.')
+    }
+  }
+
   const handleDelete = async (id: string) => {
     const ok = await confirm({
       title: 'Excluir usuário?',
@@ -115,7 +139,7 @@ export default function UsuariosPage() {
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Usuários
           </h1>
-          <p className="text-sm text-[#71717A] mt-1.5 max-w-[58ch]">
+          <p className="text-sm text-[#71717A] mt-1.5">
             Gerencie quem tem acesso ao sistema, defina perfis e ative ou desative contas.
           </p>
         </div>
@@ -221,10 +245,17 @@ export default function UsuariosPage() {
                         <MoreHorizontal size={16} />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-36">
+                    <DropdownMenuContent align="end" className="w-52">
                       <DropdownMenuItem onClick={() => openEdit(u)} className="gap-2 cursor-pointer">
                         <Pencil size={13} />
                         Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleResendEmail(u)}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <KeyRound size={13} />
+                        Reenviar e-mail de senha
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDelete(u.id)}

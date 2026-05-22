@@ -154,7 +154,7 @@ function Kpi({
 }
 
 export default function RelatoriosPage() {
-  const { tasks: allTasks, isLoading } = useTasks()
+  const { tasks: allTasks, isLoading, isInitialLoad } = useTasks()
   const { entries: allEntries } = useTimeEntries()
   const { users } = useUsers()
   const { categories } = useCategories()
@@ -269,7 +269,7 @@ export default function RelatoriosPage() {
   const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
   const item = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }
 
-  if (isLoading && tasks.length === 0) {
+  if (isInitialLoad || (isLoading && tasks.length === 0)) {
     return <RelatoriosSkeleton />
   }
 
@@ -292,7 +292,7 @@ export default function RelatoriosPage() {
               </span>
             )}
           </h1>
-          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+          <p className="text-[#71717A] text-sm mt-1.5">
             {effectiveUserId === 'all'
               ? (isAdmin
                   ? 'Visão geral da equipe — produtividade, distribuição de tarefas e tempo investido.'

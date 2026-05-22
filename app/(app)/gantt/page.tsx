@@ -107,7 +107,7 @@ export default function GanttPage() {
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Gantt
           </h1>
-          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+          <p className="text-[#71717A] text-sm mt-1.5">
             Visualize a distribuição das tarefas ao longo do tempo, com data de início e prazo.
           </p>
         </div>
@@ -161,7 +161,7 @@ export default function GanttPage() {
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Gantt
           </h1>
-          <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
+          <p className="text-[#71717A] text-sm mt-1.5">
             Acompanhe a linha do tempo do projeto — barras coloridas indicam {colorBy === 'status' ? 'status' : 'prioridade'}.
           </p>
         </div>
