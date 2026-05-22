@@ -55,7 +55,7 @@ const EMPTY_FORM: TaskFormData = {
 }
 
 export default function ListaPage() {
-  const { tasks, addTask, updateTask, deleteTask } = useTasks()
+  const { tasks, addTask, updateTask, deleteTask, isLoading: loadingTasks } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
 
@@ -228,14 +228,51 @@ export default function ListaPage() {
           </TableHeader>
           <TableBody>
             <AnimatePresence>
-              {filtered.length === 0 && (
+              {loadingTasks && tasks.length === 0 && (
+                <>
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <TableRow key={`skeleton-${i}`} className="border-b border-[#F4F4F5] hover:bg-transparent">
+                      <TableCell className="py-3.5">
+                        <div className="space-y-2">
+                          <div className="flex gap-1.5">
+                            <div className="h-4 w-12 bg-[#F4F4F5] rounded animate-pulse" />
+                            <div className="h-4 w-20 bg-[#F4F4F5] rounded animate-pulse" />
+                          </div>
+                          <div className="h-4 w-52 bg-[#F4F4F5] rounded animate-pulse" />
+                        </div>
+                      </TableCell>
+                      <TableCell><div className="h-5 w-20 bg-[#F4F4F5] rounded-full animate-pulse" /></TableCell>
+                      <TableCell><div className="h-5 w-16 bg-[#F4F4F5] rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-7 w-24 bg-[#F4F4F5] rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-16 bg-[#F4F4F5] rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-24 bg-[#F4F4F5] rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-[#F4F4F5] rounded animate-pulse" /></TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )}
+              {!loadingTasks && filtered.length === 0 && (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={7} className="py-16 text-center text-[#A1A1AA]">
                     <div className="inline-flex w-14 h-14 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-3">
                       <Filter size={24} className="text-[#A1A1AA]" />
                     </div>
-                    <p className="font-semibold text-[#52525B] mb-1">Nenhuma tarefa encontrada</p>
-                    <p className="text-[0.8125rem]">Ajuste os filtros ou crie uma nova tarefa para começar.</p>
+                    <p className="font-semibold text-[#52525B] mb-1">
+                      {tasks.length === 0 ? 'Sua lista está limpa' : 'Nenhuma tarefa encontrada'}
+                    </p>
+                    <p className="text-[0.8125rem] max-w-sm mx-auto">
+                      {tasks.length === 0
+                        ? 'Comece criando a primeira tarefa do projeto — defina título, prazo e responsável.'
+                        : 'Ajuste os filtros ou crie uma nova tarefa para começar.'}
+                    </p>
+                    {tasks.length === 0 && (
+                      <button
+                        onClick={openNew}
+                        className="mt-5 h-9 inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
+                      >
+                        <Plus size={14} strokeWidth={2.5} /> Criar primeira tarefa
+                      </button>
+                    )}
                   </TableCell>
                 </TableRow>
               )}
@@ -247,10 +284,15 @@ export default function ListaPage() {
                 return (
                   <motion.tr
                     key={task.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    transition={{ delay: idx * 0.025 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 120,
+                      damping: 22,
+                      delay: idx * 0.025,
+                    }}
                     className="border-b border-[#F4F4F5] transition-colors hover:bg-[#FAFAFA]"
                   >
                     {/* Tarefa */}

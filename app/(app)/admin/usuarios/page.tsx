@@ -164,13 +164,23 @@ export default function UsuariosPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-[#A1A1AA] gap-2">
-            <p className="text-sm">Nenhum usuário encontrado</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="inline-flex w-14 h-14 rounded-2xl bg-[#F7F8FA] items-center justify-center mb-3">
+              <Shield size={24} className="text-[#A1A1AA]" />
+            </div>
+            <p className="font-semibold text-[#52525B] mb-1">
+              {search ? 'Nenhum usuário encontrado' : 'Sem usuários cadastrados'}
+            </p>
+            <p className="text-[0.8125rem] text-[#A1A1AA] max-w-sm">
+              {search
+                ? 'Ajuste o termo de busca ou crie um novo usuário.'
+                : 'Convide membros da equipe — eles receberão um e-mail para definir a própria senha.'}
+            </p>
             <button
               onClick={openNew}
-              className="flex items-center gap-1.5 border border-[#E4E4E7] bg-white hover:bg-[#F7F8FA] text-[#3F3F46] text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer mt-1"
+              className="mt-5 h-9 inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
             >
-              <Plus size={13} strokeWidth={2.5} /> Adicionar usuário
+              <Plus size={14} strokeWidth={2.5} /> {search ? 'Adicionar usuário' : 'Convidar primeiro usuário'}
             </button>
           </div>
         ) : (
