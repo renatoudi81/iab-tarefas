@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
+import { MagneticButton } from '@/components/ui/MagneticButton'
 
 const COLUMNS: Status[] = ['Pendente', 'Em andamento', 'Aguardando', 'Atrasada', 'Concluída']
 
@@ -106,13 +107,13 @@ export default function KanbanPage() {
             Arraste os cards entre colunas para atualizar o status — a mudança é persistida automaticamente.
           </p>
         </div>
-        <button
+        <MagneticButton
           onClick={() => router.push('/lista')}
-          className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
+          className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} />
           Nova Tarefa
-        </button>
+        </MagneticButton>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>

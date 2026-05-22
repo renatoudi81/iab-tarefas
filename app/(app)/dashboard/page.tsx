@@ -14,6 +14,7 @@ import {
   BarChart3, Activity, Sparkles, ArrowUpRight,
 } from 'lucide-react'
 import { SpotlightCard } from '@/components/ui/SpotlightCard'
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
 
 // ──────────────────────────────────────────────────────────────────────
 // Tooltip dark com tipografia mono nos números
@@ -92,6 +93,10 @@ function BentoTile({
 // ──────────────────────────────────────────────────────────────────────
 function Kpi({
   label, value, icon: Icon, hint, accentColor, accentBg, danger, pulse,
+  /** Se omitido, o valor é animado de 0 ao número final. Use `false` se for string puro */
+  animated = true,
+  numericValue,
+  suffix,
 }: {
   label: string
   value: string | number
@@ -101,8 +106,14 @@ function Kpi({
   accentBg: string
   danger?: boolean
   pulse?: boolean
+  animated?: boolean
+  /** Valor numérico para animar; usa `value` se omitido */
+  numericValue?: number
+  /** Sufixo para o counter (ex: 'h', '%') */
+  suffix?: string
 }) {
-  const isDanger = danger && Number(value) > 0
+  const numeric = numericValue ?? Number(value) ?? 0
+  const isDanger = danger && numeric > 0
   return (
     <BentoTile className="p-5" spotlight>
       <div className="flex items-start justify-between gap-3 mb-4">
@@ -128,7 +139,15 @@ function Kpi({
         className="font-mono text-[2rem] font-bold leading-none tabular-nums tracking-[-0.02em]"
         style={{ color: isDanger ? '#DC2626' : '#0F172A' }}
       >
-        {value}
+        {animated && !isNaN(numeric) ? (
+          <AnimatedCounter
+            value={numeric}
+            suffix={suffix}
+            decimals={suffix === 'h' ? 1 : 0}
+          />
+        ) : (
+          value
+        )}
       </div>
       {hint && <div className="text-[0.72rem] text-[#71717A] mt-2.5">{hint}</div>}
     </BentoTile>
@@ -443,6 +462,8 @@ export default function DashboardPage() {
         <Kpi
           label="Horas registradas"
           value={metrics.hoursInPeriod}
+          numericValue={parseFloat(metrics.hoursInPeriod)}
+          suffix="h"
           icon={Clock}
           accentColor="#7C3AED"
           accentBg="#F5F3FF"
@@ -461,6 +482,8 @@ export default function DashboardPage() {
         <Kpi
           label="Produtividade"
           value={metrics.productivity}
+          numericValue={metrics.donePct}
+          suffix="%"
           icon={CheckCircle2}
           accentColor="#16A34A"
           accentBg="#F0FDF4"

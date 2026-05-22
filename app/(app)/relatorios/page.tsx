@@ -17,6 +17,9 @@ import {
 } from 'lucide-react'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
+import { MagneticButton } from '@/components/ui/MagneticButton'
+import { SpotlightCard } from '@/components/ui/SpotlightCard'
 
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
@@ -95,6 +98,8 @@ function Kpi({
   icon: Icon,
   label,
   value,
+  numericValue,
+  suffix = '',
   hint,
   accentColor = '#2563EB',
   accentBg = '#EFF6FF',
@@ -102,28 +107,45 @@ function Kpi({
   icon: React.ElementType
   label: string
   value: string | number
+  numericValue?: number
+  suffix?: string
   hint?: string
   accentColor?: string
   accentBg?: string
 }) {
+  const numeric = numericValue ?? (typeof value === 'number' ? value : NaN)
+  const animatable = !isNaN(numeric)
   return (
-    <div className="bg-white rounded-2xl border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] p-5 transition-all hover:shadow-[0_14px_36px_-12px_rgba(37,99,235,0.18)] hover:-translate-y-0.5">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <span className="text-[0.72rem] font-medium text-[#71717A] uppercase tracking-wider leading-tight">
-          {label}
-        </span>
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: accentBg }}
-        >
-          <Icon size={15} style={{ color: accentColor }} strokeWidth={2} />
+    <SpotlightCard
+      color={accentColor}
+      className="bg-white rounded-2xl border border-[#EDEEF1] shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] transition-all hover:shadow-[0_14px_36px_-12px_rgba(37,99,235,0.18)] hover:-translate-y-0.5"
+    >
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <span className="text-[0.72rem] font-medium text-[#71717A] uppercase tracking-wider leading-tight">
+            {label}
+          </span>
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: accentBg }}
+          >
+            <Icon size={15} style={{ color: accentColor }} strokeWidth={2} />
+          </div>
         </div>
+        <div className="text-[1.875rem] font-mono font-bold text-[#0F172A] leading-none tabular-nums tracking-[-0.02em]">
+          {animatable ? (
+            <AnimatedCounter
+              value={numeric}
+              suffix={suffix}
+              decimals={suffix === 'h' ? 1 : 0}
+            />
+          ) : (
+            value
+          )}
+        </div>
+        {hint && <div className="text-[0.72rem] text-[#A1A1AA] mt-2">{hint}</div>}
       </div>
-      <div className="text-[1.875rem] font-mono font-bold text-[#0F172A] leading-none tabular-nums tracking-[-0.02em]">
-        {value}
-      </div>
-      {hint && <div className="text-[0.72rem] text-[#A1A1AA] mt-2">{hint}</div>}
-    </div>
+    </SpotlightCard>
   )
 }
 
@@ -249,12 +271,12 @@ export default function RelatoriosPage() {
           >
             <Printer size={13} /> Imprimir
           </button>
-          <button
+          <MagneticButton
             onClick={handleExportCSV}
-            className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
+            className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
           >
             <Download size={13} strokeWidth={2.5} /> Exportar CSV
-          </button>
+          </MagneticButton>
         </div>
       </div>
 
@@ -278,6 +300,8 @@ export default function RelatoriosPage() {
             icon={TrendingUp}
             label="Taxa de conclusão"
             value={`${stats.pctConcluidas}%`}
+            numericValue={stats.pctConcluidas}
+            suffix="%"
             hint={`${stats.concluidas} de ${tasks.length} concluídas`}
             accentColor="#16A34A"
             accentBg="#F0FDF4"
@@ -286,6 +310,8 @@ export default function RelatoriosPage() {
             icon={Clock}
             label="Horas registradas"
             value={`${stats.totalHoras}h`}
+            numericValue={stats.totalHoras}
+            suffix="h"
             hint={`${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`}
             accentColor="#A855F7"
             accentBg="#FAF5FF"

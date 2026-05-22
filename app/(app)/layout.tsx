@@ -9,9 +9,10 @@ import { useTasks } from '@/hooks/useTasks'
 import { useNotifications } from '@/hooks/useNotifications'
 import { STATUSES } from '@/types'
 import { getInitials } from '@/types'
-import { Sun, Moon, Bell, ChevronDown, LogOut, User } from 'lucide-react'
+import { Sun, Moon, Bell, ChevronDown, LogOut, User, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/ui/UserAvatar'
+import { CommandPalette } from '@/components/ui/CommandPalette'
 
 const SIDEBAR_WIDTH = 220
 
@@ -74,6 +75,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <CommandPalette />
       <Sidebar delayedCount={delayedCount} />
 
       {/* Header */}
@@ -81,8 +83,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         className="fixed top-0 right-0 h-14 z-40 flex items-center justify-between gap-2 px-5 bg-background/95 backdrop-blur-sm border-b border-border transition-all"
         style={{ left: SIDEBAR_WIDTH }}
       >
-        {/* Lado esquerdo: notificações + tema */}
+        {/* Lado esquerdo: busca + notificações + tema */}
         <div className="flex items-center gap-1">
+          {/* Botão Buscar (⌘K) */}
+          <button
+            onClick={() => {
+              const isMac = navigator.platform.toUpperCase().includes('MAC')
+              const ev = new KeyboardEvent('keydown', {
+                key: 'k',
+                metaKey: isMac,
+                ctrlKey: !isMac,
+                bubbles: true,
+              })
+              document.dispatchEvent(ev)
+            }}
+            className="hidden md:inline-flex items-center gap-2 h-8 px-2.5 mr-2 rounded-lg border border-[#E4E4E7] bg-[#FAFAFA] hover:bg-[#F4F4F5] transition-colors cursor-pointer text-[0.78rem] text-[#71717A]"
+            title="Buscar (⌘K)"
+          >
+            <Search size={13} className="text-[#A1A1AA]" />
+            <span>Buscar...</span>
+            <kbd className="font-mono text-[0.62rem] bg-white border border-[#E4E4E7] px-1 py-[1px] rounded text-[#71717A] ml-1">
+              ⌘K
+            </kbd>
+          </button>
+
           {/* Notificações */}
           <div ref={notifRef} className="relative">
             <Button

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserAvatar } from '@/components/ui/UserAvatar'
+import { MagneticButton } from '@/components/ui/MagneticButton'
 
 type UserForm = { nome: string; email: string; perfil: string; ativo: boolean }
 const EMPTY_USER: UserForm = { nome: '', email: '', perfil: 'Usuário', ativo: true }
@@ -122,12 +123,12 @@ export default function UsuariosPage() {
             Gerencie quem tem acesso ao sistema, defina perfis e ative ou desative contas.
           </p>
         </div>
-        <button
+        <MagneticButton
           onClick={openNew}
-          className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
+          className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} /> Novo Usuário
-        </button>
+        </MagneticButton>
       </div>
 
       {/* Toolbar: busca + filtros */}

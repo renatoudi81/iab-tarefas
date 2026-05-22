@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { MagneticButton } from '@/components/ui/MagneticButton'
 
 export default function CategoriasPage() {
   const { user } = useAuth()
@@ -64,12 +65,12 @@ export default function CategoriasPage() {
             Organize as tarefas por área de atuação — Marketing, Financeiro, Jurídico e mais.
           </p>
         </div>
-        <button
+        <MagneticButton
           onClick={openNew}
-          className="h-9 flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer"
+          className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} /> Nova Categoria
-        </button>
+        </MagneticButton>
       </div>
 
       {/* Toolbar */}
