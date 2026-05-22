@@ -30,6 +30,7 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
+import { FormError } from '@/components/ui/FormError'
 
 type UserForm = { nome: string; email: string; perfil: string; ativo: boolean }
 const EMPTY_USER: UserForm = { nome: '', email: '', perfil: 'Usuário', ativo: true }
@@ -297,18 +298,7 @@ export default function UsuariosPage() {
               </div>
             </div>
 
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="rounded-xl border border-[#DC2626] bg-[#FEF2F2] px-3 py-2.5 text-sm text-[#DC2626]"
-                >
-                  {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <FormError message={error} />
 
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setModal({ open: false, user: null })}>

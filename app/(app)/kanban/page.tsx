@@ -192,7 +192,8 @@ export default function KanbanPage() {
                                 {...drag.draggableProps}
                                 {...drag.dragHandleProps}
                                 className={cn(
-                                  'bg-white border border-[#E8E8EC] hover:border-[#C8C8D4] transition-all rounded-lg',
+                                  'bg-white border border-[#E8E8EC] rounded-lg',
+                                  !dragSnapshot.isDragging && 'card-lift',
                                   dragSnapshot.isDragging && 'opacity-95 rotate-[0.8deg]'
                                 )}
                                 style={{

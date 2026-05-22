@@ -480,6 +480,56 @@ body {
 /* ─── Smooth scroll global ──────────────────────────────────── */
 html { scroll-behavior: smooth; }
 
+/* ─── Card hover lift (premium feel) ─────────────────────────────
+   Aplicar via className="card-lift" em cards interativos.
+   Easing: cubic-bezier(0.16, 1, 0.3, 1) = expo-out (Linear/Vercel)
+*/
+.card-lift {
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px -10px rgba(15, 23, 42, 0.12);
+  border-color: #D4D4D8;
+}
+
+/* ─── Form validation visual ─────────────────────────────────
+   .field-invalid: borda vermelha + shake animation
+   .form-error-box: caixa de erro inline com fade-in
+*/
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%, 45%, 75% { transform: translateX(-3px); }
+  30%, 60%, 90% { transform: translateX(3px); }
+}
+
+.field-invalid,
+.field-invalid:focus,
+.field-invalid:focus-visible {
+  border-color: #DC2626 !important;
+  outline-color: #DC2626 !important;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1) !important;
+  animation: shake 0.32s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.form-error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: var(--danger-bg);
+  border: 1px solid #FECACA;
+  color: #B91C1C;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  animation: fadeIn 0.18s ease both;
+}
+
 /* ─── Reduced motion (a11y) ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

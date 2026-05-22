@@ -13,6 +13,7 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
+import { FormError } from '@/components/ui/FormError'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -657,18 +658,7 @@ export default function ListaPage() {
 
             </div>
 
-            <AnimatePresence>
-              {saveError && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="bg-destructive/10 text-destructive px-3 py-2.5 rounded-lg text-sm border border-destructive/30 mt-4 overflow-hidden"
-                >
-                  {saveError}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <FormError message={saveError} className="mt-4" />
 
             <DialogFooter className="border-t border-border pt-4 mt-5">
               <Button type="button" variant="secondary" onClick={closeModal} disabled={saving}>
