@@ -49,8 +49,13 @@ export default function Sidebar({ delayedCount }: SidebarProps) {
       className="fixed h-screen z-50 flex flex-col bg-white border-r border-[#E4E4E7] overflow-hidden"
       style={{ width: SIDEBAR_WIDTH }}
     >
-      {/* Logo */}
-      <div className="flex flex-col items-start px-5 py-4 flex-shrink-0 border-b border-[#E4E4E7] gap-1.5">
+      {/* Logo (clicável → Dashboard) */}
+      <button
+        type="button"
+        onClick={() => router.push('/dashboard')}
+        className="flex flex-col items-start px-5 py-4 flex-shrink-0 border-b border-[#E4E4E7] gap-1.5 cursor-pointer bg-transparent border-l-0 border-r-0 border-t-0 text-left hover:bg-[#FAFAFA] transition-colors"
+        aria-label="Ir para Dashboard"
+      >
         <Image
           src="/logo-iab-blue.svg"
           alt="Instituto Alfa e Beto"
@@ -62,7 +67,7 @@ export default function Sidebar({ delayedCount }: SidebarProps) {
         <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-[#A1A1AA]">
           Controle de Atividades
         </span>
-      </div>
+      </button>
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2.5 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5">

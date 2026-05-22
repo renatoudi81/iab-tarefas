@@ -18,12 +18,18 @@ export async function GET(req: Request) {
   const user = await verifyAuth(req)
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const isAdmin = user.perfil === 'Administrador'
+
   // Collection group query: pega todos os time_entries de todas as tasks
   const snap = await adminDb.collectionGroup('time_entries')
     .orderBy('criado_em', 'desc')
     .get()
 
-  const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const allEntries = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]
+
+  // Permissões: admin vê tudo. Outros perfis veem apenas seus próprios lançamentos.
+  const entries = isAdmin ? allEntries : allEntries.filter(e => e.usuario_id === user.id)
+
   return NextResponse.json({ entries })
 }
 

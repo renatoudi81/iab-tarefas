@@ -1,10 +1,14 @@
 'use client'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 import { STATUSES, STATUS_COLORS, formatMinutes } from '@/types'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -150,10 +154,29 @@ function Kpi({
 }
 
 export default function RelatoriosPage() {
-  const { tasks, isLoading } = useTasks()
-  const { entries } = useTimeEntries()
+  const { tasks: allTasks, isLoading } = useTasks()
+  const { entries: allEntries } = useTimeEntries()
   const { users } = useUsers()
   const { categories } = useCategories()
+  const { user: authUser } = useAuth()
+
+  const isAdmin = authUser?.perfil === 'Administrador'
+
+  // Filtro por usuário — apenas admin pode escolher; outros perfis sempre veem o próprio
+  const [filterUserId, setFilterUserId] = useState<string>('all')
+  const effectiveUserId = isAdmin ? filterUserId : (authUser?.id || 'all')
+
+  // Aplica o filtro localmente (a API já restringe não-admins; aqui é só para
+  // o admin alternar a visão entre "todos" e uma pessoa específica)
+  const tasks = useMemo(() => {
+    if (effectiveUserId === 'all') return allTasks
+    return allTasks.filter(t => t.responsavel_id === effectiveUserId)
+  }, [allTasks, effectiveUserId])
+
+  const entries = useMemo(() => {
+    if (effectiveUserId === 'all') return allEntries
+    return allEntries.filter(e => e.usuario_id === effectiveUserId)
+  }, [allEntries, effectiveUserId])
 
   const stats = useMemo(() => {
     const byStatus = Object.values(STATUSES)
@@ -263,12 +286,39 @@ export default function RelatoriosPage() {
           </div>
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Relatórios
+            {effectiveUserId !== 'all' && (
+              <span className="ml-2.5 text-[1rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2.5 py-1 rounded-lg align-middle">
+                {users.find((u) => u.id === effectiveUserId)?.nome || 'Usuário'}
+              </span>
+            )}
           </h1>
           <p className="text-[#71717A] text-sm mt-1.5 max-w-[58ch]">
-            Acompanhe produtividade, distribuição de tarefas e tempo investido pela equipe.
+            {effectiveUserId === 'all'
+              ? (isAdmin
+                  ? 'Visão geral da equipe — produtividade, distribuição de tarefas e tempo investido.'
+                  : 'Suas estatísticas — tarefas atribuídas, tempo gasto e produtividade.')
+              : 'Visão filtrada — métricas restritas ao usuário selecionado.'}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
+          {isAdmin && users.length > 1 && (
+            <div className="w-[200px]">
+              <Select value={filterUserId} onValueChange={setFilterUserId}>
+                <SelectTrigger className="h-9 text-sm bg-white">
+                  <SelectValue placeholder="Filtrar por usuário..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os usuários</SelectItem>
+                  {users
+                    .slice()
+                    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <button
             onClick={() => window.print()}
             className="h-9 flex items-center gap-1.5 border border-[#E4E4E7] bg-white hover:bg-[#F7F8FA] active:scale-[0.98] text-[#3F3F46] text-sm font-medium px-3.5 rounded-lg transition-all cursor-pointer"

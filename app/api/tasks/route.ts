@@ -25,6 +25,8 @@ export async function GET(req: Request) {
   const user = await verifyAuth(req)
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const isAdmin = user.perfil === 'Administrador'
+
   // 1) Tasks ordenadas por atualizado_em desc
   const tasksSnap = await adminDb.collection('tasks').orderBy('atualizado_em', 'desc').get()
 
@@ -32,7 +34,7 @@ export async function GET(req: Request) {
   const userMap = await loadUserMap()
 
   // 3) Para cada task, buscar subtasks e contagem de comments em paralelo
-  const tasks = await Promise.all(tasksSnap.docs.map(async (doc) => {
+  const tasksRaw = await Promise.all(tasksSnap.docs.map(async (doc) => {
     const data = doc.data() as any
     const taskRef = doc.ref
 
@@ -55,6 +57,16 @@ export async function GET(req: Request) {
       },
     }
   }))
+
+  // 4) Permissões: admin vê tudo. Outros perfis veem apenas tarefas onde:
+  //    - são o responsável (responsavel_id === user.id), ou
+  //    - participam da equipe (user.id em equipe)
+  const tasks = isAdmin
+    ? tasksRaw
+    : tasksRaw.filter((t: any) =>
+        t.responsavel_id === user.id ||
+        (Array.isArray(t.equipe) && t.equipe.includes(user.id))
+      )
 
   return NextResponse.json({ tasks })
 }

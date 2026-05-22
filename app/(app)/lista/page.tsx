@@ -5,20 +5,18 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
 import { STATUSES, PRIORITIES, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, todayStr } from '@/types'
-import type { Task, TaskFormData, Status, Prioridade } from '@/types'
-import { Plus, Search, Pencil, Trash2, Loader2, X, Filter, MoreHorizontal } from 'lucide-react'
+import type { Task } from '@/types'
+import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
 import TaskDrawer from '@/components/TaskDrawer'
+import TaskModal from '@/components/TaskModal'
 import { cn } from '@/lib/utils'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
-import { FormError } from '@/components/ui/FormError'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
@@ -29,13 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
 import {
   Table,
   TableHeader,
@@ -51,16 +42,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-const EMPTY_FORM: TaskFormData = {
-  titulo: '', descricao: '', observacoes: '', categoria: '', responsavel_id: null,
-  equipe: [], prioridade: 'Média', status: 'Pendente',
-  tempo_estimado: 60, tempo_gasto_total: 0,
-  data_inicio: '', data_prazo: '', data_conclusao: null, tags: [], anexos: [],
-  aguardando_quem: null, data_retorno_esperada: null
-}
-
 export default function ListaPage() {
-  const { tasks, addTask, updateTask, deleteTask, isLoading: loadingTasks } = useTasks()
+  const { tasks, deleteTask, isLoading: loadingTasks } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
   const { toast } = useToast()
@@ -71,9 +54,6 @@ export default function ListaPage() {
   const [filterPriority, setFilterPriority] = useState('')
   const [filterUser, setFilterUser] = useState('')
   const [modal, setModal] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null })
-  const [form, setForm] = useState<TaskFormData>({ ...EMPTY_FORM, data_inicio: todayStr() })
-  const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState('')
   const [drawerTask, setDrawerTask] = useState<Task | null>(null)
 
   const filtered = useMemo(() => {
@@ -87,44 +67,11 @@ export default function ListaPage() {
     })
   }, [tasks, search, filterStatus, filterPriority, filterUser])
 
-  const openNew = () => {
-    setForm({ ...EMPTY_FORM, data_inicio: todayStr() })
-    setModal({ open: true, task: null })
-    setSaveError('')
-  }
-  const openEdit = (task: Task) => {
-    setForm({
-      titulo: task.titulo, descricao: task.descricao || '', observacoes: task.observacoes || '',
-      categoria: task.categoria, responsavel_id: task.responsavel_id, equipe: task.equipe,
-      prioridade: task.prioridade, status: task.status, tempo_estimado: task.tempo_estimado,
-      tempo_gasto_total: task.tempo_gasto_total, data_inicio: task.data_inicio || '',
-      data_prazo: task.data_prazo || '', data_conclusao: task.data_conclusao,
-      tags: task.tags, anexos: task.anexos,
-      aguardando_quem: task.aguardando_quem ?? null,
-      data_retorno_esperada: task.data_retorno_esperada ?? null,
-    })
-    setModal({ open: true, task })
-    setSaveError('')
-  }
+  const openNew = () => setModal({ open: true, task: null })
+  const openEdit = (task: Task) => setModal({ open: true, task })
   const closeModal = () => setModal({ open: false, task: null })
 
   const onTaskClick = (task: Task) => setDrawerTask(task)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (saving) return
-    setSaving(true); setSaveError('')
-    try {
-      if (modal.task) {
-        await updateTask(modal.task.id, form)
-        toast.success('Tarefa atualizada')
-      } else {
-        await addTask(form)
-        toast.success('Tarefa criada')
-      }
-      closeModal()
-    } catch (err: any) { setSaveError(err.message) } finally { setSaving(false) }
-  }
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
@@ -143,10 +90,6 @@ export default function ListaPage() {
   }
 
   const hasFilters = filterStatus || filterPriority || filterUser || search
-
-  const isEditing = !!modal.task
-  const isAguardando = form.status === 'Aguardando'
-  const isConcluida = form.status === 'Concluída'
 
   return (
     <div>
@@ -432,248 +375,8 @@ export default function ListaPage() {
         </Table>
       </div>
 
-      {/* Modal */}
-      <Dialog open={modal.open} onOpenChange={open => !open && closeModal()}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold tracking-tight">
-              {isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-4">
-
-              {/* Título — largura total */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="titulo">Título *</Label>
-                <Input
-                  id="titulo"
-                  required
-                  value={form.titulo}
-                  onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))}
-                  placeholder="Título da tarefa..."
-                />
-              </div>
-
-              {/* Descrição — largura total, textarea 3 linhas */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="descricao">Descrição</Label>
-                <Textarea
-                  id="descricao"
-                  rows={3}
-                  placeholder="Descreva o objetivo e escopo desta tarefa..."
-                  value={form.descricao || ''}
-                  onChange={e => setForm(p => ({ ...p, descricao: e.target.value }))}
-                />
-              </div>
-
-              {/* Categoria | Responsável */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label>Categoria *</Label>
-                  <Select
-                    required
-                    value={form.categoria}
-                    onValueChange={v => setForm(p => ({ ...p, categoria: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label>Responsável *</Label>
-                  <Select
-                    required
-                    value={form.responsavel_id || ''}
-                    onValueChange={v => setForm(p => ({ ...p, responsavel_id: v || null }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users.map(u => <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Prioridade | Status | Estimado (min) | Data Início */}
-              <div className="grid grid-cols-4 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label>Prioridade</Label>
-                  <Select
-                    value={form.prioridade}
-                    onValueChange={v => setForm(p => ({ ...p, prioridade: v as Prioridade }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(PRIORITIES).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label>Status</Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={v => setForm(p => ({ ...p, status: v as Status }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(STATUSES).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="tempo_estimado">Estimado (min)</Label>
-                  <Input
-                    id="tempo_estimado"
-                    type="number"
-                    min="1"
-                    value={form.tempo_estimado}
-                    onChange={e => setForm(p => ({ ...p, tempo_estimado: Number(e.target.value) }))}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="data_inicio">Data Início</Label>
-                  <Input
-                    id="data_inicio"
-                    type="date"
-                    value={form.data_inicio || ''}
-                    onChange={e => setForm(p => ({ ...p, data_inicio: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              {/* Vencimento | Tempo Gasto (min — só ao editar) */}
-              <div className={cn('grid gap-4', isEditing ? 'grid-cols-2' : 'grid-cols-1')}>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="data_prazo">Vencimento *</Label>
-                  <Input
-                    id="data_prazo"
-                    required
-                    type="date"
-                    value={form.data_prazo || ''}
-                    onChange={e => setForm(p => ({ ...p, data_prazo: e.target.value }))}
-                  />
-                </div>
-                {isEditing && (
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="tempo_gasto">Tempo Gasto (min)</Label>
-                    <Input
-                      id="tempo_gasto"
-                      type="number"
-                      min="0"
-                      value={form.tempo_gasto_total}
-                      onChange={e => setForm(p => ({ ...p, tempo_gasto_total: Number(e.target.value) }))}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* AnimatePresence: quando status='Aguardando' */}
-              <AnimatePresence>
-                {isAguardando && (
-                  <motion.div
-                    key="aguardando-fields"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="grid grid-cols-2 gap-4 border-t border-dashed border-border pt-3">
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="aguardando_quem">Aguardando retorno de:</Label>
-                        <Input
-                          id="aguardando_quem"
-                          type="text"
-                          placeholder="Nome ou setor..."
-                          value={form.aguardando_quem || ''}
-                          onChange={e => setForm(p => ({ ...p, aguardando_quem: e.target.value || null }))}
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="data_retorno">Data esperada:</Label>
-                        <Input
-                          id="data_retorno"
-                          type="date"
-                          value={form.data_retorno_esperada || ''}
-                          onChange={e => setForm(p => ({ ...p, data_retorno_esperada: e.target.value || null }))}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* AnimatePresence: quando status='Concluída' */}
-              <AnimatePresence>
-                {isEditing && isConcluida && (
-                  <motion.div
-                    key="concluida-fields"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="flex flex-col gap-4 border-t border-dashed border-border pt-3">
-                      {/* Data de Conclusão | (vazio) */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="data_conclusao">Data de Conclusão</Label>
-                          <Input
-                            id="data_conclusao"
-                            type="date"
-                            value={form.data_conclusao || ''}
-                            onChange={e => setForm(p => ({ ...p, data_conclusao: e.target.value || null }))}
-                          />
-                        </div>
-                        <div />
-                      </div>
-                      {/* Observações — largura total, textarea 3 linhas */}
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="observacoes">Observações</Label>
-                        <Textarea
-                          id="observacoes"
-                          rows={3}
-                          placeholder="Notas adicionais, impedimentos, contexto relevante..."
-                          value={form.observacoes || ''}
-                          onChange={e => setForm(p => ({ ...p, observacoes: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-            </div>
-
-            <FormError message={saveError} className="mt-4" />
-
-            <DialogFooter className="border-t border-border pt-4 mt-5">
-              <Button type="button" variant="secondary" onClick={closeModal} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? <><Loader2 size={14} className="animate-spin" /> Salvando...</>
-                  : isEditing ? 'Atualizar Tarefa' : 'Criar Tarefa'
-                }
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Modal de criar/editar tarefa */}
+      <TaskModal open={modal.open} task={modal.task} onClose={closeModal} />
 
       {/* Task Drawer */}
       <TaskDrawer

@@ -6,12 +6,17 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes } from '@/types'
 import type { Status, Task } from '@/types'
-import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { MagneticButton } from '@/components/ui/MagneticButton'
+import TaskModal from '@/components/TaskModal'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { useToast } from '@/contexts/ToastContext'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 const COLUMNS: Status[] = ['Pendente', 'Em andamento', 'Aguardando', 'Atrasada', 'Concluída']
 
@@ -34,9 +39,37 @@ function sortTasks(tasks: Task[]): Task[] {
 }
 
 export default function KanbanPage() {
-  const { tasks: swrTasks, updateTask, isLoading } = useTasks()
+  const { tasks: swrTasks, updateTask, deleteTask, isLoading } = useTasks()
   const { users } = useUsers()
-  const router = useRouter()
+  const { toast } = useToast()
+  const { confirm } = useConfirm()
+
+  // Modal de criar/editar tarefa
+  const [modal, setModal] = useState<{
+    open: boolean
+    task: Task | null
+    initialStatus?: Status
+  }>({ open: false, task: null })
+
+  const openNew = (status?: Status) => setModal({ open: true, task: null, initialStatus: status })
+  const openEdit = (task: Task) => setModal({ open: true, task })
+  const closeModal = () => setModal({ open: false, task: null })
+
+  const handleDelete = async (task: Task) => {
+    const ok = await confirm({
+      title: 'Excluir tarefa?',
+      description: `"${task.titulo}" e todos os lançamentos de tempo serão removidos. Esta ação não pode ser desfeita.`,
+      confirmText: 'Excluir',
+      variant: 'destructive',
+    })
+    if (!ok) return
+    try {
+      await deleteTask(task.id)
+      toast.success('Tarefa excluída')
+    } catch (err: any) {
+      toast.error('Erro ao excluir tarefa', err.message)
+    }
+  }
 
   const [localTasks, setLocalTasks] = useState<Task[]>(swrTasks)
   // Guarda IDs com updates pendentes — bloqueia o sync de swrTasks
@@ -112,7 +145,7 @@ export default function KanbanPage() {
           </p>
         </div>
         <MagneticButton
-          onClick={() => router.push('/lista')}
+          onClick={() => openNew()}
           className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} />
@@ -147,6 +180,14 @@ export default function KanbanPage() {
                       >
                         {col.length}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => openNew(status)}
+                        title="Adicionar tarefa nesta coluna"
+                        className="ml-0.5 h-6 w-6 flex items-center justify-center rounded-md text-[#71717A] hover:text-[#111111] hover:bg-[#F4F4F5] transition-colors cursor-pointer border-0 bg-transparent"
+                      >
+                        <Plus size={13} strokeWidth={2.4} />
+                      </button>
                     </div>
                     <p className="text-[0.7rem] text-[#A1A1AA] mt-1 tabular-nums">
                       {col.length} tarefa{col.length !== 1 ? 's' : ''}&nbsp;·&nbsp;
@@ -206,20 +247,52 @@ export default function KanbanPage() {
                               >
                                 <CardContent className="p-3.5">
 
-                                  {/* ID + Prioridade */}
+                                  {/* ID + Prioridade + Ações */}
                                   <div className="flex items-center justify-between gap-2 mb-2.5">
                                     <span className="text-[0.62rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0 tabular-nums tracking-tight">
                                       #{shortId}
                                     </span>
-                                    <span
-                                      className="text-[0.65rem] font-semibold px-2 py-[2px] rounded-full flex-shrink-0"
-                                      style={{
-                                        background: prioColor + '18',
-                                        color: prioColor,
-                                      }}
-                                    >
-                                      {task.prioridade}
-                                    </span>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      <span
+                                        className="text-[0.65rem] font-semibold px-2 py-[2px] rounded-full"
+                                        style={{
+                                          background: prioColor + '18',
+                                          color: prioColor,
+                                        }}
+                                      >
+                                        {task.prioridade}
+                                      </span>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button
+                                            type="button"
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="h-6 w-6 flex items-center justify-center rounded-md text-[#A1A1AA] hover:text-[#111111] hover:bg-[#F4F4F5] transition-colors cursor-pointer border-0 bg-transparent"
+                                            title="Ações"
+                                          >
+                                            <MoreHorizontal size={14} />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-36">
+                                          <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); openEdit(task) }}
+                                            className="gap-2 cursor-pointer text-[0.82rem]"
+                                          >
+                                            <Pencil size={13} />
+                                            Editar
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(task) }}
+                                            className="gap-2 cursor-pointer text-[0.82rem] text-[#DC2626] focus:text-[#DC2626] focus:bg-[#FEF2F2]"
+                                          >
+                                            <Trash2 size={13} />
+                                            Excluir
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
                                   </div>
 
                                   {/* Título */}
@@ -338,6 +411,14 @@ export default function KanbanPage() {
           })}
         </div>
       </DragDropContext>
+
+      {/* Modal de criar/editar tarefa */}
+      <TaskModal
+        open={modal.open}
+        task={modal.task}
+        initialStatus={modal.initialStatus}
+        onClose={closeModal}
+      />
     </div>
   )
 }
