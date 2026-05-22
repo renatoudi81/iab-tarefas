@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { IconTooltip } from '@/components/ui/tooltip'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 const SIDEBAR_WIDTH = 220
 
@@ -28,6 +29,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const notifRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
+
+  // Atalhos globais (G D → Dashboard, G L → Lista, etc)
+  useKeyboardShortcuts()
 
   useEffect(() => {
     if (!loading && !user) router.replace('/login')
