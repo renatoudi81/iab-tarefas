@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
@@ -15,6 +15,9 @@ import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 import { stripHtml } from '@/components/ui/RichTextEditor'
+import { Pagination } from '@/components/ui/Pagination'
+
+const PAGE_SIZE = 20
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -56,6 +59,7 @@ export default function ListaPage() {
   const [filterUser, setFilterUser] = useState('')
   const [modal, setModal] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null })
   const [drawerTask, setDrawerTask] = useState<Task | null>(null)
+  const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
     const s = search.toLowerCase()
@@ -67,6 +71,18 @@ export default function ListaPage() {
       return true
     })
   }, [tasks, search, filterStatus, filterPriority, filterUser])
+
+  // Reset para página 1 sempre que filtros mudarem (caso contrário,
+  // o usuário poderia ficar numa página "vazia" após filtrar)
+  useEffect(() => {
+    setPage(1)
+  }, [search, filterStatus, filterPriority, filterUser])
+
+  // Slice da página atual
+  const paginated = useMemo(() => {
+    const startIdx = (page - 1) * PAGE_SIZE
+    return filtered.slice(startIdx, startIdx + PAGE_SIZE)
+  }, [filtered, page])
 
   const openNew = () => setModal({ open: true, task: null })
   const openEdit = (task: Task) => setModal({ open: true, task })
@@ -239,7 +255,7 @@ export default function ListaPage() {
                   </TableCell>
                 </TableRow>
               )}
-              {filtered.map((task, idx) => {
+              {paginated.map((task, idx) => {
                 const resp = users.find(u => u.id === task.responsavel_id)
                 const overdue = task.data_prazo && task.data_prazo < todayStr() && task.status !== 'Concluída'
                 const pct = task.tempo_estimado > 0 ? Math.min(100, Math.round((task.tempo_gasto_total / task.tempo_estimado) * 100)) : 0
@@ -374,6 +390,17 @@ export default function ListaPage() {
             </AnimatePresence>
           </TableBody>
         </Table>
+
+        {/* Paginação — só mostra quando há mais de 1 página */}
+        {filtered.length > PAGE_SIZE && (
+          <Pagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            onPageChange={setPage}
+            itemLabel="tarefas"
+          />
+        )}
       </div>
 
       {/* Modal de criar/editar tarefa */}
