@@ -233,7 +233,7 @@ export default function KanbanPage() {
                                 {...drag.draggableProps}
                                 {...drag.dragHandleProps}
                                 className={cn(
-                                  'bg-white border border-[#E8E8EC] rounded-lg',
+                                  'bg-white border border-[#E8E8EC] rounded-lg min-h-[200px]',
                                   !dragSnapshot.isDragging && 'card-lift',
                                   dragSnapshot.isDragging && 'opacity-95 rotate-[0.8deg]'
                                 )}
@@ -245,7 +245,7 @@ export default function KanbanPage() {
                                   ...drag.draggableProps.style,
                                 }}
                               >
-                                <CardContent className="p-3.5">
+                                <CardContent className="p-3.5 flex flex-col h-full min-h-[200px]">
 
                                   {/* ID + Prioridade + Ações */}
                                   <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -347,10 +347,12 @@ export default function KanbanPage() {
                                     </div>
                                   )}
 
-                                  {/* Separador */}
-                                  <div className="h-px bg-[#F0F0F2] my-2.5" />
+                                  {/* Separador — mt-auto empurra o rodapé para baixo,
+                                       garantindo metadados sempre ancorados independente
+                                       da altura do conteúdo acima */}
+                                  <div className="h-px bg-[#F0F0F2] mt-auto mb-2.5" />
 
-                                  {/* Metadados */}
+                                  {/* Metadados (rodapé do card) */}
                                   <div className="flex flex-col gap-1.5">
 
                                     {/* Categoria */}
