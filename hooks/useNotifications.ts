@@ -1,10 +1,12 @@
 import useSWR from 'swr'
 import type { Notification } from '@/types'
 import { apiFetch, apiFetcher } from '@/lib/api-fetch'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useNotifications() {
+  const { user } = useAuth()
   const { data, isLoading, mutate } = useSWR<{ notifications: Notification[] }>(
-    '/api/notifications',
+    user ? '/api/notifications' : null,
     apiFetcher,
     { refreshInterval: 30000 }
   )

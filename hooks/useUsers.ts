@@ -3,6 +3,7 @@ import type { User } from '@/types'
 import { apiFetch, apiFetcher } from '@/lib/api-fetch'
 import { sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '@/lib/firebase-client'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface AddUserPayload {
   nome: string
@@ -15,8 +16,10 @@ export interface AddUserPayload {
 }
 
 export function useUsers() {
+  // Gate em auth — não dispara fetch antes do user estar pronto (evita 401)
+  const { user: authUser } = useAuth()
   const { data, error, isLoading, mutate } = useSWR<{ users: User[] }>(
-    '/api/users',
+    authUser ? '/api/users' : null,
     apiFetcher,
     { refreshInterval: 60000 }
   )

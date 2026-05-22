@@ -1,10 +1,12 @@
 import useSWR from 'swr'
 import type { Category } from '@/types'
 import { apiFetch, apiFetcher } from '@/lib/api-fetch'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useCategories() {
+  const { user } = useAuth()
   const { data, error, isLoading, mutate } = useSWR<{ categories: Category[] }>(
-    '/api/categories',
+    user ? '/api/categories' : null,
     apiFetcher,
     { refreshInterval: 60000 }
   )

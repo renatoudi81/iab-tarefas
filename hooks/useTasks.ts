@@ -1,18 +1,22 @@
 import useSWR from 'swr'
 import type { Task, TaskFormData } from '@/types'
 import { apiFetch, apiFetcher } from '@/lib/api-fetch'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useTasks() {
+  // Gate em auth: SWR não dispara o fetch enquanto o user não estiver carregado
+  // (evita 401 inicial que cacheava error e fazia o empty state aparecer)
+  const { user } = useAuth()
   const { data, error, isLoading, mutate } = useSWR<{ tasks: Task[] }>(
-    '/api/tasks',
+    user ? '/api/tasks' : null,
     apiFetcher,
     { refreshInterval: 30000 }
   )
 
   const tasks = data?.tasks ?? []
-  // True até a primeira resposta (data ou erro) chegar. Mais confiável
-  // que isLoading do SWR para evitar flash de "empty state" antes do load.
-  const isInitialLoad = data === undefined && error === undefined
+  // True enquanto auth carrega OU enquanto a primeira resposta não chega.
+  // Evita o flash de "empty state" quando o user demora pra autenticar.
+  const isInitialLoad = !user || (data === undefined && error === undefined)
 
   const addTask = async (taskData: TaskFormData): Promise<Task> => {
     const res = await apiFetch('/api/tasks', {

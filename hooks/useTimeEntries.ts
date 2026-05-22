@@ -1,6 +1,7 @@
 import useSWR from 'swr'
 import type { TimeEntry } from '@/types'
 import { apiFetch, apiFetcher } from '@/lib/api-fetch'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface NewTimeEntry {
   tarefa_id: string
@@ -12,8 +13,9 @@ export interface NewTimeEntry {
 }
 
 export function useTimeEntries() {
+  const { user } = useAuth()
   const { data, error, isLoading, mutate } = useSWR<{ entries: TimeEntry[] }>(
-    '/api/time-entries',
+    user ? '/api/time-entries' : null,
     apiFetcher,
     { refreshInterval: 30000 }
   )
