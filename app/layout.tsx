@@ -24,6 +24,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Instituto Alfa e Beto — Tarefas',
   description: 'Gestão Inteligente de Tarefas',
+  icons: {
+    // Favicon principal (aba do browser, bookmarks)
+    icon: [
+      { url: '/logo-iab-symbol.svg', type: 'image/svg+xml' },
+    ],
+    // Apple Touch Icon (quando adicionado à tela inicial do iOS)
+    apple: '/logo-iab-symbol.svg',
+    // Shortcut icon (legacy fallback)
+    shortcut: '/logo-iab-symbol.svg',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
