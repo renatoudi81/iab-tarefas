@@ -18,7 +18,7 @@ import { stripHtml } from '@/components/ui/RichTextEditor'
 import { Pagination } from '@/components/ui/Pagination'
 import { getCategoryColor } from '@/lib/category-color'
 import { useAuth } from '@/contexts/AuthContext'
-import { Calendar as CalendarIcon } from 'lucide-react'
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 
 const PAGE_SIZE = 20
 
@@ -246,25 +246,6 @@ export default function ListaPage() {
           </Select>
         )}
 
-        {/* Date range — filtra por data_prazo. Mesma estrutura do Kanban
-            (visual weight equivalente: pill com border e bg-white, h-9). */}
-        <div className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#E4E4E7] bg-white">
-          <CalendarIcon size={13} className="text-[#A1A1AA]" />
-          <span className="text-[0.75rem] text-[#71717A] font-medium hidden sm:inline">De</span>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-          />
-          <span className="text-[0.75rem] text-[#71717A] font-medium">até</span>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-          />
-        </div>
         {hasFilters && (
           <Button
             variant="ghost"
@@ -278,6 +259,16 @@ export default function ListaPage() {
             <X size={13} /> Limpar
           </Button>
         )}
+
+        {/* Direita: date range — alinhado com Kanban e Gantt */}
+        <div className="ml-auto">
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            onFromChange={setDateFrom}
+            onToChange={setDateTo}
+          />
+        </div>
       </div>
 
       {/* Table */}

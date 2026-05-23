@@ -23,6 +23,7 @@ import {
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { getCategoryColor } from '@/lib/category-color'
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import TaskDrawer from '@/components/TaskDrawer'
 
 type ColorBy = 'status' | 'prioridade'
@@ -297,6 +298,8 @@ export default function GanttPage() {
   const [hideOldDone, setHideOldDone] = useState(true)
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => {
@@ -322,6 +325,13 @@ export default function GanttPage() {
       .filter(t => filterStatus === 'all' || t.status === filterStatus)
       .filter(t => filterUserId === 'all' || t.responsavel_id === filterUserId)
       .filter(t => {
+        // Date range — tarefa entra se SE SOBREPÕE ao período escolhido:
+        // (task.data_inicio <= dateTo) AND (task.data_prazo >= dateFrom)
+        if (dateFrom && t.data_prazo! < dateFrom) return false
+        if (dateTo && t.data_inicio! > dateTo) return false
+        return true
+      })
+      .filter(t => {
         // Amostragem inteligente: oculta Concluídas há > 7 dias
         if (!hideOldDone) return true
         if (t.status !== 'Concluída') return true
@@ -335,7 +345,7 @@ export default function GanttPage() {
         if (aOver !== bOver) return aOver - bOver
         return (a.data_inicio || '') < (b.data_inicio || '') ? -1 : 1
       })
-  }, [tasks, filterStatus, filterUserId, hideOldDone])
+  }, [tasks, filterStatus, filterUserId, hideOldDone, dateFrom, dateTo])
 
   if (isInitialLoad || (loadingTasks && tasks.length === 0)) {
     return <GanttSkeleton />
@@ -390,6 +400,10 @@ export default function GanttPage() {
           setHideOldDone={setHideOldDone}
           groupBy={groupBy}
           setGroupBy={setGroupBy}
+          dateFrom={dateFrom}
+          setDateFrom={setDateFrom}
+          dateTo={dateTo}
+          setDateTo={setDateTo}
           minDate=""
           maxDate=""
         />
@@ -483,6 +497,10 @@ export default function GanttPage() {
         setHideOldDone={setHideOldDone}
         groupBy={groupBy}
         setGroupBy={setGroupBy}
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
         minDate={minDate}
         maxDate={maxDate}
       />
@@ -632,6 +650,10 @@ interface PageHeaderProps {
   setHideOldDone: (v: boolean) => void
   groupBy: GroupBy
   setGroupBy: (v: GroupBy) => void
+  dateFrom: string
+  setDateFrom: (v: string) => void
+  dateTo: string
+  setDateTo: (v: string) => void
   minDate: string
   maxDate: string
 }
@@ -770,6 +792,16 @@ function PageHeader(p: PageHeaderProps) {
           {p.hideOldDone ? <EyeOff size={13} /> : <Eye size={13} />}
           {p.hideOldDone ? 'Concluídas antigas ocultas' : 'Mostrar todas concluídas'}
         </button>
+
+        {/* Direita: date range — alinhado com Kanban e Lista */}
+        <div className="ml-auto">
+          <DateRangeFilter
+            from={p.dateFrom}
+            to={p.dateTo}
+            onFromChange={p.setDateFrom}
+            onToChange={p.setDateTo}
+          />
+        </div>
       </div>
     </>
   )

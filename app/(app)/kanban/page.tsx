@@ -14,11 +14,11 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 import TaskModal from '@/components/TaskModal'
 import { stripHtml } from '@/components/ui/RichTextEditor'
 import { getCategoryColor } from '@/lib/category-color'
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
@@ -199,25 +199,7 @@ export default function KanbanPage() {
         (não-admin já vê apenas as próprias tarefas via filtro server-side).
       */}
       <div className="mb-5 flex items-center gap-2 flex-wrap">
-        <div className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#E4E4E7] bg-white">
-          <Calendar size={13} className="text-[#A1A1AA]" />
-          <span className="text-[0.75rem] text-[#71717A] font-medium hidden sm:inline">De</span>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-          />
-          <span className="text-[0.75rem] text-[#71717A] font-medium">até</span>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-          />
-        </div>
-
-        {/* User picker — só admin pode filtrar por outras pessoas */}
+        {/* Esquerda: filtros conceituais (responsável) */}
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>
             <SelectTrigger className="h-9 w-[180px] text-sm bg-white">
@@ -245,6 +227,17 @@ export default function KanbanPage() {
             Limpar filtros
           </button>
         )}
+
+        {/* Direita: date range — padrão visual unificado, sempre no fim
+            da toolbar pra ficar visualmente alinhado em todas as telas */}
+        <div className="ml-auto">
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            onFromChange={setDateFrom}
+            onToChange={setDateTo}
+          />
+        </div>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
