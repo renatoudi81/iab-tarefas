@@ -25,14 +25,14 @@ const PRIORITY_ORDER: Record<string, number> = { 'Crítica': 0, 'Alta': 1, 'Méd
 
 function sortTasks(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => {
-    // 1. Prioridade (Crítica → Alta → Média → Baixa)
-    const pDiff = (PRIORITY_ORDER[a.prioridade] ?? 9) - (PRIORITY_ORDER[b.prioridade] ?? 9)
-    if (pDiff !== 0) return pDiff
-    // 2. Data de vencimento (mais próxima primeiro; sem prazo vai para o final)
+    // 1. Data de vencimento (mais próxima primeiro; sem prazo vai pro final)
     const aP = a.data_prazo ?? '9999-12-31'
     const bP = b.data_prazo ?? '9999-12-31'
     if (aP !== bP) return aP < bP ? -1 : 1
-    // 3. Data de criação (mais antiga primeiro)
+    // 2. Prioridade (Crítica → Alta → Média → Baixa) como desempate
+    const pDiff = (PRIORITY_ORDER[a.prioridade] ?? 9) - (PRIORITY_ORDER[b.prioridade] ?? 9)
+    if (pDiff !== 0) return pDiff
+    // 3. Data de criação (mais antiga primeiro) como último desempate
     const aC = a.criado_em ?? ''
     const bC = b.criado_em ?? ''
     return aC < bC ? -1 : 1
@@ -223,7 +223,6 @@ export default function KanbanPage() {
                         const totalSubtasks = task._count?.subtasks ?? task.subtasks?.length ?? 0
                         const doneSubtasks = task.subtasks?.filter(s => s.concluida).length ?? 0
                         const allDone = totalSubtasks > 0 && doneSubtasks === totalSubtasks
-                        const shortId = task.id.slice(-5).toUpperCase()
                         const prioColor = PRIORITY_COLORS[task.prioridade]
                         // Cor do status (Pendente, Em andamento, Aguardando,
                         // Atrasada, Concluída) — usada no border esquerdo do
@@ -261,18 +260,23 @@ export default function KanbanPage() {
                                   ...drag.draggableProps.style,
                                 }}
                               >
-                                <CardContent className="p-3.5 flex flex-col h-full">
+                                <CardContent className="p-0 flex flex-col h-full">
 
-                                  {/* ID + Prioridade + Ações */}
-                                  <div className="flex items-center justify-between gap-2 mb-2.5">
-                                    <span className="text-[0.62rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0 tabular-nums tracking-tight">
-                                      #{shortId}
-                                    </span>
-                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  {/* TOP — info compacta (categoria + prio + menu) */}
+                                  <div className="px-3.5 pt-3 pb-2 flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                      {task.categoria && (
+                                        <span className="inline-flex items-center gap-1 text-[0.65rem] font-medium px-1.5 py-[2px] rounded bg-[#F4F4F5] text-[#52525B] truncate">
+                                          <Tag size={9} className="flex-shrink-0" />
+                                          <span className="truncate">{task.categoria}</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
                                       <span
-                                        className="text-[0.65rem] font-semibold px-2 py-[2px] rounded-full"
+                                        className="text-[0.62rem] font-bold uppercase tracking-wider px-2 py-[3px] rounded-full"
                                         style={{
-                                          background: prioColor + '18',
+                                          background: prioColor + '22',
                                           color: prioColor,
                                         }}
                                       >
@@ -311,23 +315,11 @@ export default function KanbanPage() {
                                     </div>
                                   </div>
 
-                                  {/* Título */}
-                                  <p
-                                    className="text-[0.8125rem] font-bold text-[#111111] leading-snug mb-1.5"
-                                    style={{
-                                      display: '-webkit-box',
-                                      WebkitLineClamp: 2,
-                                      WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    {task.titulo}
-                                  </p>
-
-                                  {/* Descrição (preview sem HTML) */}
-                                  {task.descricao && stripHtml(task.descricao) && (
+                                  {/* BODY — título + descrição + subtarefas */}
+                                  <div className="px-3.5 flex-1 flex flex-col min-h-0">
+                                    {/* Título — peso e tamanho maiores pra dominar a hierarquia */}
                                     <p
-                                      className="text-[0.75rem] text-[#71717A] leading-relaxed mb-2.5"
+                                      className="text-[0.92rem] font-bold text-[#0F172A] leading-snug tracking-[-0.005em] mb-1.5"
                                       style={{
                                         display: '-webkit-box',
                                         WebkitLineClamp: 2,
@@ -335,82 +327,81 @@ export default function KanbanPage() {
                                         overflow: 'hidden',
                                       }}
                                     >
-                                      {stripHtml(task.descricao)}
+                                      {task.titulo}
                                     </p>
-                                  )}
 
-                                  {/* Subtasks progress (when applicable) */}
-                                  {totalSubtasks > 0 && (
-                                    <div className="mb-2.5">
-                                      <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[0.68rem] text-[#71717A] flex items-center gap-1">
-                                          <CheckSquare size={10} className={allDone ? 'text-[#16A34A]' : ''} />
-                                          Subtarefas
-                                        </span>
-                                        <span className={cn('text-[0.68rem] font-medium', allDone ? 'text-[#16A34A]' : 'text-[#71717A]')}>
-                                          {doneSubtasks}/{totalSubtasks}
-                                        </span>
-                                      </div>
-                                      <div className="h-1 w-full rounded-full bg-[#F0F0F2] overflow-hidden">
-                                        <div
-                                          className="h-full rounded-full transition-all"
-                                          style={{
-                                            width: `${Math.round((doneSubtasks / totalSubtasks) * 100)}%`,
-                                            background: allDone ? '#16A34A' : color,
-                                          }}
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Separador — mt-auto empurra o rodapé para baixo,
-                                       garantindo metadados sempre ancorados independente
-                                       da altura do conteúdo acima */}
-                                  <div className="h-px bg-[#F0F0F2] mt-auto mb-2.5" />
-
-                                  {/* Metadados (rodapé do card) */}
-                                  <div className="flex flex-col gap-1.5">
-
-                                    {/* Categoria */}
-                                    {task.categoria && (
-                                      <div className="flex items-center gap-1.5 min-w-0">
-                                        <Tag size={11} className="text-[#A1A1AA] flex-shrink-0" />
-                                        <span className="text-[0.72rem] text-[#52525B] truncate">{task.categoria}</span>
-                                      </div>
+                                    {/* Descrição */}
+                                    {task.descricao && stripHtml(task.descricao) && (
+                                      <p
+                                        className="text-[0.75rem] text-[#71717A] leading-relaxed mb-2"
+                                        style={{
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 2,
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden',
+                                        }}
+                                      >
+                                        {stripHtml(task.descricao)}
+                                      </p>
                                     )}
 
-                                    {/* Responsável */}
-                                    {resp && (
-                                      <div className="flex items-center gap-1.5 min-w-0">
-                                        <UserAvatar user={resp as any} size={16} textSize="text-[7px]" />
-                                        <span className="text-[0.72rem] text-[#52525B] truncate">{(resp as any).nome}</span>
-                                      </div>
-                                    )}
-
-                                    {/* Tempo estimado + Prazo */}
-                                    <div className="flex items-center gap-3 mt-0.5">
-                                      {task.tempo_estimado ? (
-                                        <div className="flex items-center gap-1">
-                                          <Clock size={11} className="text-[#A1A1AA] flex-shrink-0" />
-                                          <span className="text-[0.72rem] text-[#52525B]">
-                                            {formatMinutes(task.tempo_estimado)}
+                                    {/* Subtarefas progress */}
+                                    {totalSubtasks > 0 && (
+                                      <div className="mt-1">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-[0.65rem] text-[#71717A] flex items-center gap-1 font-medium">
+                                            <CheckSquare size={10} className={allDone ? 'text-[#16A34A]' : 'text-[#A1A1AA]'} />
+                                            Subtarefas
+                                          </span>
+                                          <span className={cn('text-[0.65rem] font-bold tabular-nums', allDone ? 'text-[#16A34A]' : 'text-[#52525B]')}>
+                                            {doneSubtasks}/{totalSubtasks}
                                           </span>
                                         </div>
-                                      ) : null}
+                                        <div className="h-1 w-full rounded-full bg-[#F0F0F2] overflow-hidden">
+                                          <div
+                                            className="h-full rounded-full transition-all"
+                                            style={{
+                                              width: `${Math.round((doneSubtasks / totalSubtasks) * 100)}%`,
+                                              background: allDone ? '#16A34A' : color,
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
 
+                                  {/* FOOTER — bg sutil pra separar visualmente.
+                                       Avatar do responsável (24px) + nome compacto à esquerda;
+                                       prazo (com destaque se vencido) + tempo à direita. */}
+                                  <div className="mt-auto px-3.5 py-2.5 bg-[#FAFAFA] border-t border-[#F0F0F2] flex items-center gap-2">
+                                    {resp ? (
+                                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                        <UserAvatar user={resp as any} size={22} textSize="text-[9px]" />
+                                        <span className="text-[0.7rem] font-medium text-[#3F3F46] truncate">{(resp as any).nome.split(' ')[0]}</span>
+                                      </div>
+                                    ) : <div className="flex-1" />}
+
+                                    <div className="flex items-center gap-2 flex-shrink-0 text-[0.68rem]">
+                                      {task.tempo_estimado > 0 && (
+                                        <span className="inline-flex items-center gap-0.5 text-[#71717A] tabular-nums">
+                                          <Clock size={10} className="text-[#A1A1AA]" />
+                                          {formatMinutes(task.tempo_estimado)}
+                                        </span>
+                                      )}
                                       {task.data_prazo && (
-                                        <div className="flex items-center gap-1 ml-auto">
-                                          <Calendar size={11} className={cn('flex-shrink-0', overdue ? 'text-[#DC2626]' : 'text-[#A1A1AA]')} />
-                                          <span className={cn(
-                                            'text-[0.72rem]',
-                                            overdue ? 'text-[#DC2626] font-semibold' : 'text-[#52525B]'
-                                          )}>
-                                            {formatDateBR(task.data_prazo)}
-                                          </span>
-                                        </div>
+                                        <span
+                                          className={cn(
+                                            'inline-flex items-center gap-0.5 tabular-nums px-1.5 py-[2px] rounded font-semibold',
+                                            overdue
+                                              ? 'bg-[#FEE2E2] text-[#B91C1C]'
+                                              : 'bg-white text-[#3F3F46] border border-[#E4E4E7]',
+                                          )}
+                                        >
+                                          <Calendar size={10} className={overdue ? 'text-[#DC2626]' : 'text-[#A1A1AA]'} />
+                                          {formatDateBR(task.data_prazo)}
+                                        </span>
                                       )}
                                     </div>
-
                                   </div>
 
                                 </CardContent>
