@@ -61,16 +61,36 @@ export default function ListaPage() {
   const [drawerTask, setDrawerTask] = useState<Task | null>(null)
   const [page, setPage] = useState(1)
 
+  // Mesma ordenação aplicada no Kanban (single source of truth de UX):
+  //   1. Data de vencimento (mais próxima primeiro; sem prazo vai pro final)
+  //   2. Prioridade (Crítica → Alta → Média → Baixa) como desempate
+  //   3. Data de criação (mais antiga primeiro) como último desempate
+  const PRIORITY_ORDER: Record<string, number> = useMemo(
+    () => ({ 'Crítica': 0, 'Alta': 1, 'Média': 2, 'Baixa': 3 }),
+    []
+  )
+
   const filtered = useMemo(() => {
     const s = search.toLowerCase()
-    return tasks.filter(t => {
-      if (filterStatus && t.status !== filterStatus) return false
-      if (filterPriority && t.prioridade !== filterPriority) return false
-      if (filterUser && t.responsavel_id !== filterUser) return false
-      if (s && !t.titulo.toLowerCase().includes(s) && !stripHtml(t.descricao).toLowerCase().includes(s)) return false
-      return true
-    })
-  }, [tasks, search, filterStatus, filterPriority, filterUser])
+    return tasks
+      .filter(t => {
+        if (filterStatus && t.status !== filterStatus) return false
+        if (filterPriority && t.prioridade !== filterPriority) return false
+        if (filterUser && t.responsavel_id !== filterUser) return false
+        if (s && !t.titulo.toLowerCase().includes(s) && !stripHtml(t.descricao).toLowerCase().includes(s)) return false
+        return true
+      })
+      .sort((a, b) => {
+        const aP = a.data_prazo ?? '9999-12-31'
+        const bP = b.data_prazo ?? '9999-12-31'
+        if (aP !== bP) return aP < bP ? -1 : 1
+        const pDiff = (PRIORITY_ORDER[a.prioridade] ?? 9) - (PRIORITY_ORDER[b.prioridade] ?? 9)
+        if (pDiff !== 0) return pDiff
+        const aC = a.criado_em ?? ''
+        const bC = b.criado_em ?? ''
+        return aC < bC ? -1 : 1
+      })
+  }, [tasks, search, filterStatus, filterPriority, filterUser, PRIORITY_ORDER])
 
   // Reset para página 1 sempre que filtros mudarem (caso contrário,
   // o usuário poderia ficar numa página "vazia" após filtrar)
