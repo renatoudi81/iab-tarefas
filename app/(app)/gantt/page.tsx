@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
@@ -252,8 +252,17 @@ function StatusDistribution({ byStatus, total }: { byStatus: Record<Status, numb
 
 /* ─── Página principal ─────────────────────────────────────────── */
 
+/* Helper: soma N dias a uma string YYYY-MM-DD e retorna YYYY-MM-DD.
+   Parse direto para não depender de timezone. */
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  dt.setUTCDate(dt.getUTCDate() + days)
+  return dt.toISOString().split('T')[0]
+}
+
 export default function GanttPage() {
-  const { tasks, isLoading: loadingTasks, isInitialLoad } = useTasks()
+  const { tasks, isLoading: loadingTasks, isInitialLoad, updateTask } = useTasks()
   const { users } = useUsers()
   const { user: authUser } = useAuth()
   const isAdmin = authUser?.perfil === 'Administrador'
@@ -538,8 +547,16 @@ export default function GanttPage() {
                     todayPct={todayPct}
                     offset={offset}
                     width={width}
+                    totalDays={totalDays}
                     color={getColor(task)}
                     onClick={() => setDrawerTask(task)}
+                    onUpdateDates={async (newStart, newEnd) => {
+                      try {
+                        await updateTask(task.id, { data_inicio: newStart, data_prazo: newEnd })
+                      } catch {
+                        // Silencia — useTasks já fará rollback otimista em caso de falha
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -721,11 +738,15 @@ interface TaskRowProps {
   todayPct: number | null
   offset: (date: string) => number
   width: (start: string, end: string) => number
+  totalDays: number
   color: string
   onClick: () => void
+  onUpdateDates: (newStart: string, newEnd: string) => Promise<void>
 }
 
-function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, color, onClick }: TaskRowProps) {
+function TaskRow({
+  task, idx, users, today, ticks, todayPct, offset, width, totalDays, color, onClick, onUpdateDates,
+}: TaskRowProps) {
   const resp = users.find(u => u.id === task.responsavel_id)
   const pct = task.tempo_estimado > 0
     ? Math.min(100, (task.tempo_gasto_total / task.tempo_estimado) * 100)
@@ -745,9 +766,87 @@ function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, colo
   const catColor = task.categoria ? getCategoryColor(task.categoria) : null
   const shortId = task.id.slice(-5).toUpperCase()
 
+  /* ─── Drag / Resize ─────────────────────────────────────────── */
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  // Drag state: durante o pointer-down/move guardamos o offset em dias
+  // já com snap (Math.round). Setamos null ao soltar.
+  const [drag, setDrag] = useState<{
+    mode: 'move' | 'resize-end'
+    startX: number
+    deltaDays: number
+  } | null>(null)
+  // Flag pra suprimir o onClick que dispararia logo após um drag real
+  const wasDraggingRef = useRef(false)
+
+  // Atalho: dias visíveis na barra com o delta aplicado
+  const effectiveStart = drag ? addDays(task.data_inicio!, drag.mode === 'move' ? drag.deltaDays : 0) : task.data_inicio!
+  let effectiveEnd = drag
+    ? (drag.mode === 'move'
+        ? addDays(task.data_prazo!, drag.deltaDays)
+        : addDays(task.data_prazo!, drag.deltaDays))
+    : task.data_prazo!
+  // resize-end não pode ficar antes do start
+  if (drag?.mode === 'resize-end' && effectiveEnd < effectiveStart) {
+    effectiveEnd = effectiveStart
+  }
+
+  const startPointerDown = (mode: 'move' | 'resize-end') => (e: React.PointerEvent) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    setDrag({ mode, startX: e.clientX, deltaDays: 0 })
+  }
+
+  useEffect(() => {
+    if (!drag) return
+    const trackWidthPx = trackRef.current?.offsetWidth || 1
+    const pixelsPerDay = trackWidthPx / totalDays
+
+    const onMove = (e: PointerEvent) => {
+      const dx = e.clientX - drag.startX
+      const deltaDays = Math.round(dx / pixelsPerDay)
+      if (deltaDays !== drag.deltaDays) {
+        setDrag({ ...drag, deltaDays })
+      }
+    }
+    const onUp = () => {
+      const { mode, deltaDays } = drag
+      if (deltaDays === 0) {
+        setDrag(null)
+        return
+      }
+      // Marca que houve drag pra evitar abrir o Drawer no mesmo gesto
+      wasDraggingRef.current = true
+      setTimeout(() => { wasDraggingRef.current = false }, 100)
+
+      if (mode === 'move') {
+        const ns = addDays(task.data_inicio!, deltaDays)
+        const ne = addDays(task.data_prazo!, deltaDays)
+        onUpdateDates(ns, ne).finally(() => setDrag(null))
+      } else {
+        // resize-end: muda só o prazo, garantindo ne >= start
+        let ne = addDays(task.data_prazo!, deltaDays)
+        if (ne < task.data_inicio!) ne = task.data_inicio!
+        onUpdateDates(task.data_inicio!, ne).finally(() => setDrag(null))
+      }
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [drag, totalDays, task.data_inicio, task.data_prazo, onUpdateDates])
+
+  const handleRowClick = () => {
+    if (wasDraggingRef.current) return
+    onClick()
+  }
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleRowClick}
       className="flex items-center gap-0 mb-2.5 rounded-lg cursor-pointer hover:bg-[#FAFAFA] transition-colors py-1 -my-1"
     >
       {/* Coluna esquerda — info da tarefa */}
@@ -787,7 +886,7 @@ function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, colo
       </div>
 
       {/* Bar track */}
-      <div className="flex-1 relative h-10">
+      <div ref={trackRef} className="flex-1 relative h-10">
         {/* Linhas verticais (grid) */}
         {ticks.map((w, i) => (
           <div
@@ -806,33 +905,41 @@ function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, colo
         {/* Track de fundo */}
         <div className="absolute inset-[10px_0] bg-[#F7F8FA] rounded-md" />
 
-        {/* Barra — Tooltip rico no hover */}
-        <Tooltip delayDuration={300}>
+        {/* Barra — Tooltip rico + drag/resize */}
+        <Tooltip delayDuration={drag ? 9999 : 300}>
           <TooltipTrigger asChild>
             <motion.div
+              onPointerDown={startPointerDown('move')}
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: `${width(task.data_inicio!, task.data_prazo!)}%`, opacity: 1 }}
-              transition={{ delay: Math.min(idx * 0.03, 0.5), duration: 0.4, ease: 'easeOut' }}
+              animate={{
+                width: `${width(effectiveStart, effectiveEnd)}%`,
+                opacity: drag ? 0.85 : 1,
+              }}
+              transition={drag ? { duration: 0 } : { delay: Math.min(idx * 0.03, 0.5), duration: 0.4, ease: 'easeOut' }}
               style={{
                 position: 'absolute',
-                left: `${offset(task.data_inicio!)}%`,
+                left: `${offset(effectiveStart)}%`,
                 top: '7px',
                 bottom: '7px',
                 background: color + 'ee',
                 borderRadius: '6px',
-                zIndex: 2,
+                zIndex: drag ? 5 : 2,
                 overflow: 'hidden',
+                cursor: drag ? 'grabbing' : 'grab',
+                touchAction: 'none',
                 boxShadow: overdue
                   ? `0 0 0 1.5px ${color}, 0 0 0 4px rgba(220,38,38,0.18)`
                   : isNearDue
                     ? `0 0 0 1.5px ${color}, 0 0 0 3px rgba(217,119,6,0.20)`
-                    : `0 0 0 1.5px ${color}`,
-                animation: overdue ? 'gantt-overdue-pulse 2s ease-in-out infinite' : undefined,
+                    : drag
+                      ? `0 0 0 2px ${color}, 0 6px 16px -4px rgba(15,23,42,0.25)`
+                      : `0 0 0 1.5px ${color}`,
+                animation: overdue && !drag ? 'gantt-overdue-pulse 2s ease-in-out infinite' : undefined,
               }}
             >
               {pct > 0 && (
                 <div
-                  className="absolute left-0 top-0 bottom-0 rounded-[inherit]"
+                  className="absolute left-0 top-0 bottom-0 rounded-[inherit] pointer-events-none"
                   style={{
                     width: `${pct}%`,
                     background: isOver
@@ -841,11 +948,22 @@ function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, colo
                   }}
                 />
               )}
-              <div className="relative z-10 flex items-center h-full pl-1.5 gap-1">
+              <div className="relative z-10 flex items-center h-full pl-1.5 gap-1 pointer-events-none">
                 <span className="text-[0.66rem] font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
-                  {task.status} {pct > 0 && `· ${Math.round(pct)}%`}
+                  {drag
+                    ? (drag.mode === 'move'
+                        ? `${formatDateBR(effectiveStart)} → ${formatDateBR(effectiveEnd)}`
+                        : `Novo prazo: ${formatDateBR(effectiveEnd)}`)
+                    : `${task.status} ${pct > 0 ? `· ${Math.round(pct)}%` : ''}`}
                 </span>
               </div>
+              {/* Handle de resize na extremidade direita */}
+              <div
+                onPointerDown={startPointerDown('resize-end')}
+                className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize z-20 hover:bg-white/30 transition-colors"
+                style={{ touchAction: 'none' }}
+                title="Arrastar para alterar prazo"
+              />
             </motion.div>
           </TooltipTrigger>
           <TooltipContent
