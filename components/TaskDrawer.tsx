@@ -102,7 +102,7 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
           )}
         </div>
         <div>
-          <SectionLabel>ResponsÃ¡vel</SectionLabel>
+          <SectionLabel>Responsável</SectionLabel>
           {resp ? (
             <div className="flex items-center gap-2">
               <Avatar className="w-7 h-7 shrink-0">
@@ -118,7 +118,7 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
           ) : <span className="text-[#71717A]">â€”</span>}
         </div>
         <div>
-          <SectionLabel>Data InÃ­cio</SectionLabel>
+          <SectionLabel>Data Início</SectionLabel>
           <div className="text-[#71717A]">{fmtDate(task.data_inicio)}</div>
         </div>
         <div>
@@ -226,7 +226,7 @@ function SubtarefasTab({ taskId }: { taskId: string }) {
       {/* Progress */}
       {totalCount > 0 && (
         <div className="text-[0.8125rem] text-[#71717A] font-medium">
-          {completedCount} de {totalCount} concluÃ­da{totalCount !== 1 ? 's' : ''}
+          {completedCount} de {totalCount} concluída{totalCount !== 1 ? 's' : ''}
         </div>
       )}
 
@@ -332,7 +332,7 @@ function ComentariosTab({ taskId }: { taskId: string }) {
       ) : (
         <div className="flex flex-col gap-3">
           {comments.length === 0 && (
-            <div className="text-[#71717A] text-sm">Nenhum comentÃ¡rio ainda.</div>
+            <div className="text-[#71717A] text-sm">Nenhum comentário ainda.</div>
           )}
           <AnimatePresence>
             {comments.map(c => (
@@ -384,11 +384,11 @@ function ComentariosTab({ taskId }: { taskId: string }) {
         </div>
       )}
 
-      {/* Adicionar comentÃ¡rio */}
+      {/* Adicionar comentário */}
       <div className="flex flex-col gap-2">
         <Textarea
           rows={3}
-          placeholder="Escreva um comentÃ¡rio..."
+          placeholder="Escreva um comentário..."
           value={texto}
           onChange={e => setTexto(e.target.value)}
           disabled={sending}
@@ -466,13 +466,13 @@ function TempoTab({ task }: { task: Task }) {
         </Button>
       </div>
 
-      {/* LanÃ§amentos */}
+      {/* Lançamentos */}
       <div>
-        <SectionLabel>LanÃ§amentos ({taskEntries.length})</SectionLabel>
+        <SectionLabel>Lançamentos ({taskEntries.length})</SectionLabel>
         {isLoading ? (
           <div className="text-[#71717A] text-sm">Carregando...</div>
         ) : taskEntries.length === 0 ? (
-          <div className="text-[#71717A] text-sm">Nenhum lanÃ§amento registrado.</div>
+          <div className="text-[#71717A] text-sm">Nenhum lançamento registrado.</div>
         ) : (
           <div className="flex flex-col gap-1.5">
             <AnimatePresence>
@@ -531,7 +531,7 @@ function HistoricoTab({ taskId }: { taskId: string }) {
       {isLoading ? (
         <div className="text-[#71717A] text-sm">Carregando...</div>
       ) : history.length === 0 ? (
-        <div className="text-[#71717A] text-sm">Nenhuma alteraÃ§Ã£o registrada.</div>
+        <div className="text-[#71717A] text-sm">Nenhuma alteração registrada.</div>
       ) : (
         <AnimatePresence>
           {history.map((h, idx) => (
@@ -654,9 +654,9 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
                 {([
                   { id: 'detalhes', label: 'Detalhes' },
                   { id: 'subtarefas', label: 'Subtarefas' },
-                  { id: 'comentarios', label: 'ComentÃ¡rios' },
+                  { id: 'comentarios', label: 'Comentários' },
                   { id: 'tempo', label: 'Tempo' },
-                  { id: 'historico', label: 'HistÃ³rico' },
+                  { id: 'historico', label: 'Histórico' },
                 ] as { id: DrawerTab; label: string }[]).map(tab => (
                   <TabsTrigger
                     key={tab.id}
