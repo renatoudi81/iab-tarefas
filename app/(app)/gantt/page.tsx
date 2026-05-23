@@ -11,7 +11,7 @@ import type { Task, Status } from '@/types'
 import {
   GanttChart, AlertTriangle, Clock, AlertCircle, CheckCircle2,
   Activity, TrendingUp, Eye, EyeOff, ChevronDown, ChevronRight,
-  Users, Tag as TagIcon, Layers,
+  Users, Tag as TagIcon, Layers, ZoomIn, ZoomOut,
 } from 'lucide-react'
 import {
   Tooltip, TooltipContent, TooltipTrigger,
@@ -26,8 +26,11 @@ import { getCategoryColor } from '@/lib/category-color'
 import TaskDrawer from '@/components/TaskDrawer'
 
 type ColorBy = 'status' | 'prioridade'
-type Granularity = 'week' | 'fortnight' | 'month'
+type Granularity = 'day' | 'week' | 'fortnight' | 'month'
 type GroupBy = 'none' | 'responsavel' | 'status' | 'categoria'
+
+// Ordem do mais zoom-in pro mais zoom-out — usada pelos botões +/-
+const GRANULARITY_ORDER: Granularity[] = ['day', 'week', 'fortnight', 'month']
 
 /**
  * Gera ticks da régua do Gantt conforme granularidade.
@@ -55,6 +58,23 @@ function getTicks(
       const label = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
       pushTick(d, label.replace('.', '').replace(' de ', '/'))
       d.setMonth(d.getMonth() + 1)
+    }
+    return ticks
+  }
+
+  // 'day': calcula step adaptativo pra não poluir a régua quando o
+  // range total é grande. Limite ~40 ticks. Em ranges curtos (<14 dias)
+  // mostra dia a dia. Em médios, a cada 2-3 dias. Em longos, semanal.
+  if (granularity === 'day') {
+    const totalDays = (end.getTime() - start.getTime()) / 86400000 + 1
+    const stepDay = Math.max(1, Math.ceil(totalDays / 40))
+    const d = new Date(start)
+    while (d <= end) {
+      pushTick(
+        d,
+        d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
+      )
+      d.setDate(d.getDate() + stepDay)
     }
     return ticks
   }
@@ -648,16 +668,44 @@ function PageHeader(p: PageHeaderProps) {
 
       {/* Toolbar de filtros */}
       <div className="mb-5 flex items-center gap-2 flex-wrap">
-        <Select value={p.granularity} onValueChange={v => p.setGranularity(v as Granularity)}>
-          <SelectTrigger className="w-[120px] h-9 text-sm border-[#E4E4E7] bg-white">
-            <SelectValue placeholder="Escala" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="week">Semana</SelectItem>
-            <SelectItem value="fortnight">Quinzena</SelectItem>
-            <SelectItem value="month">Mês</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Escala + botões de zoom (in/out) inline */}
+        <div className="inline-flex items-center gap-0 h-9 rounded-lg border border-[#E4E4E7] bg-white overflow-hidden">
+          <button
+            type="button"
+            onClick={() => {
+              const i = GRANULARITY_ORDER.indexOf(p.granularity)
+              if (i > 0) p.setGranularity(GRANULARITY_ORDER[i - 1])
+            }}
+            disabled={p.granularity === 'day'}
+            title="Aumentar zoom (escala menor)"
+            className="h-9 w-8 inline-flex items-center justify-center text-[#52525B] hover:bg-[#F4F4F5] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-0 bg-transparent transition-colors"
+          >
+            <ZoomIn size={14} />
+          </button>
+          <Select value={p.granularity} onValueChange={v => p.setGranularity(v as Granularity)}>
+            <SelectTrigger className="w-[105px] h-9 text-sm border-0 rounded-none focus:ring-0 shadow-none">
+              <SelectValue placeholder="Escala" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Dia</SelectItem>
+              <SelectItem value="week">Semana</SelectItem>
+              <SelectItem value="fortnight">Quinzena</SelectItem>
+              <SelectItem value="month">Mês</SelectItem>
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            onClick={() => {
+              const i = GRANULARITY_ORDER.indexOf(p.granularity)
+              if (i < GRANULARITY_ORDER.length - 1) p.setGranularity(GRANULARITY_ORDER[i + 1])
+            }}
+            disabled={p.granularity === 'month'}
+            title="Diminuir zoom (escala maior)"
+            className="h-9 w-8 inline-flex items-center justify-center text-[#52525B] hover:bg-[#F4F4F5] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-0 bg-transparent transition-colors"
+          >
+            <ZoomOut size={14} />
+          </button>
+        </div>
 
         <Select value={p.colorBy} onValueChange={v => p.setColorBy(v as ColorBy)}>
           <SelectTrigger className="w-[140px] h-9 text-sm border-[#E4E4E7] bg-white">
