@@ -387,9 +387,11 @@ export default function DashboardPage() {
     const end = new Date(dateTo + 'T00:00:00')
     let days = 0
     while (cur <= end && days < 31) {
-      const ds = cur.toISOString().split('T')[0]
+      const ds = cur.toISOString().split('T')[0] // YYYY-MM-DD
+      // Label para o eixo X em DD/MM (padrão brasileiro)
+      const [, mm, dd] = ds.split('-')
       data.push({
-        label: ds.slice(5),
+        label: `${dd}/${mm}`,
         Concluídas: tasks.filter(t => t.data_conclusao?.startsWith(ds)).length,
         Criadas: tasks.filter(t => t.criado_em.startsWith(ds)).length,
         Horas: Math.round((entries.filter(e => e.data === ds).reduce((s, e) => s + e.duracao, 0) / 60) * 10) / 10,
