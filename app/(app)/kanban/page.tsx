@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, formatDateBR } from '@/types'
 import type { Status, Task } from '@/types'
-import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -14,6 +14,11 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 import TaskModal from '@/components/TaskModal'
 import { stripHtml } from '@/components/ui/RichTextEditor'
 import { getCategoryColor } from '@/lib/category-color'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
@@ -45,6 +50,15 @@ export default function KanbanPage() {
   const { users } = useUsers()
   const { toast } = useToast()
   const { confirm } = useConfirm()
+  const { user: authUser } = useAuth()
+  const isAdmin = authUser?.perfil === 'Administrador'
+
+  // Filtros — date range (data_prazo) e usuário responsável (admin-only)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [filterUserId, setFilterUserId] = useState<string>('all')
+  const hasFilter = !!dateFrom || !!dateTo || filterUserId !== 'all'
+  const clearFilters = () => { setDateFrom(''); setDateTo(''); setFilterUserId('all') }
 
   // Modal de criar/editar tarefa
   const [modal, setModal] = useState<{
@@ -84,16 +98,33 @@ export default function KanbanPage() {
     }
   }, [swrTasks])
 
+  // Aplica filtros ANTES de dividir em colunas — assim cada coluna do
+  // Kanban só mostra o subconjunto filtrado e os contadores refletem o
+  // que de fato está visível.
+  const filteredTasks = useMemo(() => {
+    return localTasks.filter(t => {
+      // Filtro por responsável (admin escolhe; não-admin sempre vê só
+      // o que a API retorna — que já é o próprio)
+      if (filterUserId !== 'all' && t.responsavel_id !== filterUserId) return false
+      // Filtro por data: usamos data_prazo como a referência principal.
+      // Tarefas sem prazo são incluídas só quando NÃO há range definido.
+      if ((dateFrom || dateTo) && !t.data_prazo) return false
+      if (dateFrom && t.data_prazo && t.data_prazo < dateFrom) return false
+      if (dateTo && t.data_prazo && t.data_prazo > dateTo) return false
+      return true
+    })
+  }, [localTasks, filterUserId, dateFrom, dateTo])
+
   const columns = useMemo(() =>
     COLUMNS.map(status => {
-      const col = sortTasks(localTasks.filter(t => t.status === status))
+      const col = sortTasks(filteredTasks.filter(t => t.status === status))
       return {
         status,
         tasks: col,
         totalMin: col.reduce((s, t) => s + (t.tempo_estimado || 0), 0),
       }
     }),
-    [localTasks]
+    [filteredTasks]
   )
 
   const onDragEnd = (result: DropResult) => {
@@ -136,8 +167,14 @@ export default function KanbanPage() {
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
               <LayoutGrid size={11} strokeWidth={2.5} />
-              <span className="font-mono tabular-nums">{localTasks.length}</span> cards
+              <span className="font-mono tabular-nums">{filteredTasks.length}</span> cards
             </span>
+            {hasFilter && filteredTasks.length !== localTasks.length && (
+              <span className="inline-flex items-center text-[0.7rem] font-medium text-[#71717A] bg-[#F4F4F5] px-2 py-0.5 rounded-full">
+                <span className="font-mono tabular-nums">{localTasks.length}</span>
+                <span className="ml-1">no total</span>
+              </span>
+            )}
           </div>
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
             Kanban
@@ -153,6 +190,61 @@ export default function KanbanPage() {
           <Plus size={14} strokeWidth={2.5} />
           Nova Tarefa
         </MagneticButton>
+      </div>
+
+      {/*
+        Toolbar de filtros — mesma altura (h-9) e visual weight do padrão
+        usado em Lista e Relatórios (consistência aesthetic-usability).
+        Date range filtra por data_prazo; user picker só aparece pra admin
+        (não-admin já vê apenas as próprias tarefas via filtro server-side).
+      */}
+      <div className="mb-5 flex items-center gap-2 flex-wrap">
+        <div className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#E4E4E7] bg-white">
+          <Calendar size={13} className="text-[#A1A1AA]" />
+          <span className="text-[0.75rem] text-[#71717A] font-medium hidden sm:inline">De</span>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+          />
+          <span className="text-[0.75rem] text-[#71717A] font-medium">até</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+          />
+        </div>
+
+        {/* User picker — só admin pode filtrar por outras pessoas */}
+        {isAdmin && users.length > 1 && (
+          <Select value={filterUserId} onValueChange={setFilterUserId}>
+            <SelectTrigger className="h-9 w-[180px] text-sm bg-white">
+              <SelectValue placeholder="Responsável..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os responsáveis</SelectItem>
+              {users
+                .slice()
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                .map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {hasFilter && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[0.78rem] font-medium text-[#52525B] border border-[#E4E4E7] bg-white hover:bg-[#F4F4F5] transition-colors cursor-pointer"
+          >
+            <X size={13} />
+            Limpar filtros
+          </button>
+        )}
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>

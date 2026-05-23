@@ -17,6 +17,8 @@ import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 import { stripHtml } from '@/components/ui/RichTextEditor'
 import { Pagination } from '@/components/ui/Pagination'
 import { getCategoryColor } from '@/lib/category-color'
+import { useAuth } from '@/contexts/AuthContext'
+import { Calendar as CalendarIcon } from 'lucide-react'
 
 const PAGE_SIZE = 20
 
@@ -53,11 +55,15 @@ export default function ListaPage() {
   const { categories } = useCategories()
   const { toast } = useToast()
   const { confirm } = useConfirm()
+  const { user: authUser } = useAuth()
+  const isAdmin = authUser?.perfil === 'Administrador'
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPriority, setFilterPriority] = useState('')
   const [filterUser, setFilterUser] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [modal, setModal] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null })
   const [drawerTask, setDrawerTask] = useState<Task | null>(null)
   const [page, setPage] = useState(1)
@@ -94,6 +100,10 @@ export default function ListaPage() {
         if (filterStatus && t.status !== filterStatus) return false
         if (filterPriority && t.prioridade !== filterPriority) return false
         if (filterUser && t.responsavel_id !== filterUser) return false
+        // Date range — filtra por data_prazo (campo principal pra urgência)
+        if ((dateFrom || dateTo) && !t.data_prazo) return false
+        if (dateFrom && t.data_prazo && t.data_prazo < dateFrom) return false
+        if (dateTo && t.data_prazo && t.data_prazo > dateTo) return false
         if (s && !t.titulo.toLowerCase().includes(s) && !stripHtml(t.descricao).toLowerCase().includes(s)) return false
         return true
       })
@@ -116,13 +126,13 @@ export default function ListaPage() {
         const bC = b.criado_em ?? ''
         return aC < bC ? -1 : 1
       })
-  }, [tasks, search, filterStatus, filterPriority, filterUser, STATUS_ORDER, PRIORITY_ORDER])
+  }, [tasks, search, filterStatus, filterPriority, filterUser, dateFrom, dateTo, STATUS_ORDER, PRIORITY_ORDER])
 
   // Reset para página 1 sempre que filtros mudarem (caso contrário,
   // o usuário poderia ficar numa página "vazia" após filtrar)
   useEffect(() => {
     setPage(1)
-  }, [search, filterStatus, filterPriority, filterUser])
+  }, [search, filterStatus, filterPriority, filterUser, dateFrom, dateTo])
 
   // Slice da página atual
   const paginated = useMemo(() => {
@@ -152,7 +162,7 @@ export default function ListaPage() {
     }
   }
 
-  const hasFilters = filterStatus || filterPriority || filterUser || search
+  const hasFilters = filterStatus || filterPriority || filterUser || search || dateFrom || dateTo
 
   return (
     <div>
@@ -218,21 +228,52 @@ export default function ListaPage() {
           </SelectContent>
         </Select>
 
-        <Select value={filterUser || 'all'} onValueChange={v => setFilterUser(v === 'all' ? '' : v)}>
-          <SelectTrigger className="h-9 w-auto min-w-[165px] text-sm border-[#E4E4E7] bg-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os responsáveis</SelectItem>
-            {users.map(u => <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {/* Filtro por responsável — só admin pode ver tarefas de outros.
+            Não-admin já recebe da API apenas as próprias tarefas, então
+            esse filtro perde a função pra ele. */}
+        {isAdmin && users.length > 1 && (
+          <Select value={filterUser || 'all'} onValueChange={v => setFilterUser(v === 'all' ? '' : v)}>
+            <SelectTrigger className="h-9 w-auto min-w-[165px] text-sm border-[#E4E4E7] bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os responsáveis</SelectItem>
+              {users
+                .slice()
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                .map(u => <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Date range — filtra por data_prazo. Mesma estrutura do Kanban
+            (visual weight equivalente: pill com border e bg-white, h-9). */}
+        <div className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#E4E4E7] bg-white">
+          <CalendarIcon size={13} className="text-[#A1A1AA]" />
+          <span className="text-[0.75rem] text-[#71717A] font-medium hidden sm:inline">De</span>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+          />
+          <span className="text-[0.75rem] text-[#71717A] font-medium">até</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            className="h-7 w-[130px] border-0 px-1 text-[0.8rem] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+          />
+        </div>
         {hasFilters && (
           <Button
             variant="ghost"
             size="sm"
             className="gap-1 text-red-500 hover:text-red-700"
-            onClick={() => { setSearch(''); setFilterStatus(''); setFilterPriority(''); setFilterUser('') }}
+            onClick={() => {
+              setSearch(''); setFilterStatus(''); setFilterPriority(''); setFilterUser('')
+              setDateFrom(''); setDateTo('')
+            }}
           >
             <X size={13} /> Limpar
           </Button>
