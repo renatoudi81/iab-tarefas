@@ -24,6 +24,7 @@ import { Progress } from '@/components/ui/progress'
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { SpotlightCard } from '@/components/ui/SpotlightCard'
+import { cn } from '@/lib/utils'
 
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
@@ -534,16 +535,30 @@ export default function RelatoriosPage() {
                         : pct >= 40
                           ? '[&>div]:bg-[#D97706]'
                           : '[&>div]:bg-[#2563EB]'
+                    // Von Restorff: o usuário logado aparece destacado com
+                    // ring azul + badge "Você" — facilita identificar a si
+                    // mesmo no ranking sem precisar varrer todos os nomes
+                    const isSelf = authUser?.id === user.id
                     return (
                       <li
                         key={user.id}
-                        className="group flex gap-4 p-4 rounded-xl border border-[#EDEEF1] bg-white hover:border-[#2563EB]/30 hover:shadow-[0_8px_24px_-12px_rgba(37,99,235,0.18)] transition-all"
+                        className={cn(
+                          'group flex gap-4 p-4 rounded-xl border bg-white transition-all',
+                          isSelf
+                            ? 'border-[#2563EB] ring-2 ring-[#2563EB]/15 shadow-[0_8px_24px_-12px_rgba(37,99,235,0.22)]'
+                            : 'border-[#EDEEF1] hover:border-[#2563EB]/30 hover:shadow-[0_8px_24px_-12px_rgba(37,99,235,0.18)]',
+                        )}
                       >
                         <UserAvatar user={user} size={40} textSize="text-[13px]" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline justify-between gap-2 mb-1">
-                            <span className="font-semibold text-[0.92rem] text-[#111111] truncate">
+                            <span className="font-semibold text-[0.92rem] text-[#111111] truncate inline-flex items-center gap-2">
                               {user.nome}
+                              {isSelf && (
+                                <span className="text-[0.62rem] font-bold uppercase tracking-wider bg-[#EFF6FF] text-[#2563EB] px-1.5 py-0.5 rounded">
+                                  Você
+                                </span>
+                              )}
                             </span>
                             <span
                               className="text-[0.78rem] font-bold tabular-nums flex-shrink-0"

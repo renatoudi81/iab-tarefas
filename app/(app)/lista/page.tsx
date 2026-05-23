@@ -272,7 +272,17 @@ export default function ListaPage() {
                       damping: 22,
                       delay: idx * 0.025,
                     }}
-                    className="border-b border-[#F4F4F5] transition-colors hover:bg-[#FAFAFA]"
+                    className={cn(
+                      'border-b border-[#F4F4F5] transition-colors',
+                      // Von Restorff: tarefas vencidas têm bg vermelho MUITO
+                      // sutil pra serem reconhecidas em uma varredura visual,
+                      // sem competir com o conteúdo. Apenas as vencidas — todas
+                      // as demais linhas ficam neutras (regra Von Restorff:
+                      // contraste com o entorno).
+                      overdue
+                        ? 'bg-[#FEF2F2]/60 hover:bg-[#FEF2F2]'
+                        : 'hover:bg-[#FAFAFA]',
+                    )}
                   >
                     {/* Tarefa */}
                     <TableCell className="py-3 max-w-[300px]">

@@ -225,6 +225,12 @@ export default function KanbanPage() {
                         const allDone = totalSubtasks > 0 && doneSubtasks === totalSubtasks
                         const shortId = task.id.slice(-5).toUpperCase()
                         const prioColor = PRIORITY_COLORS[task.prioridade]
+                        // Von Restorff: tarefas Críticas têm borda esquerda
+                        // vermelha grossa para se destacar das demais (que ficam
+                        // com border padrão). O efeito sobrevive ao colorblind
+                        // check porque é também uma diferença de ESPESSURA, não
+                        // só de cor.
+                        const isCritica = task.prioridade === 'Crítica'
 
                         return (
                           <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -234,7 +240,10 @@ export default function KanbanPage() {
                                 {...drag.draggableProps}
                                 {...drag.dragHandleProps}
                                 className={cn(
-                                  'bg-white border border-[#E8E8EC] rounded-lg min-h-[200px]',
+                                  'bg-white border rounded-lg min-h-[200px]',
+                                  isCritica
+                                    ? 'border-[#E8E8EC] border-l-[3px] border-l-[#DC2626]'
+                                    : 'border-[#E8E8EC]',
                                   !dragSnapshot.isDragging && 'card-lift',
                                   dragSnapshot.isDragging && 'opacity-95 rotate-[0.8deg]'
                                 )}
@@ -242,7 +251,9 @@ export default function KanbanPage() {
                                   cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
                                   boxShadow: dragSnapshot.isDragging
                                     ? '0 8px 28px rgba(0,0,0,0.14)'
-                                    : '0 1px 2px rgba(0,0,0,0.04)',
+                                    : isCritica
+                                      ? '0 2px 6px -1px rgba(220,38,38,0.12), 0 1px 2px rgba(0,0,0,0.04)'
+                                      : '0 1px 2px rgba(0,0,0,0.04)',
                                   ...drag.draggableProps.style,
                                 }}
                               >
