@@ -17,6 +17,11 @@ import {
 import { formatDateBR } from '@/types'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { useUsers } from '@/hooks/useUsers'
+import { useAuth } from '@/contexts/AuthContext'
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
 
@@ -92,6 +97,22 @@ function BentoTile({
 }
 
 // ──────────────────────────────────────────────────────────────────────
+/* Hint pequeno mostrando delta % vs período anterior (↑ +12% ou ↓ -8%).
+   Quando não há comparação significativa (sem dados anteriores), mostra
+   o fallback (texto informativo padrão). */
+function DeltaHint({ delta, fallback }: { delta: number; fallback: React.ReactNode }) {
+  if (delta === 0) return <>{fallback}</>
+  const isUp = delta > 0
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={isUp ? 'text-[#16A34A]' : 'text-[#DC2626]'}>
+        {isUp ? '↑' : '↓'} {Math.abs(delta)}%
+      </span>
+      <span className="text-[#A1A1AA]">vs período anterior</span>
+    </span>
+  )
+}
+
 // KPI — tipografia hierárquica via peso + cor (não via tamanho gigante).
 // Numbers em font-mono (Geist Mono) com tabular-nums.
 // ──────────────────────────────────────────────────────────────────────
@@ -105,7 +126,7 @@ function Kpi({
   label: string
   value: string | number
   icon: React.ElementType
-  hint?: string
+  hint?: React.ReactNode
   accentColor: string
   accentBg: string
   danger?: boolean
@@ -349,9 +370,26 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { tasks, isLoading: loadingTasks } = useTasks()
-  const { entries } = useTimeEntries()
+  const { tasks: allTasks, isLoading: loadingTasks } = useTasks()
+  const { entries: allEntries } = useTimeEntries()
   const { users } = useUsers()
+  const { user: authUser } = useAuth()
+  const isAdmin = authUser?.perfil === 'Administrador'
+
+  // Filtro por usuário (admin escolhe; não-admin sempre vê o próprio)
+  const [filterUserId, setFilterUserId] = useState<string>('all')
+  const effectiveUserId = isAdmin ? filterUserId : (authUser?.id || 'all')
+
+  // Escopo: filtra tudo pelo usuário escolhido. Filtro server-side já
+  // restringe não-admins; aqui o admin alterna entre "Todos" e indivíduo.
+  const tasks = useMemo(() => {
+    if (effectiveUserId === 'all') return allTasks
+    return allTasks.filter(t => t.responsavel_id === effectiveUserId)
+  }, [allTasks, effectiveUserId])
+  const entries = useMemo(() => {
+    if (effectiveUserId === 'all') return allEntries
+    return allEntries.filter(e => e.usuario_id === effectiveUserId)
+  }, [allEntries, effectiveUserId])
 
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 6)
@@ -368,14 +406,43 @@ export default function DashboardPage() {
     const done = tasks.filter(t => t.status === STATUSES.DONE).length
     const total = tasks.length
     const productivity = total > 0 ? Math.round((done / total) * 100) : 0
-    // Horas: prioriza time_entries no período (mais granular). Se não há
-    // lançamentos, cai pro tempo_gasto_total das tarefas (campo editado
-    // direto no modal) — assim o card nunca fica zerado quando há dados.
     const minutesFromEntries = periodEntries.reduce((s, e) => s + e.duracao, 0)
     const minutesFromTasks = tasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
     const minutes = minutesFromEntries > 0 ? minutesFromEntries : minutesFromTasks
     const hours = Math.round((minutes / 60) * 10) / 10
-    // Próximos vencimentos (7 dias) — não-concluídas com prazo entre hoje e D+7
+
+    // ──── Comparação com período anterior (mesma duração)
+    const periodMs = (new Date(dateTo).getTime() - new Date(dateFrom).getTime()) || 86400000
+    const periodDays = Math.round(periodMs / 86400000) + 1
+    const prevFrom = new Date(new Date(dateFrom).getTime() - periodDays * 86400000)
+      .toISOString().split('T')[0]
+    const prevTo = new Date(new Date(dateFrom).getTime() - 86400000).toISOString().split('T')[0]
+    const prevInPeriod = tasks.filter(t =>
+      t.criado_em.slice(0, 10) >= prevFrom && t.criado_em.slice(0, 10) <= prevTo,
+    ).length
+    const prevEntries = entries.filter(e => e.data >= prevFrom && e.data <= prevTo)
+    const prevMinutes = prevEntries.reduce((s, e) => s + e.duracao, 0)
+    const prevHours = Math.round((prevMinutes / 60) * 10) / 10
+
+    const tasksDelta = prevInPeriod > 0
+      ? Math.round(((inPeriod.length - prevInPeriod) / prevInPeriod) * 100)
+      : (inPeriod.length > 0 ? 100 : 0)
+    const hoursDelta = prevHours > 0
+      ? Math.round(((hours - prevHours) / prevHours) * 100)
+      : (hours > 0 ? 100 : 0)
+
+    // ──── Velocidade — tarefas concluídas/semana (últimas 4 semanas)
+    const fourWeeksAgo = new Date()
+    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
+    const fourWeeksAgoStr = fourWeeksAgo.toISOString().split('T')[0]
+    const recentDone = tasks.filter(t =>
+      t.status === STATUSES.DONE &&
+      t.data_conclusao &&
+      t.data_conclusao >= fourWeeksAgoStr
+    ).length
+    const velocity = Math.round((recentDone / 4) * 10) / 10
+
+    // ──── Próximos vencimentos / Top atrasadas
     const todayDate = new Date(new Date().toISOString().split('T')[0])
     const inSevenDays = new Date(todayDate)
     inSevenDays.setDate(inSevenDays.getDate() + 7)
@@ -387,7 +454,6 @@ export default function DashboardPage() {
       .sort((a, b) => (a.data_prazo! < b.data_prazo! ? -1 : 1))
       .slice(0, 5)
 
-    // Top 5 atrasadas (maior atraso primeiro)
     const topOverdue = tasks
       .filter(t => t.status === 'Atrasada' && t.data_prazo)
       .map(t => ({
@@ -407,6 +473,9 @@ export default function DashboardPage() {
       donePct: productivity,
       doneCount: done,
       hoursSource: minutesFromEntries > 0 ? 'entries' : 'tasks',
+      tasksDelta,
+      hoursDelta,
+      velocity,
       upcoming,
       topOverdue,
     }
@@ -470,34 +539,44 @@ export default function DashboardPage() {
             Acompanhe a produtividade da equipe e os indicadores do período selecionado.
           </p>
         </div>
-        <div className="flex items-center gap-1 border border-[#E4E4E7] rounded-lg bg-white px-3 h-9 text-sm text-[#3F3F46] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <input
-            type="date"
-            className="border-0 bg-transparent text-sm text-[#3F3F46] outline-none cursor-pointer font-mono tabular-nums"
-            style={{ colorScheme: 'light' }}
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-          />
-          <span className="text-[#A1A1AA] select-none px-1">→</span>
-          <input
-            type="date"
-            className="border-0 bg-transparent text-sm text-[#3F3F46] outline-none cursor-pointer font-mono tabular-nums"
-            style={{ colorScheme: 'light' }}
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Filtro por usuário — admin escolhe; outros perfis ocultos */}
+          {isAdmin && users.length > 1 && (
+            <Select value={filterUserId} onValueChange={setFilterUserId}>
+              <SelectTrigger className="h-9 w-[200px] text-sm bg-white">
+                <SelectValue placeholder="Filtrar por usuário..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os usuários</SelectItem>
+                {users
+                  .slice()
+                  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                  .map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            onFromChange={setDateFrom}
+            onToChange={setDateTo}
           />
         </div>
       </motion.div>
 
       {/* ──────────────── KPIs row ──────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <Kpi
           label="Tarefas no período"
           value={metrics.tasksInPeriod}
           icon={TrendingUp}
           accentColor="#2563EB"
           accentBg="#EFF6FF"
-          hint={`de ${tasks.length} no total`}
+          hint={
+            <DeltaHint delta={metrics.tasksDelta} fallback={`de ${tasks.length} no total`} />
+          }
         />
         <Kpi
           label="Horas registradas"
@@ -508,10 +587,24 @@ export default function DashboardPage() {
           accentColor="#7C3AED"
           accentBg="#F5F3FF"
           hint={
-            metrics.hoursSource === 'entries'
-              ? `${entries.length} lançamento${entries.length !== 1 ? 's' : ''} no período`
-              : `tempo total das ${tasks.length} tarefas`
+            <DeltaHint
+              delta={metrics.hoursDelta}
+              fallback={
+                metrics.hoursSource === 'entries'
+                  ? `${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`
+                  : `tempo total`
+              }
+            />
           }
+        />
+        <Kpi
+          label="Velocidade"
+          value={`${metrics.velocity}/sem`}
+          numericValue={metrics.velocity}
+          icon={Activity}
+          accentColor="#F59E0B"
+          accentBg="#FFFBEB"
+          hint="média das últimas 4 semanas"
         />
         <Kpi
           label="Tarefas atrasadas"

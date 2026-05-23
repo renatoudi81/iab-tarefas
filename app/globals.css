@@ -603,6 +603,34 @@ html { scroll-behavior: smooth; }
   }
 }
 
+/* ─── Print (PDF via window.print) ──────────────────────────
+   Otimiza Relatórios pra geração de PDF: esconde sidebar/header,
+   expande conteúdo a 100%, neutraliza shadows/glows.
+*/
+@media print {
+  /* Layout principal: esconde sidebar e header */
+  aside,
+  header { display: none !important; }
+  main {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+  }
+  /* Esconde elementos interativos */
+  button:not([data-print-keep]),
+  .recharts-tooltip-wrapper,
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+  /* Cards: remove sombras + glows pra não desperdiçar tinta */
+  [class*="shadow-"] {
+    box-shadow: none !important;
+  }
+  /* Quebra de página antes de cada Section grande */
+  section + section { page-break-before: auto; }
+  /* Cor de fundo branca pro papel */
+  body { background: white !important; }
+}
+
 /* ─── Reduced motion (a11y) ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

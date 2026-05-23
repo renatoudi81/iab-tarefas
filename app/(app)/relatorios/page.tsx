@@ -336,6 +336,61 @@ export default function RelatoriosPage() {
       ? Math.round((dentroDoPrevisto / concluidasComEstimativa.length) * 100)
       : 0
 
+    // ──── Tarefas órfãs (sem responsável atribuído)
+    const orphan = tasks.filter((t) => !t.responsavel_id)
+
+    // ──── Burndown: concluídas acumuladas vs criadas acumuladas no período
+    // Determina o range: usa dateFrom/dateTo se setado; senão data mais antiga
+    // até hoje. Limita a 60 pontos pra não sobrecarregar o chart.
+    const datesAll = tasks
+      .map((t) => t.criado_em?.slice(0, 10))
+      .filter(Boolean) as string[]
+    const oldestDate = datesAll.length > 0 ? datesAll.sort()[0] : ''
+    const burnStart = dateFrom || oldestDate
+    const burnEnd = dateTo || new Date().toISOString().split('T')[0]
+    const burndownData: { label: string; Criadas: number; Concluídas: number }[] = []
+    if (burnStart && burnEnd && burnStart <= burnEnd) {
+      const startMs = new Date(burnStart + 'T00:00:00').getTime()
+      const endMs = new Date(burnEnd + 'T00:00:00').getTime()
+      const totalDays = Math.min(60, Math.round((endMs - startMs) / 86400000) + 1)
+      const stepDays = Math.max(1, Math.ceil(((endMs - startMs) / 86400000 + 1) / totalDays))
+      let acc = 0, accDone = 0
+      // Para acumular, contamos quantas tasks foram criadas/concluídas até cada data
+      for (let i = 0; i < totalDays; i++) {
+        const dms = startMs + i * stepDays * 86400000
+        if (dms > endMs) break
+        const ds = new Date(dms).toISOString().split('T')[0]
+        const [, mm, dd] = ds.split('-')
+        acc = tasks.filter(t => (t.criado_em || '').slice(0, 10) <= ds).length
+        accDone = tasks.filter(t => t.status === 'Concluída' && (t.data_conclusao || '') <= ds).length
+        burndownData.push({ label: `${dd}/${mm}`, Criadas: acc, Concluídas: accDone })
+      }
+    }
+
+    // ──── Heatmap atividade por dia da semana
+    // Eixo X: dia da semana (Dom..Sáb). Valor: nº de tarefas criadas
+    // OU concluídas naquele dia da semana. Contagens em 4 últimas semanas.
+    const heatmapData = (() => {
+      const fourWeeksAgo = new Date()
+      fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
+      const fourWeeksAgoStr = fourWeeksAgo.toISOString().split('T')[0]
+      const counts: number[] = [0, 0, 0, 0, 0, 0, 0] // dom..sab
+      tasks.forEach((t) => {
+        const created = t.criado_em?.slice(0, 10)
+        if (created && created >= fourWeeksAgoStr) {
+          const d = new Date(created + 'T00:00:00').getDay()
+          counts[d]++
+        }
+      })
+      const max = Math.max(1, ...counts)
+      const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+      return labels.map((label, i) => ({
+        label,
+        value: counts[i],
+        intensity: counts[i] / max,
+      }))
+    })()
+
     return {
       byStatus,
       byUser,
@@ -346,13 +401,16 @@ export default function RelatoriosPage() {
       leadTimeMedio,
       pctAderencia,
       exceeded,
+      orphan,
+      burndownData,
+      heatmapData,
       totalHoras,
       concluidas,
       pctConcluidas,
       pendentes,
       atrasadas,
     }
-  }, [tasks, entries, users, categories])
+  }, [tasks, entries, users, categories, dateFrom, dateTo])
 
   const handleExportCSV = () => {
     const rows = [
@@ -848,6 +906,137 @@ export default function RelatoriosPage() {
             </div>
           </Section>
         </motion.div>
+
+        {/* ──────────────── Burndown ──────────────── */}
+        {stats.burndownData.length > 1 && (
+          <motion.div variants={item}>
+            <Section
+              icon={Activity}
+              iconColor="#2563EB"
+              iconBg="#EFF6FF"
+              title="Burndown — Criadas vs Concluídas"
+              subtitle="Quantidades acumuladas ao longo do tempo. Distância entre as linhas indica backlog em aberto."
+            >
+              <div className="p-5" style={{ height: 280 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.burndownData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F4F4F5" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="Criadas" fill="#2563EB" fillOpacity={0.35} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                    <Bar dataKey="Concluídas" fill="#16A34A" fillOpacity={0.95} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="px-5 pb-4 flex items-center gap-4 text-[0.72rem] text-[#71717A]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded" style={{ background: 'rgba(37,99,235,0.35)' }} />
+                  Criadas (acumulado)
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded" style={{ background: '#16A34A' }} />
+                  Concluídas (acumulado)
+                </span>
+              </div>
+            </Section>
+          </motion.div>
+        )}
+
+        {/* ──────────────── Heatmap dia da semana ──────────────── */}
+        <motion.div variants={item}>
+          <Section
+            icon={Activity}
+            iconColor="#7C3AED"
+            iconBg="#F5F3FF"
+            title="Atividade por dia da semana"
+            subtitle="Distribuição das tarefas criadas nas últimas 4 semanas"
+          >
+            <div className="p-5">
+              <div className="grid grid-cols-7 gap-2">
+                {stats.heatmapData.map((d) => (
+                  <div key={d.label} className="flex flex-col items-center gap-1.5">
+                    <span className="text-[0.65rem] uppercase font-semibold tracking-wider text-[#71717A]">
+                      {d.label}
+                    </span>
+                    <div
+                      className="w-full h-16 rounded-md flex items-center justify-center transition-all"
+                      style={{
+                        background: d.intensity === 0
+                          ? '#F7F8FA'
+                          : `rgba(124, 58, 237, ${Math.max(0.18, d.intensity)})`,
+                      }}
+                      title={`${d.label}: ${d.value} tarefa${d.value !== 1 ? 's' : ''}`}
+                    >
+                      <span
+                        className={
+                          'text-[1rem] font-mono font-bold tabular-nums ' +
+                          (d.intensity > 0.5 ? 'text-white' : 'text-[#0F172A]')
+                        }
+                      >
+                        {d.value}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center gap-2 text-[0.7rem] text-[#71717A]">
+                <span>Menos</span>
+                {[0.18, 0.35, 0.55, 0.8, 1].map((opacity, i) => (
+                  <span
+                    key={i}
+                    className="w-3.5 h-3.5 rounded"
+                    style={{ background: `rgba(124, 58, 237, ${opacity})` }}
+                  />
+                ))}
+                <span>Mais</span>
+              </div>
+            </div>
+          </Section>
+        </motion.div>
+
+        {/* ──────────────── Tarefas órfãs ──────────────── */}
+        {stats.orphan.length > 0 && (
+          <motion.div variants={item}>
+            <Section
+              icon={AlertTriangle}
+              iconColor="#F59E0B"
+              iconBg="#FFFBEB"
+              title="Tarefas sem responsável"
+              subtitle={`${stats.orphan.length} ${stats.orphan.length === 1 ? 'tarefa precisa ser atribuída' : 'tarefas precisam ser atribuídas'}`}
+            >
+              <ul className="divide-y divide-[#F4F4F5]">
+                {stats.orphan.slice(0, 10).map((task) => (
+                  <li key={task.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="w-8 h-8 rounded-full bg-[#FFFBEB] flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle size={14} className="text-[#D97706]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-[0.875rem] text-[#0F172A] truncate">{task.titulo}</div>
+                      <div className="text-[0.72rem] text-[#71717A] flex items-center gap-2 mt-0.5">
+                        <span>{task.categoria || 'sem categoria'}</span>
+                        {task.data_prazo && (
+                          <>
+                            <span className="text-[#D4D4D8]">·</span>
+                            <span className="tabular-nums">prazo {formatDateBR(task.data_prazo)}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] flex-shrink-0">
+                      {task.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {stats.orphan.length > 10 && (
+                <div className="px-5 py-2.5 border-t border-[#F4F4F5] text-[0.72rem] text-[#71717A] text-center">
+                  E mais {stats.orphan.length - 10} {stats.orphan.length - 10 === 1 ? 'tarefa órfã' : 'tarefas órfãs'}
+                </div>
+              )}
+            </Section>
+          </motion.div>
+        )}
 
         {/* ──────────────── Tempo excedido ──────────────── */}
         {stats.exceeded.length > 0 && (
