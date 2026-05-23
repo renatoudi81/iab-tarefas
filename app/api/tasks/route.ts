@@ -33,6 +33,10 @@ export async function GET(req: Request) {
   // 2) Mapa de usuários (paralelo)
   const userMap = await loadUserMap()
 
+  // "Hoje" no formato YYYY-MM-DD para comparar com data_prazo (que também
+  // é YYYY-MM-DD). Comparação lexicográfica funciona pra esse formato.
+  const today = new Date().toISOString().split('T')[0]
+
   // 3) Para cada task, buscar subtasks e contagem de comments em paralelo
   const tasksRaw = await Promise.all(tasksSnap.docs.map(async (doc) => {
     const data = doc.data() as any
@@ -46,9 +50,21 @@ export async function GET(req: Request) {
     const subtasks = subtasksSnap.docs.map(s => ({ concluida: (s.data() as any).concluida }))
     const responsavel = data.responsavel_id ? userMap.get(data.responsavel_id) ?? null : null
 
+    // Status derivado: se data_prazo < hoje e a tarefa NÃO está Concluída,
+    // ela aparece como 'Atrasada' independentemente do status persistido.
+    // Não escrevemos isso no Firestore — manter o status "intenção do usuário"
+    // (Pendente/Em andamento/Aguardando) para que, se o prazo for adiado, a
+    // tarefa volte ao status correto automaticamente sem perda de informação.
+    const isOverdue =
+      data.data_prazo &&
+      data.data_prazo < today &&
+      data.status !== 'Concluída'
+    const effectiveStatus = isOverdue ? 'Atrasada' : data.status
+
     return {
       id: doc.id,
       ...data,
+      status: effectiveStatus,
       responsavel,
       subtasks,
       _count: {
@@ -137,5 +153,17 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ task: { id: ref.id, ...taskData, responsavel } }, { status: 201 })
+  // Mesma derivação do GET — task criada já com data_prazo vencida vira
+  // 'Atrasada' direto na resposta (consistência entre POST/PATCH/GET)
+  const today = new Date().toISOString().split('T')[0]
+  const isOverdue =
+    taskData.data_prazo &&
+    taskData.data_prazo < today &&
+    taskData.status !== 'Concluída'
+  const effectiveStatus = isOverdue ? 'Atrasada' : taskData.status
+
+  return NextResponse.json(
+    { task: { id: ref.id, ...taskData, status: effectiveStatus, responsavel } },
+    { status: 201 },
+  )
 }

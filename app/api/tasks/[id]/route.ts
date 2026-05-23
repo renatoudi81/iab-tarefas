@@ -112,7 +112,19 @@ export async function PATCH(req: Request, { params }: Params) {
     }
   }
 
-  return NextResponse.json({ task: { id: updated.id, ...updatedData, responsavel } })
+  // Mesma derivação aplicada no GET — status='Atrasada' quando vencida
+  // e não-concluída. Garante consistência entre POST/PATCH e GET; o user
+  // não vê a tarefa "saltar" entre status diferentes após cada operação.
+  const today = new Date().toISOString().split('T')[0]
+  const isOverdue =
+    updatedData.data_prazo &&
+    updatedData.data_prazo < today &&
+    updatedData.status !== 'Concluída'
+  const effectiveStatus = isOverdue ? 'Atrasada' : updatedData.status
+
+  return NextResponse.json({
+    task: { id: updated.id, ...updatedData, status: effectiveStatus, responsavel },
+  })
 }
 
 export async function DELETE(req: Request, { params }: Params) {
