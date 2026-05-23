@@ -25,14 +25,14 @@ export const metadata: Metadata = {
   title: 'Instituto Alfa e Beto — Tarefas',
   description: 'Gestão Inteligente de Tarefas',
   icons: {
-    // Favicon principal (aba do browser, bookmarks)
+    // Favicon principal — usa a versão DARK (azul) do símbolo porque
+    // a versão padrão (logo-iab-symbol.svg) é branca e fica invisível
+    // na barra de abas do browser (fundo claro).
     icon: [
-      { url: '/logo-iab-symbol.svg', type: 'image/svg+xml' },
+      { url: '/logo-iab-symbol-dark.svg', type: 'image/svg+xml' },
     ],
-    // Apple Touch Icon (quando adicionado à tela inicial do iOS)
-    apple: '/logo-iab-symbol.svg',
-    // Shortcut icon (legacy fallback)
-    shortcut: '/logo-iab-symbol.svg',
+    apple: '/logo-iab-symbol-dark.svg',
+    shortcut: '/logo-iab-symbol-dark.svg',
   },
 }
 
