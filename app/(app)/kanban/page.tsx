@@ -225,12 +225,10 @@ export default function KanbanPage() {
                         const allDone = totalSubtasks > 0 && doneSubtasks === totalSubtasks
                         const shortId = task.id.slice(-5).toUpperCase()
                         const prioColor = PRIORITY_COLORS[task.prioridade]
-                        // Von Restorff: tarefas Críticas têm borda esquerda
-                        // vermelha grossa para se destacar das demais (que ficam
-                        // com border padrão). O efeito sobrevive ao colorblind
-                        // check porque é também uma diferença de ESPESSURA, não
-                        // só de cor.
-                        const isCritica = task.prioridade === 'Crítica'
+                        // Cor do status (Pendente, Em andamento, Aguardando,
+                        // Atrasada, Concluída) — usada no border esquerdo do
+                        // card para que seja escaneável a coluna toda sem ler.
+                        const statusColor = STATUS_COLORS[task.status]
 
                         return (
                           <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -240,24 +238,30 @@ export default function KanbanPage() {
                                 {...drag.draggableProps}
                                 {...drag.dragHandleProps}
                                 className={cn(
-                                  'bg-white border rounded-lg min-h-[200px]',
-                                  isCritica
-                                    ? 'border-[#E8E8EC] border-l-[3px] border-l-[#DC2626]'
-                                    : 'border-[#E8E8EC]',
+                                  'bg-white border border-[#E8E8EC] rounded-lg',
+                                  // Altura FIXA — todos os cards ficam exatamente
+                                  // do mesmo tamanho visual, independentemente de
+                                  // ter ou não descrição/subtarefas. Conteúdo
+                                  // excedente é cortado (line-clamp já limita o
+                                  // tamanho do texto, então corte é raro).
+                                  'h-[260px] overflow-hidden',
                                   !dragSnapshot.isDragging && 'card-lift',
                                   dragSnapshot.isDragging && 'opacity-95 rotate-[0.8deg]'
                                 )}
                                 style={{
                                   cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
+                                  // Borda esquerda 3px na cor do status — toda
+                                  // a coluna fica visualmente coerente, e cards
+                                  // que mudam de status ganham a nova cor.
+                                  borderLeftWidth: '3px',
+                                  borderLeftColor: statusColor,
                                   boxShadow: dragSnapshot.isDragging
                                     ? '0 8px 28px rgba(0,0,0,0.14)'
-                                    : isCritica
-                                      ? '0 2px 6px -1px rgba(220,38,38,0.12), 0 1px 2px rgba(0,0,0,0.04)'
-                                      : '0 1px 2px rgba(0,0,0,0.04)',
+                                    : '0 1px 2px rgba(0,0,0,0.04)',
                                   ...drag.draggableProps.style,
                                 }}
                               >
-                                <CardContent className="p-3.5 flex flex-col h-full min-h-[200px]">
+                                <CardContent className="p-3.5 flex flex-col h-full">
 
                                   {/* ID + Prioridade + Ações */}
                                   <div className="flex items-center justify-between gap-2 mb-2.5">
