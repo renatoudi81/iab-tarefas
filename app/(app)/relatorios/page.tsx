@@ -9,15 +9,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { STATUSES, STATUS_COLORS, formatMinutes, formatDateBR } from '@/types'
+import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR } from '@/types'
+import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
 import {
   Printer, AlertTriangle, Users, Tag, Clock,
   Download, PieChart as PieChartIcon, BarChart2,
-  ListChecks, TrendingUp,
+  ListChecks, TrendingUp, Activity, CheckCircle2,
 } from 'lucide-react'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
@@ -167,17 +168,45 @@ export default function RelatoriosPage() {
   const [filterUserId, setFilterUserId] = useState<string>('all')
   const effectiveUserId = isAdmin ? filterUserId : (authUser?.id || 'all')
 
-  // Aplica o filtro localmente (a API já restringe não-admins; aqui é só para
-  // o admin alternar a visão entre "todos" e uma pessoa específica)
+  // Filtro por período — aplica em todas as métricas do Relatório
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
+  // Aplica filtros em cadeia: usuário → período. Pra tasks, considera
+  // sobreposição com o período (não exige estar 100% dentro).
   const tasks = useMemo(() => {
-    if (effectiveUserId === 'all') return allTasks
-    return allTasks.filter(t => t.responsavel_id === effectiveUserId)
-  }, [allTasks, effectiveUserId])
+    let arr = allTasks
+    if (effectiveUserId !== 'all') {
+      arr = arr.filter(t => t.responsavel_id === effectiveUserId)
+    }
+    if (dateFrom || dateTo) {
+      arr = arr.filter(t => {
+        // Usa data_prazo como referência principal; tarefas sem prazo
+        // só entram se NÃO há range definido
+        if (!t.data_prazo) return false
+        if (dateFrom && t.data_prazo < dateFrom) return false
+        if (dateTo && t.data_prazo > dateTo) return false
+        return true
+      })
+    }
+    return arr
+  }, [allTasks, effectiveUserId, dateFrom, dateTo])
 
   const entries = useMemo(() => {
-    if (effectiveUserId === 'all') return allEntries
-    return allEntries.filter(e => e.usuario_id === effectiveUserId)
-  }, [allEntries, effectiveUserId])
+    let arr = allEntries
+    if (effectiveUserId !== 'all') {
+      arr = arr.filter(e => e.usuario_id === effectiveUserId)
+    }
+    if (dateFrom || dateTo) {
+      arr = arr.filter(e => {
+        if (!e.data) return false
+        if (dateFrom && e.data < dateFrom) return false
+        if (dateTo && e.data > dateTo) return false
+        return true
+      })
+    }
+    return arr
+  }, [allEntries, effectiveUserId, dateFrom, dateTo])
 
   const stats = useMemo(() => {
     const byStatus = Object.values(STATUSES)
@@ -244,16 +273,84 @@ export default function RelatoriosPage() {
     const pctConcluidas =
       tasks.length > 0 ? Math.round((concluidas / tasks.length) * 100) : 0
     const pendentes = tasks.filter((t) => t.status !== 'Concluída').length
+    const atrasadas = tasks.filter((t) => t.status === 'Atrasada').length
+
+    /* ─── Métricas adicionais ──────────────────────────────────── */
+
+    // Distribuição de prioridades
+    const byPriority = (['Crítica', 'Alta', 'Média', 'Baixa'] as const)
+      .map((p) => ({
+        name: p,
+        value: tasks.filter((t) => t.prioridade === p).length,
+        color: PRIORITY_COLORS[p],
+      }))
+      .filter((p) => p.value > 0)
+
+    // Previsto vs Realizado por responsável (chart de barras lado a lado)
+    const plannedVsActual = users
+      .map((u) => {
+        const userTasks = tasks.filter((t) => t.responsavel_id === u.id)
+        const estimado = userTasks.reduce((s, t) => s + (t.tempo_estimado || 0), 0)
+        const gasto = userTasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
+        return {
+          name: u.nome.split(' ')[0],
+          Estimado: Math.round((estimado / 60) * 10) / 10,
+          Gasto: Math.round((gasto / 60) * 10) / 10,
+        }
+      })
+      .filter((u) => u.Estimado > 0 || u.Gasto > 0)
+      .sort((a, b) => b.Gasto - a.Gasto)
+      .slice(0, 8)
+
+    // Top 5 tarefas mais atrasadas (mais antigas no status Atrasada)
+    const today = new Date().toISOString().split('T')[0]
+    const topAtrasadas = tasks
+      .filter((t) => t.status === 'Atrasada' && t.data_prazo)
+      .map((t) => {
+        const ms = new Date(today).getTime() - new Date(t.data_prazo!).getTime()
+        return { task: t, diasAtraso: Math.floor(ms / 86400000) }
+      })
+      .sort((a, b) => b.diasAtraso - a.diasAtraso)
+      .slice(0, 5)
+
+    // Tempo médio de conclusão (dias entre data_inicio e data_conclusao)
+    const concluidasComDatas = tasks.filter(
+      (t) => t.status === 'Concluída' && t.data_inicio && t.data_conclusao
+    )
+    const leadTimes = concluidasComDatas.map((t) => {
+      const ms = new Date(t.data_conclusao!).getTime() - new Date(t.data_inicio!).getTime()
+      return Math.max(0, ms / 86400000)
+    })
+    const leadTimeMedio = leadTimes.length > 0
+      ? Math.round(leadTimes.reduce((s, x) => s + x, 0) / leadTimes.length * 10) / 10
+      : 0
+
+    // Aderência ao estimado (% de tarefas concluídas dentro do tempo previsto)
+    const concluidasComEstimativa = tasks.filter(
+      (t) => t.status === 'Concluída' && t.tempo_estimado > 0
+    )
+    const dentroDoPrevisto = concluidasComEstimativa.filter(
+      (t) => t.tempo_gasto_total <= t.tempo_estimado
+    ).length
+    const pctAderencia = concluidasComEstimativa.length > 0
+      ? Math.round((dentroDoPrevisto / concluidasComEstimativa.length) * 100)
+      : 0
 
     return {
       byStatus,
       byUser,
       byCategory,
+      byPriority,
+      plannedVsActual,
+      topAtrasadas,
+      leadTimeMedio,
+      pctAderencia,
       exceeded,
       totalHoras,
       concluidas,
       pctConcluidas,
       pendentes,
+      atrasadas,
     }
   }, [tasks, entries, users, categories])
 
@@ -343,6 +440,14 @@ export default function RelatoriosPage() {
           >
             <Download size={13} strokeWidth={2.5} /> Exportar CSV
           </MagneticButton>
+
+          {/* Direita: date range — mesmo padrão de Kanban/Lista/Gantt */}
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            onFromChange={setDateFrom}
+            onToChange={setDateTo}
+          />
         </div>
       </div>
 
@@ -585,6 +690,161 @@ export default function RelatoriosPage() {
                   })}
                 </ul>
               )}
+            </div>
+          </Section>
+        </motion.div>
+
+        {/* ──────────────── Previsto vs Realizado por pessoa ──────────────── */}
+        {stats.plannedVsActual.length > 0 && (
+          <motion.div variants={item}>
+            <Section
+              icon={Activity}
+              iconColor="#7C3AED"
+              iconBg="#F5F3FF"
+              title="Previsto vs Realizado"
+              subtitle="Comparação de horas estimadas vs efetivamente gastas — por pessoa"
+            >
+              <div className="p-5" style={{ height: 280 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.plannedVsActual} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F4F4F5" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} unit="h" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="Estimado" fill="#7C3AED" fillOpacity={0.45} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                    <Bar dataKey="Gasto" fill="#7C3AED" fillOpacity={0.95} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="px-5 pb-4 flex items-center gap-4 text-[0.72rem] text-[#71717A]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded" style={{ background: 'rgba(124,58,237,0.45)' }} />
+                  Estimado
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded" style={{ background: '#7C3AED' }} />
+                  Gasto
+                </span>
+                <span className="ml-auto inline-flex items-center gap-1.5">
+                  <CheckCircle2 size={12} className="text-[#16A34A]" />
+                  Aderência ao previsto:{' '}
+                  <strong className="text-[#0F172A] tabular-nums">{stats.pctAderencia}%</strong>
+                </span>
+              </div>
+            </Section>
+          </motion.div>
+        )}
+
+        {/* ──────────────── Top tarefas atrasadas ──────────────── */}
+        {stats.topAtrasadas.length > 0 && (
+          <motion.div variants={item}>
+            <Section
+              icon={AlertTriangle}
+              iconColor="#DC2626"
+              iconBg="#FEF2F2"
+              title="Tarefas mais atrasadas"
+              subtitle={`${stats.atrasadas} ${stats.atrasadas === 1 ? 'tarefa atrasada no total' : 'tarefas atrasadas no total'} — exibindo as ${stats.topAtrasadas.length} com maior atraso`}
+            >
+              <ul className="divide-y divide-[#F4F4F5]">
+                {stats.topAtrasadas.map(({ task, diasAtraso }) => {
+                  const resp = users.find((u) => u.id === task.responsavel_id)
+                  return (
+                    <li key={task.id} className="flex items-center gap-3 px-5 py-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#FEF2F2] flex items-center justify-center flex-shrink-0">
+                        <span className="text-[1.05rem] font-mono font-bold tabular-nums text-[#DC2626]">
+                          {diasAtraso}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-[0.875rem] text-[#0F172A] truncate">{task.titulo}</div>
+                        <div className="text-[0.72rem] text-[#71717A] flex items-center gap-2 mt-0.5">
+                          <span className="inline-flex items-center gap-1">
+                            <Clock size={10} />
+                            Prazo: <span className="tabular-nums">{formatDateBR(task.data_prazo)}</span>
+                          </span>
+                          {resp && (
+                            <>
+                              <span className="text-[#D4D4D8]">·</span>
+                              <span>{resp.nome}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#FEE2E2] text-[#B91C1C] flex-shrink-0">
+                        {diasAtraso === 1 ? '1 dia' : `${diasAtraso} dias`} atraso
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </Section>
+          </motion.div>
+        )}
+
+        {/* ──────────────── Distribuição de prioridades + Tempo médio ──────────────── */}
+        <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Prioridades */}
+          {stats.byPriority.length > 0 && (
+            <Section
+              icon={TrendingUp}
+              iconColor="#F59E0B"
+              iconBg="#FFFBEB"
+              title="Distribuição por prioridade"
+              subtitle="Volume de tarefas por nível de urgência"
+            >
+              <div className="p-5">
+                <div className="flex h-3 w-full rounded-full overflow-hidden bg-[#F4F4F5] mb-4">
+                  {stats.byPriority.map((p) => {
+                    const total = stats.byPriority.reduce((s, x) => s + x.value, 0)
+                    const pct = total > 0 ? (p.value / total) * 100 : 0
+                    return (
+                      <div
+                        key={p.name}
+                        className="h-full transition-all"
+                        style={{ width: `${pct}%`, background: p.color }}
+                        title={`${p.name}: ${p.value}`}
+                      />
+                    )
+                  })}
+                </div>
+                <ul className="grid grid-cols-2 gap-3">
+                  {stats.byPriority.map((p) => (
+                    <li key={p.name} className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded flex-shrink-0" style={{ background: p.color }} />
+                      <span className="text-[0.82rem] text-[#3F3F46] flex-1">{p.name}</span>
+                      <span className="text-[0.82rem] font-bold tabular-nums text-[#0F172A]">{p.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Section>
+          )}
+
+          {/* Tempo médio de conclusão */}
+          <Section
+            icon={Clock}
+            iconColor="#2563EB"
+            iconBg="#EFF6FF"
+            title="Tempo médio de conclusão"
+            subtitle="Dias entre data de início e conclusão das tarefas finalizadas"
+          >
+            <div className="p-5 flex flex-col items-center justify-center text-center">
+              <div className="text-[3rem] font-mono font-bold leading-none tabular-nums text-[#0F172A]">
+                {stats.leadTimeMedio}
+              </div>
+              <div className="text-[0.85rem] text-[#71717A] mt-2 mb-4">
+                {stats.leadTimeMedio === 1 ? 'dia em média' : 'dias em média'}
+              </div>
+              <div className="grid grid-cols-2 gap-3 w-full text-left">
+                <div className="bg-[#F7F8FA] rounded-lg p-3">
+                  <div className="text-[0.65rem] uppercase tracking-wider font-medium text-[#71717A] mb-1">Concluídas</div>
+                  <div className="text-[1.4rem] font-mono font-bold tabular-nums text-[#16A34A]">{stats.concluidas}</div>
+                </div>
+                <div className="bg-[#F7F8FA] rounded-lg p-3">
+                  <div className="text-[0.65rem] uppercase tracking-wider font-medium text-[#71717A] mb-1">Aderência</div>
+                  <div className="text-[1.4rem] font-mono font-bold tabular-nums text-[#2563EB]">{stats.pctAderencia}%</div>
+                </div>
+              </div>
             </div>
           </Section>
         </motion.div>

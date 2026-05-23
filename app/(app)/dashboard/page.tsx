@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
-import { STATUSES, todayStr } from '@/types'
+import { STATUSES, STATUS_COLORS, todayStr } from '@/types'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -12,7 +12,11 @@ import {
 import {
   TrendingUp, Clock, AlertTriangle, CheckCircle2,
   BarChart3, Activity, Sparkles, ArrowUpRight,
+  Calendar as CalendarIcon, Flame,
 } from 'lucide-react'
+import { formatDateBR } from '@/types'
+import { UserAvatar } from '@/components/ui/UserAvatar'
+import { useUsers } from '@/hooks/useUsers'
 import { SpotlightCard } from '@/components/ui/SpotlightCard'
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
 
@@ -347,6 +351,7 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const { tasks, isLoading: loadingTasks } = useTasks()
   const { entries } = useTimeEntries()
+  const { users } = useUsers()
 
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 6)
@@ -370,6 +375,30 @@ export default function DashboardPage() {
     const minutesFromTasks = tasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
     const minutes = minutesFromEntries > 0 ? minutesFromEntries : minutesFromTasks
     const hours = Math.round((minutes / 60) * 10) / 10
+    // Próximos vencimentos (7 dias) — não-concluídas com prazo entre hoje e D+7
+    const todayDate = new Date(new Date().toISOString().split('T')[0])
+    const inSevenDays = new Date(todayDate)
+    inSevenDays.setDate(inSevenDays.getDate() + 7)
+    const todayStrLocal = todayDate.toISOString().split('T')[0]
+    const sevenStr = inSevenDays.toISOString().split('T')[0]
+    const upcoming = tasks
+      .filter(t => t.status !== 'Concluída' && t.status !== 'Atrasada' && t.data_prazo)
+      .filter(t => t.data_prazo! >= todayStrLocal && t.data_prazo! <= sevenStr)
+      .sort((a, b) => (a.data_prazo! < b.data_prazo! ? -1 : 1))
+      .slice(0, 5)
+
+    // Top 5 atrasadas (maior atraso primeiro)
+    const topOverdue = tasks
+      .filter(t => t.status === 'Atrasada' && t.data_prazo)
+      .map(t => ({
+        task: t,
+        diasAtraso: Math.floor(
+          (todayDate.getTime() - new Date(t.data_prazo!).getTime()) / 86400000
+        ),
+      }))
+      .sort((a, b) => b.diasAtraso - a.diasAtraso)
+      .slice(0, 5)
+
     return {
       tasksInPeriod: inPeriod.length,
       hoursInPeriod: `${hours}h`,
@@ -378,6 +407,8 @@ export default function DashboardPage() {
       donePct: productivity,
       doneCount: done,
       hoursSource: minutesFromEntries > 0 ? 'entries' : 'tasks',
+      upcoming,
+      topOverdue,
     }
   }, [tasks, entries, dateFrom, dateTo])
 
@@ -618,6 +649,120 @@ export default function DashboardPage() {
           })}
         </div>
       </BentoSection>
+
+      {/* ──────────────── Widgets: Próximos vencimentos + Top atrasadas ──── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Próximos 7 dias */}
+        <BentoSection
+          icon={CalendarIcon}
+          iconColor="#2563EB"
+          iconBg="#EFF6FF"
+          title="Próximos vencimentos"
+          subtitle="Tarefas com prazo nos próximos 7 dias"
+        >
+          {metrics.upcoming.length === 0 ? (
+            <div className="px-5 py-8 flex flex-col items-center gap-2 text-center">
+              <div className="w-10 h-10 rounded-full bg-[#F0FDF4] flex items-center justify-center">
+                <CheckCircle2 size={18} className="text-[#16A34A]" />
+              </div>
+              <p className="text-[0.82rem] text-[#52525B] font-medium">Nenhum prazo próximo</p>
+              <p className="text-[0.72rem] text-[#A1A1AA]">Você está tranquilo pelos próximos 7 dias.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-[#F4F4F5]">
+              {metrics.upcoming.map((task) => {
+                const resp = users.find((u) => u.id === task.responsavel_id)
+                const days = Math.floor(
+                  (new Date(task.data_prazo!).getTime() - new Date(new Date().toISOString().split('T')[0]).getTime()) / 86400000
+                )
+                const statusColor = STATUS_COLORS[task.status as keyof typeof STATUS_COLORS]
+                return (
+                  <li key={task.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[#FAFAFA] transition-colors">
+                    <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: statusColor }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-[0.875rem] text-[#0F172A] truncate">{task.titulo}</div>
+                      <div className="text-[0.72rem] text-[#71717A] flex items-center gap-2 mt-0.5">
+                        <span className="inline-flex items-center gap-1 tabular-nums">
+                          <CalendarIcon size={10} />
+                          {formatDateBR(task.data_prazo)}
+                        </span>
+                        {resp && (
+                          <>
+                            <span className="text-[#D4D4D8]">·</span>
+                            <UserAvatar user={resp} size={14} textSize="text-[7px]" />
+                            <span>{resp.nome.split(' ')[0]}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <span className={
+                      'text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded flex-shrink-0 ' +
+                      (days === 0 ? 'bg-[#FEF2F2] text-[#B91C1C]' :
+                        days <= 2 ? 'bg-[#FFFBEB] text-[#92400E]' :
+                        'bg-[#EFF6FF] text-[#2563EB]')
+                    }>
+                      {days === 0 ? 'Hoje' : days === 1 ? 'Amanhã' : `${days} dias`}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </BentoSection>
+
+        {/* Top 5 mais atrasadas */}
+        <BentoSection
+          icon={Flame}
+          iconColor="#DC2626"
+          iconBg="#FEF2F2"
+          title="Atenção urgente"
+          subtitle={metrics.topOverdue.length === 0 ? 'Nenhuma tarefa atrasada' : 'Tarefas com maior tempo de atraso'}
+        >
+          {metrics.topOverdue.length === 0 ? (
+            <div className="px-5 py-8 flex flex-col items-center gap-2 text-center">
+              <div className="w-10 h-10 rounded-full bg-[#F0FDF4] flex items-center justify-center">
+                <CheckCircle2 size={18} className="text-[#16A34A]" />
+              </div>
+              <p className="text-[0.82rem] text-[#52525B] font-medium">Tudo em dia</p>
+              <p className="text-[0.72rem] text-[#A1A1AA]">Nenhuma tarefa atrasada no momento.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-[#F4F4F5]">
+              {metrics.topOverdue.map(({ task, diasAtraso }) => {
+                const resp = users.find((u) => u.id === task.responsavel_id)
+                return (
+                  <li key={task.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[#FAFAFA] transition-colors">
+                    <div className="w-10 h-10 rounded-lg bg-[#FEF2F2] flex items-center justify-center flex-shrink-0">
+                      <span className="text-[0.95rem] font-mono font-bold tabular-nums text-[#DC2626]">
+                        {diasAtraso}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-[0.875rem] text-[#0F172A] truncate">{task.titulo}</div>
+                      <div className="text-[0.72rem] text-[#71717A] flex items-center gap-2 mt-0.5">
+                        <span className="inline-flex items-center gap-1 tabular-nums">
+                          <CalendarIcon size={10} />
+                          {formatDateBR(task.data_prazo)}
+                        </span>
+                        {resp && (
+                          <>
+                            <span className="text-[#D4D4D8]">·</span>
+                            <UserAvatar user={resp} size={14} textSize="text-[7px]" />
+                            <span>{resp.nome.split(' ')[0]}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#FEE2E2] text-[#B91C1C] flex-shrink-0">
+                      {diasAtraso === 1 ? '1 dia' : `${diasAtraso} dias`}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </BentoSection>
+      </div>
     </motion.div>
   )
 }

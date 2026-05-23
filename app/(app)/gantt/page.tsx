@@ -27,11 +27,11 @@ import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import TaskDrawer from '@/components/TaskDrawer'
 
 type ColorBy = 'status' | 'prioridade'
-type Granularity = 'day' | 'week' | 'fortnight' | 'month'
+type Granularity = 'week' | 'fortnight' | 'month'
 type GroupBy = 'none' | 'responsavel' | 'status' | 'categoria'
 
 // Ordem do mais zoom-in pro mais zoom-out — usada pelos botões +/-
-const GRANULARITY_ORDER: Granularity[] = ['day', 'week', 'fortnight', 'month']
+const GRANULARITY_ORDER: Granularity[] = ['week', 'fortnight', 'month']
 
 /**
  * Gera ticks da régua do Gantt conforme granularidade.
@@ -59,23 +59,6 @@ function getTicks(
       const label = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
       pushTick(d, label.replace('.', '').replace(' de ', '/'))
       d.setMonth(d.getMonth() + 1)
-    }
-    return ticks
-  }
-
-  // 'day': calcula step adaptativo pra não poluir a régua quando o
-  // range total é grande. Limite ~40 ticks. Em ranges curtos (<14 dias)
-  // mostra dia a dia. Em médios, a cada 2-3 dias. Em longos, semanal.
-  if (granularity === 'day') {
-    const totalDays = (end.getTime() - start.getTime()) / 86400000 + 1
-    const stepDay = Math.max(1, Math.ceil(totalDays / 40))
-    const d = new Date(start)
-    while (d <= end) {
-      pushTick(
-        d,
-        d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', ''),
-      )
-      d.setDate(d.getDate() + stepDay)
     }
     return ticks
   }
@@ -698,7 +681,7 @@ function PageHeader(p: PageHeaderProps) {
               const i = GRANULARITY_ORDER.indexOf(p.granularity)
               if (i > 0) p.setGranularity(GRANULARITY_ORDER[i - 1])
             }}
-            disabled={p.granularity === 'day'}
+            disabled={p.granularity === 'week'}
             title="Aumentar zoom (escala menor)"
             className="h-9 w-8 inline-flex items-center justify-center text-[#52525B] hover:bg-[#F4F4F5] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-0 bg-transparent transition-colors"
           >
@@ -709,7 +692,6 @@ function PageHeader(p: PageHeaderProps) {
               <SelectValue placeholder="Escala" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="day">Dia</SelectItem>
               <SelectItem value="week">Semana</SelectItem>
               <SelectItem value="fortnight">Quinzena</SelectItem>
               <SelectItem value="month">Mês</SelectItem>
