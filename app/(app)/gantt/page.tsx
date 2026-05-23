@@ -10,8 +10,12 @@ import {
 import type { Task, Status } from '@/types'
 import {
   GanttChart, AlertTriangle, Clock, AlertCircle, CheckCircle2,
-  Activity, TrendingUp, Eye, EyeOff,
+  Activity, TrendingUp, Eye, EyeOff, ChevronDown, ChevronRight,
+  Users, Tag as TagIcon, Layers,
 } from 'lucide-react'
+import {
+  Tooltip, TooltipContent, TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -23,6 +27,7 @@ import TaskDrawer from '@/components/TaskDrawer'
 
 type ColorBy = 'status' | 'prioridade'
 type Granularity = 'week' | 'fortnight' | 'month'
+type GroupBy = 'none' | 'responsavel' | 'status' | 'categoria'
 
 /**
  * Gera ticks da régua do Gantt conforme granularidade.
@@ -261,6 +266,16 @@ export default function GanttPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterUserId, setFilterUserId] = useState<string>('all')
   const [hideOldDone, setHideOldDone] = useState(true)
+  const [groupBy, setGroupBy] = useState<GroupBy>('none')
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }
 
   // Drawer
   const [drawerTask, setDrawerTask] = useState<Task | null>(null)
@@ -344,6 +359,8 @@ export default function GanttPage() {
           users={users}
           hideOldDone={hideOldDone}
           setHideOldDone={setHideOldDone}
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
           minDate=""
           maxDate=""
         />
@@ -378,6 +395,46 @@ export default function GanttPage() {
       ? STATUS_COLORS[task.status as keyof typeof STATUS_COLORS]
       : PRIORITY_COLORS[task.prioridade as keyof typeof PRIORITY_COLORS]
 
+  // Agrupamento: gera array ordenado de grupos. Quando groupBy === 'none',
+  // retorna 1 grupo vazio (key '' → renderiza sem header).
+  const groups = (() => {
+    if (groupBy === 'none') {
+      return [{ key: '', label: '', color: '#71717A', icon: null as any, tasks: tasksWithDates }]
+    }
+    const map = new Map<string, { key: string; label: string; color: string; icon: any; tasks: Task[] }>()
+    for (const t of tasksWithDates) {
+      let key: string, label: string, color: string, icon: any
+      if (groupBy === 'responsavel') {
+        const u = users.find(uu => uu.id === t.responsavel_id)
+        key = t.responsavel_id || 'none'
+        label = u?.nome || 'Sem responsável'
+        color = u?.avatar_color || '#71717A'
+        icon = Users
+      } else if (groupBy === 'status') {
+        key = t.status
+        label = STATUS_LABELS[t.status as Status] || t.status
+        color = STATUS_COLORS[t.status as Status] || '#71717A'
+        icon = Layers
+      } else {
+        key = t.categoria || 'none'
+        label = t.categoria || 'Sem categoria'
+        color = t.categoria ? getCategoryColor(t.categoria).hex : '#71717A'
+        icon = TagIcon
+      }
+      if (!map.has(key)) map.set(key, { key, label, color, icon, tasks: [] })
+      map.get(key)!.tasks.push(t)
+    }
+    // Ordenação dos grupos: Status segue ordem hierárquica; outros alfabético
+    const arr = Array.from(map.values())
+    if (groupBy === 'status') {
+      const order: Status[] = ['Atrasada', 'Em andamento', 'Aguardando', 'Pendente', 'Concluída']
+      arr.sort((a, b) => order.indexOf(a.key as Status) - order.indexOf(b.key as Status))
+    } else {
+      arr.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+    }
+    return arr
+  })()
+
   return (
     <div>
       <PageHeader
@@ -395,6 +452,8 @@ export default function GanttPage() {
         users={users}
         hideOldDone={hideOldDone}
         setHideOldDone={setHideOldDone}
+        groupBy={groupBy}
+        setGroupBy={setGroupBy}
         minDate={minDate}
         maxDate={maxDate}
       />
@@ -427,22 +486,65 @@ export default function GanttPage() {
             )}
           </div>
 
-          {/* Rows */}
-          {tasksWithDates.map((task, idx) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              idx={idx}
-              users={users}
-              today={today}
-              ticks={ticks}
-              todayPct={todayPct}
-              offset={offset}
-              width={width}
-              color={getColor(task)}
-              onClick={() => setDrawerTask(task)}
-            />
-          ))}
+          {/* Rows — agrupados ou flat */}
+          {groups.map((group, gIdx) => {
+            const isCollapsed = collapsedGroups.has(group.key)
+            const groupDone = group.tasks.filter(t => t.status === 'Concluída').length
+            const groupOverdue = group.tasks.filter(t => t.status === 'Atrasada').length
+            const showHeader = groupBy !== 'none' && group.key !== ''
+
+            return (
+              <div key={group.key || 'all'}>
+                {showHeader && (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.key)}
+                    className="w-full flex items-center gap-2 px-3 py-2 mb-2 rounded-md cursor-pointer border-0 transition-colors text-left"
+                    style={{ background: group.color + '10' }}
+                  >
+                    {isCollapsed
+                      ? <ChevronRight size={14} style={{ color: group.color }} />
+                      : <ChevronDown size={14} style={{ color: group.color }} />}
+                    {group.icon && (
+                      <group.icon size={13} style={{ color: group.color }} />
+                    )}
+                    <span className="font-semibold text-[0.82rem] text-[#0F172A]">{group.label}</span>
+                    <span
+                      className="ml-1 inline-flex items-center text-[0.65rem] font-bold px-1.5 py-[2px] rounded-full tabular-nums"
+                      style={{ background: group.color + '22', color: group.color }}
+                    >
+                      {group.tasks.length}
+                    </span>
+                    {groupOverdue > 0 && (
+                      <span className="inline-flex items-center gap-0.5 text-[0.65rem] font-semibold text-[#DC2626]">
+                        <AlertTriangle size={9} /> {groupOverdue}
+                      </span>
+                    )}
+                    {groupDone > 0 && (
+                      <span className="inline-flex items-center gap-0.5 text-[0.65rem] font-semibold text-[#16A34A]">
+                        <CheckCircle2 size={9} /> {groupDone}
+                      </span>
+                    )}
+                  </button>
+                )}
+                {!isCollapsed && group.tasks.map((task, idx) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    idx={gIdx * 5 + idx}
+                    users={users}
+                    today={today}
+                    ticks={ticks}
+                    todayPct={todayPct}
+                    offset={offset}
+                    width={width}
+                    color={getColor(task)}
+                    onClick={() => setDrawerTask(task)}
+                  />
+                ))}
+              </div>
+            )
+          })}
 
           {/* Legend */}
           <div className="border-t border-[#E4E4E7] mt-4 pt-3.5 flex gap-4 flex-wrap items-center">
@@ -491,6 +593,8 @@ interface PageHeaderProps {
   users: any[]
   hideOldDone: boolean
   setHideOldDone: (v: boolean) => void
+  groupBy: GroupBy
+  setGroupBy: (v: GroupBy) => void
   minDate: string
   maxDate: string
 }
@@ -545,6 +649,18 @@ function PageHeader(p: PageHeaderProps) {
           <SelectContent>
             <SelectItem value="status">Cor: Status</SelectItem>
             <SelectItem value="prioridade">Cor: Prioridade</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={p.groupBy} onValueChange={v => p.setGroupBy(v as GroupBy)}>
+          <SelectTrigger className="w-[150px] h-9 text-sm border-[#E4E4E7] bg-white">
+            <SelectValue placeholder="Agrupar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Sem agrupamento</SelectItem>
+            <SelectItem value="responsavel">Por responsável</SelectItem>
+            <SelectItem value="status">Por status</SelectItem>
+            <SelectItem value="categoria">Por categoria</SelectItem>
           </SelectContent>
         </Select>
 
@@ -633,7 +749,6 @@ function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, colo
     <div
       onClick={onClick}
       className="flex items-center gap-0 mb-2.5 rounded-lg cursor-pointer hover:bg-[#FAFAFA] transition-colors py-1 -my-1"
-      title={`${task.titulo} · ${task.status} · ${resp?.nome || 'Sem responsável'} · ${formatDateBR(task.data_inicio!)} → ${formatDateBR(task.data_prazo!)} · ${Math.round(pct)}%`}
     >
       {/* Coluna esquerda — info da tarefa */}
       <div className="w-[320px] flex-shrink-0 pr-4">
@@ -691,46 +806,64 @@ function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, colo
         {/* Track de fundo */}
         <div className="absolute inset-[10px_0] bg-[#F7F8FA] rounded-md" />
 
-        {/* Barra */}
-        <motion.div
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: `${width(task.data_inicio!, task.data_prazo!)}%`, opacity: 1 }}
-          transition={{ delay: Math.min(idx * 0.03, 0.5), duration: 0.4, ease: 'easeOut' }}
-          style={{
-            position: 'absolute',
-            left: `${offset(task.data_inicio!)}%`,
-            top: '7px',
-            bottom: '7px',
-            background: color + 'ee',
-            borderRadius: '6px',
-            zIndex: 2,
-            overflow: 'hidden',
-            boxShadow: overdue
-              ? `0 0 0 1.5px ${color}, 0 0 0 4px rgba(220,38,38,0.18)`
-              : isNearDue
-                ? `0 0 0 1.5px ${color}, 0 0 0 3px rgba(217,119,6,0.20)`
-                : `0 0 0 1.5px ${color}`,
-            animation: overdue ? 'gantt-overdue-pulse 2s ease-in-out infinite' : undefined,
-          }}
-        >
-          {/* Progresso (intensidade varia conforme % concluído) */}
-          {pct > 0 && (
-            <div
-              className="absolute left-0 top-0 bottom-0 rounded-[inherit]"
+        {/* Barra — Tooltip rico no hover */}
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: `${width(task.data_inicio!, task.data_prazo!)}%`, opacity: 1 }}
+              transition={{ delay: Math.min(idx * 0.03, 0.5), duration: 0.4, ease: 'easeOut' }}
               style={{
-                width: `${pct}%`,
-                background: isOver
-                  ? 'linear-gradient(90deg, rgba(220,38,38,0.50), rgba(220,38,38,0.30))'
-                  : 'linear-gradient(90deg, rgba(255,255,255,0.45), rgba(255,255,255,0.18))',
+                position: 'absolute',
+                left: `${offset(task.data_inicio!)}%`,
+                top: '7px',
+                bottom: '7px',
+                background: color + 'ee',
+                borderRadius: '6px',
+                zIndex: 2,
+                overflow: 'hidden',
+                boxShadow: overdue
+                  ? `0 0 0 1.5px ${color}, 0 0 0 4px rgba(220,38,38,0.18)`
+                  : isNearDue
+                    ? `0 0 0 1.5px ${color}, 0 0 0 3px rgba(217,119,6,0.20)`
+                    : `0 0 0 1.5px ${color}`,
+                animation: overdue ? 'gantt-overdue-pulse 2s ease-in-out infinite' : undefined,
               }}
+            >
+              {pct > 0 && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 rounded-[inherit]"
+                  style={{
+                    width: `${pct}%`,
+                    background: isOver
+                      ? 'linear-gradient(90deg, rgba(220,38,38,0.50), rgba(220,38,38,0.30))'
+                      : 'linear-gradient(90deg, rgba(255,255,255,0.45), rgba(255,255,255,0.18))',
+                  }}
+                />
+              )}
+              <div className="relative z-10 flex items-center h-full pl-1.5 gap-1">
+                <span className="text-[0.66rem] font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                  {task.status} {pct > 0 && `· ${Math.round(pct)}%`}
+                </span>
+              </div>
+            </motion.div>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            sideOffset={8}
+            className="bg-white text-[#0F172A] border border-[#E4E4E7] shadow-[0_12px_32px_-12px_rgba(15,23,42,0.18)] p-0 max-w-[280px]"
+          >
+            <TaskTooltipContent
+              task={task}
+              resp={resp}
+              pct={Math.round(pct)}
+              isOver={isOver}
+              overdue={!!overdue}
+              isNearDue={isNearDue}
+              daysUntil={daysUntil}
             />
-          )}
-          <div className="relative z-10 flex items-center h-full pl-1.5 gap-1">
-            <span className="text-[0.66rem] font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">
-              {task.status} {pct > 0 && `· ${Math.round(pct)}%`}
-            </span>
-          </div>
-        </motion.div>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Coluna direita — prazo + tempo */}
@@ -757,6 +890,105 @@ function TaskRow({ task, idx, users, today, ticks, todayPct, offset, width, colo
             {Math.round(pct)}%
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Tooltip rico ─────────────────────────────────────────────── */
+
+interface TaskTooltipContentProps {
+  task: Task
+  resp: any
+  pct: number
+  isOver: boolean
+  overdue: boolean
+  isNearDue: boolean
+  daysUntil: number | null
+}
+
+function TaskTooltipContent({ task, resp, pct, isOver, overdue, isNearDue, daysUntil }: TaskTooltipContentProps) {
+  const prioColor = PRIORITY_COLORS[task.prioridade as keyof typeof PRIORITY_COLORS]
+  const statusColor = STATUS_COLORS[task.status as keyof typeof STATUS_COLORS]
+  return (
+    <div className="text-left">
+      <div className="px-3 py-2 rounded-t-md border-b border-[#F4F4F5]" style={{ background: statusColor + '15' }}>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span
+            className="inline-flex items-center gap-1 text-[0.62rem] font-bold uppercase tracking-wider px-1.5 py-[2px] rounded text-white"
+            style={{ background: statusColor }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            {task.status}
+          </span>
+          <span
+            className="text-[0.6rem] font-bold uppercase tracking-wider px-1.5 py-[2px] rounded"
+            style={{ background: prioColor + '22', color: prioColor }}
+          >
+            {task.prioridade}
+          </span>
+        </div>
+        <p className="text-[0.875rem] font-bold text-[#0F172A] leading-tight">{task.titulo}</p>
+      </div>
+
+      <div className="px-3 py-2.5 space-y-1.5 text-[0.75rem]">
+        {resp && (
+          <div className="flex items-center gap-2">
+            <UserAvatar user={resp} size={18} textSize="text-[8px]" />
+            <span className="text-[#3F3F46] font-medium">{resp.nome}</span>
+          </div>
+        )}
+        {task.categoria && (() => {
+          const c = getCategoryColor(task.categoria)
+          return (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.hex }} />
+              <span className="text-[#52525B]">{task.categoria}</span>
+            </div>
+          )
+        })()}
+        <div className="flex items-center gap-1.5 text-[#52525B] tabular-nums pt-1">
+          <Clock size={11} className="text-[#A1A1AA]" />
+          <span>{formatDateBR(task.data_inicio)} → {formatDateBR(task.data_prazo)}</span>
+        </div>
+
+        {task.tempo_estimado > 0 && (
+          <div className="pt-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[0.65rem] text-[#71717A]">Progresso</span>
+              <span className={cn(
+                'text-[0.65rem] font-bold tabular-nums',
+                isOver ? 'text-[#DC2626]' : 'text-[#0F172A]',
+              )}>
+                {pct}%{isOver && ' ⚠'}
+              </span>
+            </div>
+            <div className="h-1 w-full bg-[#F4F4F5] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${pct}%`, background: isOver ? '#DC2626' : statusColor }}
+              />
+            </div>
+          </div>
+        )}
+
+        {(overdue || isNearDue) && (
+          <div className={cn(
+            'mt-2 px-2 py-1 rounded text-[0.65rem] font-semibold inline-flex items-center gap-1',
+            overdue ? 'bg-[#FEF2F2] text-[#B91C1C]' : 'bg-[#FFFBEB] text-[#92400E]',
+          )}>
+            {overdue ? <AlertTriangle size={10} /> : <Activity size={10} />}
+            {overdue
+              ? `Vencida há ${Math.abs(daysUntil ?? 0)} dia${Math.abs(daysUntil ?? 0) !== 1 ? 's' : ''}`
+              : daysUntil === 0 ? 'Vence hoje'
+              : daysUntil === 1 ? 'Vence amanhã'
+              : `Vence em ${daysUntil} dias`}
+          </div>
+        )}
+
+        <div className="pt-2 text-[0.6rem] text-[#A1A1AA] border-t border-[#F4F4F5] mt-2">
+          Clique para abrir detalhes
+        </div>
       </div>
     </div>
   )
