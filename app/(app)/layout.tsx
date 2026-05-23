@@ -15,6 +15,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { IconTooltip } from '@/components/ui/tooltip'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { useVersionCheck } from '@/hooks/useVersionCheck'
 
 const SIDEBAR_WIDTH = 220
 
@@ -32,6 +33,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Atalhos globais (G D → Dashboard, G L → Lista, etc)
   useKeyboardShortcuts()
+  // Detecta novo deploy e oferece "Atualizar agora" via toast
+  useVersionCheck()
 
   useEffect(() => {
     if (!loading && !user) router.replace('/login')

@@ -19,12 +19,21 @@ import { CheckCircle2, AlertCircle, Info, X, AlertTriangle } from 'lucide-react'
 
 export type ToastVariant = 'success' | 'error' | 'info' | 'warning'
 
+export interface ToastAction {
+  /** Texto do botão (ex: "Atualizar agora", "Desfazer") */
+  label: string
+  /** Callback acionado ao clicar */
+  onClick: () => void
+}
+
 export interface Toast {
   id: string
   variant: ToastVariant
   title: string
   description?: string
   duration?: number
+  /** Ação opcional renderizada como botão dentro do toast */
+  action?: ToastAction
 }
 
 interface ToastContextValue {
@@ -117,6 +126,15 @@ function ToastViewport() {
                 <div className="text-[0.875rem] font-semibold text-[#0F172A] leading-tight">{t.title}</div>
                 {t.description && (
                   <div className="text-[0.78rem] text-[#52525B] leading-snug mt-0.5">{t.description}</div>
+                )}
+                {t.action && (
+                  <button
+                    type="button"
+                    onClick={() => { t.action!.onClick(); dismiss(t.id) }}
+                    className={`mt-2 inline-flex items-center text-[0.78rem] font-semibold px-2.5 py-1 rounded-md cursor-pointer border-0 transition-colors ${cfg.iconColor} hover:bg-[#F4F4F5]`}
+                  >
+                    {t.action.label}
+                  </button>
                 )}
               </div>
               <button
