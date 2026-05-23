@@ -67,7 +67,10 @@ export default function LoginPage() {
       setSuccess(true)
       setLoading(false)
       // Pequeno delay para o usuário ver a confirmação
-      setTimeout(() => router.push('/dashboard'), 600)
+      // Após login bem-sucedido, leva direto pro Kanban (visão operacional
+      // que o usuário usa no dia-a-dia). Dashboard continua acessível
+      // pelo Sidebar / Command Palette / atalho G D.
+      setTimeout(() => router.push('/kanban'), 600)
     } catch (err) {
       const code = err instanceof FirebaseError ? err.code : ''
       const msg =
