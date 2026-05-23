@@ -1,13 +1,13 @@
 'use client'
-import { useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { useMemo, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, ClipboardList, LayoutGrid,
-  GanttChart, FileBarChart2, Settings, AlertCircle,
-  Users, Tag,
+  GanttChart, FileBarChart2, Settings,
+  Users, Tag, X,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -28,9 +28,12 @@ export const SIDEBAR_WIDTH = 220
 
 interface SidebarProps {
   delayedCount: number
+  /** Em mobile, controla o drawer (em md+ a sidebar é sempre visível) */
+  open?: boolean
+  onClose?: () => void
 }
 
-export default function Sidebar({ delayedCount }: SidebarProps) {
+export default function Sidebar({ delayedCount, open = false, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { user } = useAuth()
@@ -44,11 +47,59 @@ export default function Sidebar({ delayedCount }: SidebarProps) {
 
   const isAdmin = user?.perfil === 'Administrador'
 
+  // Fecha drawer ao navegar (mobile UX)
+  useEffect(() => {
+    if (open) onClose?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // Trava scroll do body quando drawer aberto em mobile
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (open) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [open])
+
   return (
-    <aside
-      className="fixed h-screen z-50 flex flex-col bg-white border-r border-[#E4E4E7] overflow-hidden"
-      style={{ width: SIDEBAR_WIDTH }}
-    >
+    <>
+      {/* Backdrop — só aparece em mobile quando drawer está aberto */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={onClose}
+            className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            aria-hidden
+          />
+        )}
+      </AnimatePresence>
+
+      <aside
+        className={cn(
+          'fixed h-screen z-50 flex flex-col bg-white border-r border-[#E4E4E7] overflow-hidden',
+          'w-[220px] transition-transform duration-200 ease-out',
+          // Mobile: drawer fechado por padrão; abre via prop `open`
+          // md+: sempre visível
+          open ? 'translate-x-0' : '-translate-x-full',
+          'md:translate-x-0',
+        )}
+      >
+      {/* Botão fechar — só em mobile */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="md:hidden absolute top-3 right-3 h-8 w-8 inline-flex items-center justify-center rounded-md text-[#71717A] hover:text-[#0F172A] hover:bg-[#F4F4F5] transition-colors cursor-pointer border-0 bg-transparent z-10"
+        aria-label="Fechar menu"
+      >
+        <X size={16} />
+      </button>
+
       {/* Logo (clicável → Dashboard) */}
       <button
         type="button"
@@ -152,5 +203,6 @@ export default function Sidebar({ delayedCount }: SidebarProps) {
         )}
       </nav>
     </aside>
+    </>
   )
 }

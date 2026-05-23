@@ -9,7 +9,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useNotifications } from '@/hooks/useNotifications'
 import { STATUSES } from '@/types'
 import { getInitials } from '@/types'
-import { Bell, ChevronDown, LogOut, User } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, User, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { CommandPalette } from '@/components/ui/CommandPalette'
@@ -24,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { tasks } = useTasks()
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications()
   const [notifOpen, setNotifOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
@@ -74,13 +75,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       <CommandPalette />
-      <Sidebar delayedCount={delayedCount} />
+      <Sidebar
+        delayedCount={delayedCount}
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+      />
 
-      {/* Header — apenas notificações + bloco de usuário, ambos à direita */}
+      {/* Header — hamburger em mobile + notificações + bloco de usuário */}
       <header
-        className="fixed top-0 right-0 h-14 z-40 flex items-center justify-end gap-1 px-5 bg-background/95 backdrop-blur-sm border-b border-border"
-        style={{ left: SIDEBAR_WIDTH }}
+        className="fixed top-0 right-0 left-0 md:left-[220px] h-14 z-40 flex items-center justify-between gap-1 px-4 sm:px-5 bg-background/95 backdrop-blur-sm border-b border-border"
       >
+        {/* Hamburger — só em mobile (md:hidden) */}
+        <button
+          type="button"
+          onClick={() => setMobileNavOpen(true)}
+          className="md:hidden h-9 w-9 inline-flex items-center justify-center rounded-md text-[#3F3F46] hover:bg-[#F4F4F5] transition-colors cursor-pointer border-0 bg-transparent"
+          aria-label="Abrir menu"
+        >
+          <Menu size={18} />
+        </button>
+        {/* Spacer pra empurrar bloco direito em telas md+ */}
+        <div className="hidden md:block" />
+
+        {/* Bloco direito: notificações + usuário */}
+        <div className="flex items-center gap-1">
         {/* Notificações — agora ao lado do bloco do usuário */}
         <div ref={notifRef} className="relative">
           <IconTooltip label={unreadCount > 0 ? `${unreadCount} notificações` : 'Notificações'} side="bottom">
@@ -234,12 +252,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </AnimatePresence>
           </div>
         )}
+        </div>
       </header>
 
-      {/* Conteúdo principal */}
+      {/* Conteúdo principal — ml-0 em mobile, 220px em md+ */}
       <main
-        className="min-h-screen transition-all pt-14 flex-1 flex flex-col min-w-0"
-        style={{ marginLeft: SIDEBAR_WIDTH }}
+        className="min-h-screen transition-all pt-14 flex-1 flex flex-col min-w-0 ml-0 md:ml-[220px]"
       >
         <div className="p-6 flex-1 max-w-[1600px] mx-auto w-full">
           {/*

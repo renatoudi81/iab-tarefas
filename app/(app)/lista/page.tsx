@@ -194,7 +194,7 @@ export default function ListaPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#EDEEF1] rounded-2xl overflow-hidden shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]">
+      <div className="bg-white border border-[#EDEEF1] rounded-2xl overflow-x-auto shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]">
         <Table>
           <TableHeader>
             <TableRow className="bg-[#F7F8FA] hover:bg-[#F7F8FA] border-b border-[#E4E4E7]">

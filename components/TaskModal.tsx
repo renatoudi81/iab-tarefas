@@ -152,7 +152,7 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
             </div>
 
             {/* Categoria | Responsável */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label>Categoria *</Label>
                 <Select
@@ -190,7 +190,7 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
             </div>
 
             {/* Prioridade | Status | Estimado | Início */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label>Prioridade</Label>
                 <Select
@@ -241,7 +241,7 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
             </div>
 
             {/* Vencimento | Tempo Gasto (só edição) */}
-            <div className={cn('grid gap-4', isEditing ? 'grid-cols-2' : 'grid-cols-1')}>
+            <div className={cn('grid gap-4', isEditing ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1')}>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="data_prazo">Vencimento *</Label>
                 <Input
@@ -290,7 +290,7 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="grid grid-cols-2 gap-4 border-t border-dashed border-border pt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-dashed border-border pt-3">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="aguardando_quem">Aguardando retorno de:</Label>
                       <Input
@@ -326,7 +326,7 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="grid grid-cols-2 gap-4 border-t border-dashed border-border pt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-dashed border-border pt-3">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="data_conclusao">Data de Conclusão</Label>
                       <Input
