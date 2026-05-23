@@ -1,6 +1,16 @@
-import useSWR from 'swr'
+import useSWR, { mutate as globalMutate } from 'swr'
 import type { Subtask } from '@/types'
 import { apiFetch, apiFetcher } from '@/lib/api-fetch'
+
+/**
+ * Helper: revalida a lista global de tarefas (/api/tasks) em paralelo com
+ * a sub-coleção local. Necessário porque o card do Kanban (e a Lista)
+ * lê o contador `subtasks`/`_count.subtasks` do payload de /api/tasks —
+ * sem essa revalidação, o card mostra contagem velha após CUD de subtarefas.
+ */
+async function refreshTasksList() {
+  await globalMutate('/api/tasks')
+}
 
 export function useSubtasks(taskId: string | null) {
   const { data, isLoading, mutate } = useSWR<{ subtasks: Subtask[] }>(
@@ -19,7 +29,7 @@ export function useSubtasks(taskId: string | null) {
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Erro ao adicionar subtarefa')
-    await mutate()
+    await Promise.all([mutate(), refreshTasksList()])
     return json.subtask
   }
 
@@ -34,7 +44,7 @@ export function useSubtasks(taskId: string | null) {
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Erro ao atualizar subtarefa')
-    await mutate()
+    await Promise.all([mutate(), refreshTasksList()])
     return json.subtask
   }
 
@@ -46,7 +56,7 @@ export function useSubtasks(taskId: string | null) {
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Erro ao atualizar subtarefa')
-    await mutate()
+    await Promise.all([mutate(), refreshTasksList()])
     return json.subtask
   }
 
@@ -58,7 +68,7 @@ export function useSubtasks(taskId: string | null) {
       const json = await res.json()
       throw new Error(json.error || 'Erro ao excluir subtarefa')
     }
-    await mutate()
+    await Promise.all([mutate(), refreshTasksList()])
   }
 
   const completedCount = subtasks.filter(s => s.concluida).length
