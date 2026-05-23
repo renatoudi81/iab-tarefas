@@ -62,10 +62,14 @@ export default function ListaPage() {
   const [drawerTask, setDrawerTask] = useState<Task | null>(null)
   const [page, setPage] = useState(1)
 
-  // Mesma ordenação aplicada no Kanban (single source of truth de UX):
-  //   1. Data de vencimento (mais próxima primeiro; sem prazo vai pro final)
-  //   2. Prioridade (Crítica → Alta → Média → Baixa) como desempate
-  //   3. Data de criação (mais antiga primeiro) como último desempate
+  // Ordenação da Lista:
+  //   1. Atrasadas SEMPRE primeiro (status === 'Atrasada')
+  //   2. Data de vencimento (mais próxima primeiro; sem prazo vai pro final)
+  //   3. Prioridade (Crítica → Alta → Média → Baixa) como desempate
+  //   4. Data de criação (mais antiga primeiro) como último desempate
+  //
+  // Dentro do bloco "Atrasadas" no topo, a regra interna é a mesma (data,
+  // prioridade, criação) — as mais antigas/críticas aparecem primeiro.
   const PRIORITY_ORDER: Record<string, number> = useMemo(
     () => ({ 'Crítica': 0, 'Alta': 1, 'Média': 2, 'Baixa': 3 }),
     []
@@ -82,11 +86,21 @@ export default function ListaPage() {
         return true
       })
       .sort((a, b) => {
+        // 1. Atrasadas no topo
+        const aAtr = a.status === 'Atrasada' ? 0 : 1
+        const bAtr = b.status === 'Atrasada' ? 0 : 1
+        if (aAtr !== bAtr) return aAtr - bAtr
+
+        // 2. Data de vencimento
         const aP = a.data_prazo ?? '9999-12-31'
         const bP = b.data_prazo ?? '9999-12-31'
         if (aP !== bP) return aP < bP ? -1 : 1
+
+        // 3. Prioridade
         const pDiff = (PRIORITY_ORDER[a.prioridade] ?? 9) - (PRIORITY_ORDER[b.prioridade] ?? 9)
         if (pDiff !== 0) return pDiff
+
+        // 4. Data de criação
         const aC = a.criado_em ?? ''
         const bC = b.criado_em ?? ''
         return aC < bC ? -1 : 1
