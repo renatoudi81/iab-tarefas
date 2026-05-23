@@ -16,6 +16,7 @@ import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 import { stripHtml } from '@/components/ui/RichTextEditor'
 import { Pagination } from '@/components/ui/Pagination'
+import { getCategoryColor } from '@/lib/category-color'
 
 const PAGE_SIZE = 20
 
@@ -310,11 +311,21 @@ export default function ListaPage() {
                         <span className="text-[0.63rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0 tabular-nums tracking-tight">
                           #{task.id.slice(-5).toUpperCase()}
                         </span>
-                        {task.categoria && (
-                          <span className="text-[0.63rem] px-1.5 py-[2px] rounded font-medium bg-[#F4F4F5] text-[#52525B] truncate">
-                            {task.categoria}
-                          </span>
-                        )}
+                        {task.categoria && (() => {
+                          const catColor = getCategoryColor(task.categoria)
+                          return (
+                            <span
+                              className="inline-flex items-center gap-1 text-[0.63rem] font-semibold px-1.5 py-[2px] rounded truncate"
+                              style={{ background: catColor.bg, color: catColor.hex }}
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                style={{ background: catColor.hex }}
+                              />
+                              <span className="truncate">{task.categoria}</span>
+                            </span>
+                          )
+                        })()}
                       </div>
                       <div
                         className="font-medium text-sm truncate cursor-pointer hover:text-[#2563EB] transition-colors"

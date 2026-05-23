@@ -15,6 +15,7 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
+import { getCategoryColor } from '@/lib/category-color'
 
 export default function CategoriasPage() {
   // Gate de admin já é aplicado em app/(app)/admin/layout.tsx via AdminGuard
@@ -130,7 +131,10 @@ export default function CategoriasPage() {
               >
                 {/* Nome */}
                 <div className="flex items-center gap-2.5">
-                  <div className="w-2 h-2 rounded-full flex-shrink-0 bg-[#D4D4D8]" />
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ background: getCategoryColor(c.nome).hex }}
+                  />
                   <span className="text-sm font-medium text-[#111111]">{c.nome}</span>
                 </div>
 

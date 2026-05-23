@@ -13,6 +13,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import TaskModal from '@/components/TaskModal'
 import { stripHtml } from '@/components/ui/RichTextEditor'
+import { getCategoryColor } from '@/lib/category-color'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
@@ -265,12 +266,21 @@ export default function KanbanPage() {
                                   {/* TOP — info compacta (categoria + prio + menu) */}
                                   <div className="px-3.5 pt-3 pb-2 flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                      {task.categoria && (
-                                        <span className="inline-flex items-center gap-1 text-[0.65rem] font-medium px-1.5 py-[2px] rounded bg-[#F4F4F5] text-[#52525B] truncate">
-                                          <Tag size={9} className="flex-shrink-0" />
-                                          <span className="truncate">{task.categoria}</span>
-                                        </span>
-                                      )}
+                                      {task.categoria && (() => {
+                                        const catColor = getCategoryColor(task.categoria)
+                                        return (
+                                          <span
+                                            className="inline-flex items-center gap-1 text-[0.65rem] font-semibold px-1.5 py-[2px] rounded truncate"
+                                            style={{ background: catColor.bg, color: catColor.hex }}
+                                          >
+                                            <span
+                                              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                              style={{ background: catColor.hex }}
+                                            />
+                                            <span className="truncate">{task.categoria}</span>
+                                          </span>
+                                        )
+                                      })()}
                                     </div>
                                     <div className="flex items-center gap-1 flex-shrink-0">
                                       <span

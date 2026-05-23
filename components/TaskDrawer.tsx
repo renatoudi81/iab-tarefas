@@ -32,6 +32,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useToast } from '@/contexts/ToastContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { stripHtml } from '@/components/ui/RichTextEditor'
+import { getCategoryColor } from '@/lib/category-color'
 
 type DrawerTab = 'detalhes' | 'subtarefas' | 'comentarios' | 'tempo' | 'historico'
 
@@ -82,7 +83,23 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
       <div className="grid grid-cols-2 gap-4">
         <div>
           <SectionLabel>Categoria</SectionLabel>
-          <div className="font-medium">{task.categoria || 'â€”'}</div>
+          {task.categoria ? (() => {
+            const catColor = getCategoryColor(task.categoria)
+            return (
+              <span
+                className="inline-flex items-center gap-1.5 text-[0.85rem] font-semibold px-2 py-0.5 rounded"
+                style={{ background: catColor.bg, color: catColor.hex }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: catColor.hex }}
+                />
+                {task.categoria}
+              </span>
+            )
+          })() : (
+            <div className="font-medium">—</div>
+          )}
         </div>
         <div>
           <SectionLabel>ResponsÃ¡vel</SectionLabel>
