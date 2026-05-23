@@ -63,13 +63,25 @@ export default function ListaPage() {
   const [page, setPage] = useState(1)
 
   // Ordenação da Lista:
-  //   1. Atrasadas SEMPRE primeiro (status === 'Atrasada')
+  //   1. Por STATUS hierárquico (Atrasada → Em andamento → Aguardando →
+  //      Pendente → Concluída sempre por último)
   //   2. Data de vencimento (mais próxima primeiro; sem prazo vai pro final)
   //   3. Prioridade (Crítica → Alta → Média → Baixa) como desempate
   //   4. Data de criação (mais antiga primeiro) como último desempate
   //
-  // Dentro do bloco "Atrasadas" no topo, a regra interna é a mesma (data,
-  // prioridade, criação) — as mais antigas/críticas aparecem primeiro.
+  // Dentro de cada grupo de status, as 3 regras de desempate se aplicam
+  // — então tarefas Atrasadas com prazo mais antigo e prioridade Crítica
+  // ficam no topo absoluto da lista.
+  const STATUS_ORDER: Record<string, number> = useMemo(
+    () => ({
+      'Atrasada': 0,
+      'Em andamento': 1,
+      'Aguardando': 2,
+      'Pendente': 3,
+      'Concluída': 4,
+    }),
+    []
+  )
   const PRIORITY_ORDER: Record<string, number> = useMemo(
     () => ({ 'Crítica': 0, 'Alta': 1, 'Média': 2, 'Baixa': 3 }),
     []
@@ -86,10 +98,9 @@ export default function ListaPage() {
         return true
       })
       .sort((a, b) => {
-        // 1. Atrasadas no topo
-        const aAtr = a.status === 'Atrasada' ? 0 : 1
-        const bAtr = b.status === 'Atrasada' ? 0 : 1
-        if (aAtr !== bAtr) return aAtr - bAtr
+        // 1. Status (Atrasada primeiro, Concluída por último)
+        const sDiff = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+        if (sDiff !== 0) return sDiff
 
         // 2. Data de vencimento
         const aP = a.data_prazo ?? '9999-12-31'
@@ -105,7 +116,7 @@ export default function ListaPage() {
         const bC = b.criado_em ?? ''
         return aC < bC ? -1 : 1
       })
-  }, [tasks, search, filterStatus, filterPriority, filterUser, PRIORITY_ORDER])
+  }, [tasks, search, filterStatus, filterPriority, filterUser, STATUS_ORDER, PRIORITY_ORDER])
 
   // Reset para página 1 sempre que filtros mudarem (caso contrário,
   // o usuário poderia ficar numa página "vazia" após filtrar)
