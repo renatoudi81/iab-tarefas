@@ -1,7 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import { redirect } from 'next/navigation'
 import { useCategories } from '@/hooks/useCategories'
 import { Tag, Plus, Search, Trash2, MoreHorizontal, Pencil, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -19,7 +17,7 @@ import { useConfirm } from '@/contexts/ConfirmContext'
 import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 
 export default function CategoriasPage() {
-  const { user } = useAuth()
+  // Gate de admin já é aplicado em app/(app)/admin/layout.tsx via AdminGuard
   const { categories, addCategory, updateCategory, deleteCategory } = useCategories()
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<{ open: boolean; id: string | null; nome: string }>({ open: false, id: null, nome: '' })
@@ -29,8 +27,6 @@ export default function CategoriasPage() {
 
   const openNew = () => setModal({ open: true, id: null, nome: '' })
   const openEdit = (id: string, nome: string) => setModal({ open: true, id, nome })
-
-  if (user && user.perfil !== 'Administrador') redirect('/dashboard')
 
   const filtered = categories
     .filter(c => !search || c.nome.toLowerCase().includes(search.toLowerCase()))

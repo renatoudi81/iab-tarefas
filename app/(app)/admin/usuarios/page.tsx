@@ -1,7 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import { redirect } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUsers } from '@/hooks/useUsers'
 import { getInitials } from '@/types'
@@ -38,7 +36,7 @@ type UserForm = { nome: string; email: string; perfil: string; ativo: boolean }
 const EMPTY_USER: UserForm = { nome: '', email: '', perfil: 'Usuário', ativo: true }
 
 export default function UsuariosPage() {
-  const { user: authUser } = useAuth()
+  // Gate de admin já é aplicado em app/(app)/admin/layout.tsx via AdminGuard
   const { users, addUser, updateUser, deleteUser } = useUsers()
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<{ open: boolean; user: User | null }>({ open: false, user: null })
@@ -47,8 +45,6 @@ export default function UsuariosPage() {
   const [error, setError] = useState('')
   const { toast } = useToast()
   const { confirm } = useConfirm()
-
-  if (authUser && authUser.perfil !== 'Administrador') redirect('/dashboard')
 
   const openNew = () => { setForm(EMPTY_USER); setModal({ open: true, user: null }); setError('') }
   const openEdit = (u: User) => {
