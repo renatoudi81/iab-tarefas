@@ -590,6 +590,19 @@ html { scroll-behavior: smooth; }
   animation: fadeIn 0.18s ease both;
 }
 
+/* ─── Gantt — pulse de tarefas atrasadas ─────────────────────
+   Anel vermelho que respira (box-shadow), saliente o suficiente
+   pra capturar atenção sem mascarar a cor base da barra.
+*/
+@keyframes gantt-overdue-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1.5px var(--bar-color, #DC2626), 0 0 0 4px rgba(220,38,38,0.20);
+  }
+  50% {
+    box-shadow: 0 0 0 1.5px var(--bar-color, #DC2626), 0 0 0 7px rgba(220,38,38,0.10);
+  }
+}
+
 /* ─── Reduced motion (a11y) ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
