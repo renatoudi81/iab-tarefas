@@ -371,18 +371,17 @@ export default function RelatoriosPage() {
 
     // ──── Heatmap atividade por dia da semana
     // Eixo X: dia da semana (Dom..Sáb). Valor: nº de tarefas criadas
-    // OU concluídas naquele dia da semana. Contagens em 4 últimas semanas.
+    // naquele dia da semana, DENTRO do intervalo selecionado (dateFrom/
+    // dateTo). Se não há filtro, usa todo o range natural dos dados.
     const heatmapData = (() => {
-      const fourWeeksAgo = new Date()
-      fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
-      const fourWeeksAgoStr = fourWeeksAgo.toISOString().split('T')[0]
       const counts: number[] = [0, 0, 0, 0, 0, 0, 0] // dom..sab
       tasks.forEach((t) => {
         const created = t.criado_em?.slice(0, 10)
-        if (created && created >= fourWeeksAgoStr) {
-          const d = new Date(created + 'T00:00:00').getDay()
-          counts[d]++
-        }
+        if (!created) return
+        if (dateFrom && created < dateFrom) return
+        if (dateTo && created > dateTo) return
+        const d = new Date(created + 'T00:00:00').getDay()
+        counts[d]++
       })
       const max = Math.max(1, ...counts)
       const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -1012,10 +1011,10 @@ export default function RelatoriosPage() {
             iconColor="#7C3AED"
             iconBg="#F5F3FF"
             title="Atividade por dia da semana"
-            subtitle="Distribuição das tarefas criadas nas últimas 4 semanas"
+            subtitle={`Distribuição das tarefas criadas — ${isFiltered ? 'período filtrado' : 'todo o período analisado'}`}
           >
             <div className="p-5">
-              <div className="grid grid-cols-7 gap-2" role="group" aria-label="Tarefas criadas por dia da semana nas últimas 4 semanas">
+              <div className="grid grid-cols-7 gap-2" role="group" aria-label={`Tarefas criadas por dia da semana — ${isFiltered ? 'período filtrado' : 'todo o período'}`}>
                 {stats.heatmapData.map((d) => (
                   <div key={d.label} className="flex flex-col items-center gap-1.5">
                     <span className="text-[0.65rem] uppercase font-semibold tracking-wider text-[#71717A]" aria-hidden>
@@ -1058,7 +1057,7 @@ export default function RelatoriosPage() {
                 <span>Mais</span>
               </div>
               <ChartDataTable
-                caption="Tarefas criadas por dia da semana (últimas 4 semanas)"
+                caption={`Tarefas criadas por dia da semana — ${isFiltered ? `${formatDateBR(effectiveFrom)} a ${formatDateBR(effectiveTo)}` : 'todo o período analisado'}`}
                 headers={['Dia da semana', 'Tarefas criadas']}
                 rows={stats.heatmapData.map(d => [d.label, String(d.value)])}
               />

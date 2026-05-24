@@ -284,7 +284,7 @@ export function PrintReport({
       {/* Atividade por dia da semana (textual) */}
       {stats.heatmapData.some(d => d.value > 0) && (
         <section className="pr-section">
-          <h2>Atividade por dia da semana (últimas 4 semanas)</h2>
+          <h2>Atividade por dia da semana ({fromLabel} a {toLabel})</h2>
           <table className="pr-table">
             <thead>
               <tr>
