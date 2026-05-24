@@ -446,6 +446,20 @@ export default function RelatoriosPage() {
     ? 'Todos os usuários'
     : (users.find(u => u.id === effectiveUserId)?.nome || 'Usuário')
 
+  // Intervalo efetivo pro PDF: se o usuário filtrou, usa o filtro;
+  // senão calcula o range natural dos dados (criado_em mais antigo → hoje).
+  const todayStrLocal = new Date().toISOString().split('T')[0]
+  const isFiltered = !!(dateFrom || dateTo)
+  let effectiveFrom = dateFrom
+  let effectiveTo = dateTo || todayStrLocal
+  if (!effectiveFrom) {
+    const oldest = tasks
+      .map(t => (t.criado_em || '').slice(0, 10))
+      .filter(Boolean)
+      .sort()[0]
+    effectiveFrom = oldest || todayStrLocal
+  }
+
   return (
     <>
       {/* PrintReport — versão otimizada do relatório para PDF/papel.
@@ -458,6 +472,9 @@ export default function RelatoriosPage() {
         totalTasks={tasks.length}
         dateFrom={dateFrom}
         dateTo={dateTo}
+        effectiveFrom={effectiveFrom}
+        effectiveTo={effectiveTo}
+        isFiltered={isFiltered}
         filterLabel={filterLabel}
       />
 

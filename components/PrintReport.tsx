@@ -23,6 +23,12 @@ interface UserLite {
 }
 
 interface PrintReportProps {
+  /** Intervalo efetivo computado pelas tarefas/lançamentos analisados.
+   *  Mostrado sempre, em formato DD/MM/AAAA → DD/MM/AAAA. */
+  effectiveFrom: string
+  effectiveTo: string
+  /** Se true, o intervalo veio do filtro manual; senão é o range dos dados */
+  isFiltered: boolean
   stats: {
     byStatus: { name: Status; value: number; color: string }[]
     byPriority: { name: Prioridade; value: number; color: string }[]
@@ -54,12 +60,19 @@ interface PrintReportProps {
 }
 
 export function PrintReport({
-  stats, users, totalTasks, dateFrom, dateTo, filterLabel,
+  stats, users, totalTasks, dateFrom, dateTo, effectiveFrom, effectiveTo, isFiltered, filterLabel,
 }: PrintReportProps) {
   const generatedAt = new Date()
-  const periodLabel = dateFrom || dateTo
-    ? `${dateFrom ? formatDateBR(dateFrom) : '—'} a ${dateTo ? formatDateBR(dateTo) : '—'}`
-    : 'Todo o período'
+  // Intervalo: sempre concreto. Se o usuário filtrou manualmente, mostra
+  // o filtro escolhido; caso contrário, mostra o range natural dos dados.
+  const fromLabel = effectiveFrom ? formatDateBR(effectiveFrom) : '—'
+  const toLabel = effectiveTo ? formatDateBR(effectiveTo) : '—'
+  const periodLabel = `${fromLabel} a ${toLabel}`
+  const periodSubLabel = isFiltered
+    ? '(filtro aplicado pelo usuário)'
+    : '(intervalo total dos dados analisados)'
+  // Evita warning de unused (mantidos por compat de assinatura)
+  void dateFrom; void dateTo;
 
   return (
     <div className="print-report">
@@ -71,7 +84,8 @@ export function PrintReport({
         </div>
         <div className="pr-meta">
           <div><strong>Período:</strong> {periodLabel}</div>
-          <div><strong>Filtro:</strong> {filterLabel}</div>
+          <div className="pr-meta-sub">{periodSubLabel}</div>
+          <div><strong>Usuário:</strong> {filterLabel}</div>
           <div><strong>Gerado em:</strong> {generatedAt.toLocaleDateString('pt-BR')} {generatedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
       </header>

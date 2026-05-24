@@ -688,6 +688,12 @@ html { scroll-behavior: smooth; }
   line-height: 1.4;
 }
 .print-report .pr-meta strong { color: #0F172A; font-weight: 600; }
+.print-report .pr-meta-sub {
+  font-size: 7pt;
+  color: #A1A1AA;
+  font-style: italic;
+  margin-top: -1px;
+}
 
 /* KPIs em tabela única */
 .print-report .pr-kpis {
