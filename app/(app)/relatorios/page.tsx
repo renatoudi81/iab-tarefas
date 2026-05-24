@@ -12,6 +12,7 @@ import {
 import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR } from '@/types'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
+import { PrintReport } from '@/components/PrintReport'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -441,7 +442,25 @@ export default function RelatoriosPage() {
     return <RelatoriosSkeleton />
   }
 
+  const filterLabel = effectiveUserId === 'all'
+    ? 'Todos os usuários'
+    : (users.find(u => u.id === effectiveUserId)?.nome || 'Usuário')
+
   return (
+    <>
+      {/* PrintReport — versão otimizada do relatório para PDF/papel.
+          Fica oculto na tela (.print-report tem display:none por padrão)
+          e SUBSTITUI o conteúdo da tela quando o usuário imprime.
+          O CSS @media print esconde body * e mostra apenas .print-report. */}
+      <PrintReport
+        stats={stats}
+        users={users}
+        totalTasks={tasks.length}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        filterLabel={filterLabel}
+      />
+
     <div className="pb-10">
       {/* ──────────────── Header ──────────────── */}
       {/* Padrão Kanban/Lista/Gantt: header com pílula+h1+subtítulo à esquerda,
@@ -1134,6 +1153,7 @@ export default function RelatoriosPage() {
         )}
       </motion.div>
     </div>
+    </>
   )
 }
 
