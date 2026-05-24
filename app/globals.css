@@ -624,9 +624,10 @@ html { scroll-behavior: smooth; }
      espaço, então não cria páginas em branco. */
   .print-report ~ * { display: none !important; }
 
-  /* Esconde chrome do app */
+  /* Esconde chrome do app — mas NÃO o <header className="pr-header">
+     que fica dentro do PrintReport (usa :not pra preservá-lo). */
   aside,
-  header,
+  header:not(.pr-header),
   .sr-only,
   [class*="ScrollProgress"],
   [class*="GrainOverlay"] { display: none !important; }
