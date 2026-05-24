@@ -619,20 +619,38 @@ html { scroll-behavior: smooth; }
     margin: 12mm 10mm;
   }
 
-  /* Esconde 100% do app: chrome + conteúdo da tela */
-  body * { visibility: hidden !important; }
-  /* Restaura visibilidade APENAS do PrintReport e seus filhos */
-  .print-report,
-  .print-report * { visibility: visible !important; }
+  /* Esconde TUDO que segue o PrintReport (o conteúdo da tela
+     fica como irmão dentro do fragment). display:none não ocupa
+     espaço, então não cria páginas em branco. */
+  .print-report ~ * { display: none !important; }
 
-  /* Posiciona o PrintReport no topo da página */
+  /* Esconde chrome do app */
+  aside,
+  header,
+  .sr-only,
+  [class*="ScrollProgress"],
+  [class*="GrainOverlay"] { display: none !important; }
+
+  /* Reseta containers ancestrais pra não inflarem altura */
+  html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+  body > div,
+  main,
+  main > div {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    background: white !important;
+  }
+
+  /* Mostra o PrintReport */
   .print-report {
     display: block !important;
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    background: white;
-    color: #0F172A;
+    width: 100% !important;
+    background: white !important;
+    color: #0F172A !important;
     font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 9.5pt;
     line-height: 1.35;
