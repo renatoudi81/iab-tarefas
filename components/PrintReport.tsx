@@ -79,8 +79,8 @@ export function PrintReport({
       {/* Cabeçalho */}
       <header className="pr-header">
         <div>
-          <h1>Relatório de Tarefas</h1>
-          <p className="pr-sub">Instituto Alfa e Beto · Controle de Atividades</p>
+          <h1>Controle de Atividades</h1>
+          <p className="pr-sub">Instituto Alfa e Beto · Relatório de tarefas</p>
         </div>
         <div className="pr-meta">
           <div><strong>Período:</strong> {periodLabel}</div>
