@@ -487,7 +487,8 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Toolbar de filtros — linha separada (padrão Kanban/Lista/Gantt) */}
-      <div className="mb-5 flex items-center gap-2 flex-wrap">
+      {/* data-print-toolbar="hide": removida do PDF gerado via window.print() */}
+      <div data-print-toolbar="hide" className="mb-5 flex items-center gap-2 flex-wrap">
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>
             <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
