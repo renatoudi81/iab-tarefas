@@ -645,7 +645,8 @@ function PageHeader(p: PageHeaderProps) {
   const STATUSES_LIST: Status[] = ['Atrasada', 'Em andamento', 'Aguardando', 'Pendente', 'Concluída']
   return (
     <>
-      <div className="mb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      {/* Header — padrão Kanban/Lista (mb-6) */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">

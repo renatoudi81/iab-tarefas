@@ -444,7 +444,9 @@ export default function RelatoriosPage() {
   return (
     <div className="pb-10">
       {/* ──────────────── Header ──────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7">
+      {/* Padrão Kanban/Lista/Gantt: header com pílula+h1+subtítulo à esquerda,
+          CTAs (Imprimir, Exportar CSV) à direita. Filtros vão em toolbar abaixo. */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
@@ -468,25 +470,7 @@ export default function RelatoriosPage() {
               : 'Visão filtrada — métricas restritas ao usuário selecionado.'}
           </p>
         </div>
-        <div className="flex gap-2 items-center flex-wrap">
-          {isAdmin && users.length > 1 && (
-            <div className="w-[200px]">
-              <Select value={filterUserId} onValueChange={setFilterUserId}>
-                <SelectTrigger aria-label="Filtrar por usuário" className="h-9 text-sm bg-white">
-                  <SelectValue placeholder="Filtrar por usuário..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os usuários</SelectItem>
-                  {users
-                    .slice()
-                    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-                    .map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+        <div className="flex gap-2 items-center">
           <button
             onClick={() => window.print()}
             className="h-9 flex items-center gap-1.5 border border-[#E4E4E7] bg-white hover:bg-[#F7F8FA] active:scale-[0.98] text-[#3F3F46] text-sm font-medium px-3.5 rounded-lg transition-all cursor-pointer"
@@ -499,8 +483,29 @@ export default function RelatoriosPage() {
           >
             <Download size={13} strokeWidth={2.5} /> Exportar CSV
           </MagneticButton>
+        </div>
+      </div>
 
-          {/* Direita: date range — mesmo padrão de Kanban/Lista/Gantt */}
+      {/* Toolbar de filtros — linha separada (padrão Kanban/Lista/Gantt) */}
+      <div className="mb-5 flex items-center gap-2 flex-wrap">
+        {isAdmin && users.length > 1 && (
+          <Select value={filterUserId} onValueChange={setFilterUserId}>
+            <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
+              <SelectValue placeholder="Filtrar por usuário..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os usuários</SelectItem>
+              {users
+                .slice()
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                .map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        )}
+        {/* Direita: date range — ml-auto empurra pro final (padrão unificado) */}
+        <div className="ml-auto">
           <DateRangeFilter
             from={dateFrom}
             to={dateTo}

@@ -49,8 +49,8 @@ export default function PerfilPage() {
 
   return (
     <div className="max-w-3xl">
-      {/* Header */}
-      <div className="mb-7">
+      {/* Header — padrão Kanban/Lista (mb-6) */}
+      <div className="mb-6">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
             <UserIcon size={11} strokeWidth={2.5} />

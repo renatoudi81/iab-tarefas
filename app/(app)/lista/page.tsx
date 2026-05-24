@@ -196,8 +196,8 @@ export default function ListaPage() {
         </MagneticButton>
       </div>
 
-      {/* Toolbar: busca + filtros */}
-      <div className="flex gap-2.5 flex-wrap items-center mb-4">
+      {/* Toolbar: busca + filtros — padrão mb-5 unificado (Kanban/Gantt/Relatórios) */}
+      <div className="flex gap-2.5 flex-wrap items-center mb-5">
         <div className="relative min-w-[200px] max-w-xs flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
           <Input

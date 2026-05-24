@@ -522,42 +522,43 @@ export default function DashboardPage() {
       className="flex flex-col gap-6 pb-10"
     >
       {/* ──────────────── Header ──────────────── */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col md:flex-row md:items-end md:justify-between gap-4"
-      >
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
-              <Sparkles size={11} strokeWidth={2.5} />
-              Visão geral
-            </span>
-          </div>
-          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
-            Dashboard
-          </h1>
-          <p className="text-sm text-[#71717A] mt-1.5">
-            Acompanhe a produtividade da equipe e os indicadores do período selecionado.
-          </p>
+      {/* Header — só pílula+h1+subtítulo (padrão Kanban/Lista/Gantt).
+          Filtros vão em toolbar separada abaixo. */}
+      <motion.div variants={itemVariants} className="mb-6">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+            <Sparkles size={11} strokeWidth={2.5} />
+            Visão geral
+          </span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Filtro por usuário — admin escolhe; outros perfis ocultos */}
-          {isAdmin && users.length > 1 && (
-            <Select value={filterUserId} onValueChange={setFilterUserId}>
-              <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
-                <SelectValue placeholder="Filtrar por usuário..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os usuários</SelectItem>
-                {users
-                  .slice()
-                  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-                  .map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          )}
+        <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
+          Dashboard
+        </h1>
+        <p className="text-sm text-[#71717A] mt-1.5">
+          Acompanhe a produtividade da equipe e os indicadores do período selecionado.
+        </p>
+      </motion.div>
+
+      {/* Toolbar de filtros — linha separada (padrão Kanban/Lista/Gantt) */}
+      <motion.div variants={itemVariants} className="mb-5 flex items-center gap-2 flex-wrap">
+        {/* Filtro por usuário — admin escolhe; outros perfis ocultos */}
+        {isAdmin && users.length > 1 && (
+          <Select value={filterUserId} onValueChange={setFilterUserId}>
+            <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
+              <SelectValue placeholder="Filtrar por usuário..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os usuários</SelectItem>
+              {users
+                .slice()
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+                .map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        )}
+        <div className="ml-auto">
           <DateRangeFilter
             from={dateFrom}
             to={dateTo}
