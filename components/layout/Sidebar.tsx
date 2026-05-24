@@ -115,13 +115,13 @@ export default function Sidebar({ delayedCount, open = false, onClose }: Sidebar
           loading="eager"
           className="object-contain object-left block"
         />
-        <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-[#A1A1AA]">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-[#71717A]">
           Controle de Atividades
         </span>
       </button>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 px-2.5 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5">
+      <nav aria-label="Navegação principal" className="flex-1 py-3 px-2.5 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5">
         {navItems.map(item => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -130,6 +130,7 @@ export default function Sidebar({ delayedCount, open = false, onClose }: Sidebar
               key={item.id}
               onClick={() => router.push(item.href)}
               title={item.label}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'w-full flex items-center gap-2.5 px-3 py-2 rounded-md border-0',
                 'relative cursor-pointer text-left',
@@ -165,7 +166,7 @@ export default function Sidebar({ delayedCount, open = false, onClose }: Sidebar
             <div className="h-px bg-[#E4E4E7] mx-1 my-2" />
             <div className="flex items-center gap-1.5 px-3 py-1 mb-0.5">
               <Settings size={10} className="text-[#A1A1AA] flex-shrink-0" />
-              <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-[#A1A1AA] whitespace-nowrap">
+              <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-[#71717A] whitespace-nowrap">
                 Admin
               </span>
             </div>
@@ -178,6 +179,7 @@ export default function Sidebar({ delayedCount, open = false, onClose }: Sidebar
                   key={sub.id}
                   onClick={() => router.push(sub.href)}
                   title={sub.label}
+                  aria-current={isSubActive ? 'page' : undefined}
                   className={cn(
                     'w-full flex items-center gap-2.5 px-3 py-2 rounded-md border-0',
                     'relative cursor-pointer text-left',

@@ -134,18 +134,21 @@ export const STATUS_LABELS: Record<Status, string> = {
 }
 
 export const STATUS_COLORS: Record<Status, string> = {
-  'Pendente': '#64748b',
-  'Em andamento': '#3b82f6',
-  'Atrasada': '#ef4444',
-  'Aguardando': '#f59e0b',
-  'Concluída': '#22c55e'
+  // Versões -700 garantem contraste 4.5:1 quando usadas como texto sobre bg claro.
+  'Pendente':     '#475569', // slate-600
+  'Em andamento': '#1D4ED8', // blue-700
+  'Atrasada':     '#B91C1C', // red-700
+  'Aguardando':   '#B45309', // amber-700
+  'Concluída':    '#15803D', // green-700
 }
 
 export const PRIORITY_COLORS: Record<Prioridade, string> = {
-  'Baixa': '#64748b',
-  'Média': '#3b82f6',
-  'Alta': '#f59e0b',
-  'Crítica': '#ef4444'
+  // Versões -800 dos hues amarelos/marrons (alta) e -700 dos outros, para
+  // garantir contraste 4.5:1 do texto sobre bg do mesmo hue (alpha ~13%).
+  'Baixa':   '#334155', // slate-700
+  'Média':   '#1D4ED8', // blue-700
+  'Alta':    '#92400E', // amber-800 (mais escuro pra contraste no bg amarelado)
+  'Crítica': '#991B1B', // red-800
 }
 
 export function getInitials(nome: string): string {

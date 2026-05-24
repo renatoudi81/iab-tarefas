@@ -9,17 +9,19 @@
  * (bg cheio) E sobre texto colorido (bg 8% opacity).
  */
 
+// Paleta calibrada com versões -700/-800 das cores Tailwind:
+// garante contraste 4.5:1 do texto sobre o bg 12% opacity (acessibilidade WCAG AA).
 const PALETTE = [
-  '#2563EB', // blue
-  '#16A34A', // green
-  '#F59E0B', // amber
-  '#8B5CF6', // violet
-  '#EC4899', // pink
-  '#0EA5E9', // sky
-  '#14B8A6', // teal
-  '#6366F1', // indigo
-  '#F97316', // orange
-  '#0891B2', // cyan
+  '#1D4ED8', // blue-700
+  '#15803D', // green-700
+  '#B45309', // amber-700
+  '#6D28D9', // violet-700
+  '#BE185D', // pink-700
+  '#0369A1', // sky-700
+  '#0F766E', // teal-700
+  '#4338CA', // indigo-700
+  '#C2410C', // orange-700
+  '#155E75', // cyan-800
 ] as const
 
 function hashString(s: string): number {

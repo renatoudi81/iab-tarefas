@@ -202,7 +202,7 @@ export default function KanbanPage() {
         {/* Esquerda: filtros conceituais (responsável) */}
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>
-            <SelectTrigger className="h-9 w-[180px] text-sm bg-white">
+            <SelectTrigger aria-label="Filtrar por responsável" className="h-9 w-[180px] text-sm bg-white">
               <SelectValue placeholder="Responsável..." />
             </SelectTrigger>
             <SelectContent>
@@ -276,7 +276,7 @@ export default function KanbanPage() {
                         <Plus size={13} strokeWidth={2.4} />
                       </button>
                     </div>
-                    <p className="text-[0.7rem] text-[#A1A1AA] mt-1 tabular-nums">
+                    <p className="text-[0.7rem] text-[#71717A] mt-1 tabular-nums">
                       {col.length} tarefa{col.length !== 1 ? 's' : ''}&nbsp;·&nbsp;
                       {totalMin > 0 ? formatMinutes(totalMin) : '—'}
                     </p>
@@ -383,7 +383,7 @@ export default function KanbanPage() {
                                             type="button"
                                             onPointerDown={(e) => e.stopPropagation()}
                                             onClick={(e) => e.stopPropagation()}
-                                            className="h-6 w-6 flex items-center justify-center rounded-md text-[#A1A1AA] hover:text-[#111111] hover:bg-[#F4F4F5] transition-colors cursor-pointer border-0 bg-transparent"
+                                            className="h-6 w-6 flex items-center justify-center rounded-md text-[#71717A] hover:text-[#111111] hover:bg-[#F4F4F5] transition-colors cursor-pointer border-0 bg-transparent"
                                             title="Ações"
                                           >
                                             <MoreHorizontal size={14} />
@@ -445,10 +445,10 @@ export default function KanbanPage() {
                                       <div className="mt-1">
                                         <div className="flex items-center justify-between mb-1">
                                           <span className="text-[0.65rem] text-[#71717A] flex items-center gap-1 font-medium">
-                                            <CheckSquare size={10} className={allDone ? 'text-[#16A34A]' : 'text-[#A1A1AA]'} />
+                                            <CheckSquare size={10} className={allDone ? 'text-[#15803D]' : 'text-[#71717A]'} />
                                             Subtarefas
                                           </span>
-                                          <span className={cn('text-[0.65rem] font-bold tabular-nums', allDone ? 'text-[#16A34A]' : 'text-[#52525B]')}>
+                                          <span className={cn('text-[0.65rem] font-bold tabular-nums', allDone ? 'text-[#15803D]' : 'text-[#52525B]')}>
                                             {doneSubtasks}/{totalSubtasks}
                                           </span>
                                         </div>
@@ -479,7 +479,7 @@ export default function KanbanPage() {
                                     <div className="flex items-center gap-2 flex-shrink-0 text-[0.68rem]">
                                       {task.tempo_estimado > 0 && (
                                         <span className="inline-flex items-center gap-0.5 text-[#71717A] tabular-nums">
-                                          <Clock size={10} className="text-[#A1A1AA]" />
+                                          <Clock size={10} className="text-[#71717A]" />
                                           {formatMinutes(task.tempo_estimado)}
                                         </span>
                                       )}
@@ -492,7 +492,7 @@ export default function KanbanPage() {
                                               : 'bg-white text-[#3F3F46] border border-[#E4E4E7]',
                                           )}
                                         >
-                                          <Calendar size={10} className={overdue ? 'text-[#DC2626]' : 'text-[#A1A1AA]'} />
+                                          <Calendar size={10} className={overdue ? 'text-[#DC2626]' : 'text-[#71717A]'} />
                                           {formatDateBR(task.data_prazo)}
                                         </span>
                                       )}

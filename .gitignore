@@ -52,3 +52,6 @@ dump.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# accessibility audit reports (gerados pelo scripts/axe-audit.mjs)
+/axe-report/

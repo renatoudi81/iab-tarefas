@@ -117,6 +117,7 @@ function PerfilInfoCard({
             type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
+            aria-label="Nome"
             className="w-full h-10 px-3 rounded-lg border border-[#E4E4E7] bg-white text-sm text-[#111111] outline-none transition-colors focus:border-[#2563EB] focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
           />
         </div>
@@ -126,11 +127,12 @@ function PerfilInfoCard({
             <span className="inline-flex items-center gap-1.5">E-mail <ReadOnlyBadge /></span>
           </Label>
           <div className="relative">
-            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none" />
+            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
             <input
               type="email"
               value={user.email}
               readOnly
+              aria-label="E-mail (somente leitura)"
               className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#52525B] cursor-not-allowed"
             />
           </div>
@@ -141,11 +143,12 @@ function PerfilInfoCard({
             <span className="inline-flex items-center gap-1.5">Perfil <ReadOnlyBadge /></span>
           </Label>
           <div className="relative">
-            <Shield size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none" />
+            <Shield size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
             <input
               type="text"
               value={user.perfil}
               readOnly
+              aria-label="Perfil de acesso (somente leitura)"
               className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#52525B] cursor-not-allowed"
             />
           </div>
@@ -162,7 +165,7 @@ function PerfilInfoCard({
             className={cn(
               'h-9 px-4 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors',
               !changed || saving
-                ? 'bg-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed'
+                ? 'bg-[#E4E4E7] text-[#71717A] cursor-not-allowed'
                 : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white cursor-pointer'
             )}
           >
@@ -268,7 +271,10 @@ function PerfilFotoCard({
         <div className="flex flex-col items-center gap-3 flex-shrink-0">
           <div
             className="relative w-24 h-24 rounded-full flex items-center justify-center overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
-            style={{ background: photoUrl ? 'transparent' : color }}
+            style={{
+              // color-mix garante contraste 4.5:1 do texto branco sobre qualquer avatar_color
+              background: photoUrl ? 'transparent' : `color-mix(in srgb, ${color} 68%, #000)`,
+            }}
           >
             {photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -291,7 +297,7 @@ function PerfilFotoCard({
               className={cn(
                 'h-8 px-3 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors border',
                 savingPhoto
-                  ? 'border-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed'
+                  ? 'border-[#E4E4E7] text-[#71717A] cursor-not-allowed'
                   : 'border-[#E4E4E7] bg-white hover:bg-[#F7F8FA] text-[#3F3F46] cursor-pointer'
               )}
             >
@@ -318,18 +324,19 @@ function PerfilFotoCard({
             accept="image/png,image/jpeg,image/webp"
             className="hidden"
             onChange={handleFileChange}
+            aria-label="Selecionar arquivo de avatar"
           />
         </div>
 
         {/* Color picker — fallback quando não tem foto */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-3">
-            <Palette size={13} className="text-[#A1A1AA]" />
+            <Palette size={13} className="text-[#71717A]" />
             <span className="text-[0.78rem] font-semibold text-[#52525B]">
               Cor de fundo das iniciais
             </span>
             {hasPhoto && (
-              <span className="text-[0.65rem] text-[#A1A1AA] uppercase tracking-wide ml-1">
+              <span className="text-[0.65rem] text-[#71717A] uppercase tracking-wide ml-1">
                 (usada quando não há foto)
               </span>
             )}
@@ -362,7 +369,7 @@ function PerfilFotoCard({
               className={cn(
                 'h-8 px-3 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors',
                 savingColor
-                  ? 'bg-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed'
+                  ? 'bg-[#E4E4E7] text-[#71717A] cursor-not-allowed'
                   : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white cursor-pointer'
               )}
             >
@@ -523,7 +530,7 @@ function PerfilSenhaCard({ userEmail }: { userEmail: string }) {
               className={cn(
                 'h-9 px-4 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors',
                 !canSave
-                  ? 'bg-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed'
+                  ? 'bg-[#E4E4E7] text-[#71717A] cursor-not-allowed'
                   : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white cursor-pointer'
               )}
             >
@@ -559,7 +566,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 function ReadOnlyBadge() {
-  return <span className="text-[0.65rem] font-medium text-[#A1A1AA] uppercase tracking-wide">somente leitura</span>
+  return <span className="text-[0.65rem] font-medium text-[#71717A] uppercase tracking-wide">somente leitura</span>
 }
 
 function FormFooter({
@@ -600,7 +607,7 @@ function PasswordField({
     <div>
       <Label>{label}</Label>
       <div className="relative">
-        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none" />
+        <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
         <input
           id={id}
           required
@@ -609,6 +616,7 @@ function PasswordField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          aria-label={label}
           className={cn(
             'w-full h-10 pl-9 pr-10 rounded-lg border text-sm text-[#111111] outline-none transition-colors',
             error
@@ -620,7 +628,7 @@ function PasswordField({
           type="button"
           onClick={onToggle}
           aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded text-[#A1A1AA] hover:text-[#52525B] hover:bg-[#F4F4F5] transition-colors bg-transparent border-0 cursor-pointer"
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded text-[#71717A] hover:text-[#52525B] hover:bg-[#F4F4F5] transition-colors bg-transparent border-0 cursor-pointer"
         >
           {show ? <EyeOff size={14} /> : <Eye size={14} />}
         </button>
@@ -635,9 +643,9 @@ function CriteriaItem({ ok, label, optional }: { ok: boolean; label: string; opt
     <li className="flex items-center gap-1.5">
       <CheckCircle2
         size={12}
-        className={cn('flex-shrink-0', ok ? 'text-[#22C55E]' : optional ? 'text-[#D4D4D8]' : 'text-[#A1A1AA]')}
+        className={cn('flex-shrink-0', ok ? 'text-[#22C55E]' : optional ? 'text-[#D4D4D8]' : 'text-[#71717A]')}
       />
-      <span className={cn(ok ? 'text-[#52525B]' : 'text-[#A1A1AA]')}>{label}</span>
+      <span className={cn(ok ? 'text-[#52525B]' : 'text-[#71717A]')}>{label}</span>
     </li>
   )
 }

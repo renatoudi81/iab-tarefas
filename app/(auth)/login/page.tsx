@@ -92,7 +92,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0A1530] relative overflow-hidden px-6 py-8 sm:py-12">
+    <main className="min-h-screen flex items-center justify-center bg-[#0A1530] relative overflow-hidden px-6 py-8 sm:py-12">
       {/* Background — gradient + blobs animados sutilmente */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#0A1530] via-[#0F1E45] to-[#091333]" />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -376,6 +376,6 @@ export default function LoginPage() {
           </p>
         </div>
       </motion.div>
-    </div>
+    </main>
   )
 }

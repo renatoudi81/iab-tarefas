@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR } from '@/types'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
+import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -149,7 +150,7 @@ function Kpi({
             value
           )}
         </div>
-        {hint && <div className="text-[0.72rem] text-[#A1A1AA] mt-2">{hint}</div>}
+        {hint && <div className="text-[0.72rem] text-[#71717A] mt-2">{hint}</div>}
       </div>
     </SpotlightCard>
   )
@@ -471,7 +472,7 @@ export default function RelatoriosPage() {
           {isAdmin && users.length > 1 && (
             <div className="w-[200px]">
               <Select value={filterUserId} onValueChange={setFilterUserId}>
-                <SelectTrigger className="h-9 text-sm bg-white">
+                <SelectTrigger aria-label="Filtrar por usuário" className="h-9 text-sm bg-white">
                   <SelectValue placeholder="Filtrar por usuário..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -571,7 +572,7 @@ export default function RelatoriosPage() {
           >
             <div className="p-5">
               {stats.byStatus.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-[#A1A1AA] gap-2">
+                <div className="flex flex-col items-center justify-center py-10 text-[#71717A] gap-2">
                   <PieChartIcon size={32} className="opacity-30" />
                   <p className="text-sm">Sem tarefas cadastradas</p>
                 </div>
@@ -596,6 +597,11 @@ export default function RelatoriosPage() {
                       <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
+                  <ChartDataTable
+                    caption="Distribuição de tarefas por status"
+                    headers={['Status', 'Quantidade']}
+                    rows={stats.byStatus.map(s => [s.name, String(s.value)])}
+                  />
                   <ul className="flex flex-col gap-2 mt-4">
                     {stats.byStatus.map(({ name, value, color }) => (
                       <li key={name} className="flex justify-between items-center">
@@ -627,7 +633,7 @@ export default function RelatoriosPage() {
           >
             <div className="p-5">
               {stats.byCategory.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-[#A1A1AA] gap-2">
+                <div className="flex flex-col items-center justify-center py-12 text-[#71717A] gap-2">
                   <BarChart2 size={32} className="opacity-30" />
                   <p className="text-sm">Nenhuma categoria com tarefas</p>
                 </div>
@@ -666,6 +672,11 @@ export default function RelatoriosPage() {
                   </BarChart>
                 </ResponsiveContainer>
               )}
+              <ChartDataTable
+                caption="Tarefas por categoria"
+                headers={['Categoria', 'Tarefas']}
+                rows={stats.byCategory.map(c => [c.name, String(c.total)])}
+              />
             </div>
           </Section>
         </motion.div>
@@ -683,7 +694,7 @@ export default function RelatoriosPage() {
           >
             <div className="p-5">
               {stats.byUser.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-[#A1A1AA] gap-2">
+                <div className="flex flex-col items-center justify-center py-10 text-[#71717A] gap-2">
                   <Users size={32} className="opacity-30" />
                   <p className="text-sm">Nenhum usuário com tarefas atribuídas</p>
                 </div>
@@ -733,15 +744,19 @@ export default function RelatoriosPage() {
                           <div className="text-[0.78rem] text-[#71717A] flex flex-wrap items-center gap-x-3 gap-y-0.5 mb-2.5">
                             <span className="tabular-nums">
                               <strong className="text-[#111111] font-semibold">{done}</strong>
-                              <span className="text-[#A1A1AA]"> / {total}</span> concluídas
+                              <span className="text-[#71717A]"> / {total}</span> concluídas
                             </span>
                             <span className="text-[#D4D4D8]">·</span>
                             <span className="inline-flex items-center gap-1 tabular-nums">
-                              <Clock size={11} className="text-[#A1A1AA]" />
+                              <Clock size={11} className="text-[#71717A]" />
                               {hours}h
                             </span>
                           </div>
-                          <Progress value={pct} className={`h-1.5 ${pctBarClass}`} />
+                          <Progress
+                            value={pct}
+                            className={`h-1.5 ${pctBarClass}`}
+                            aria-label={`Conclusão: ${pct}%`}
+                          />
                         </div>
                       </li>
                     )
@@ -809,7 +824,7 @@ export default function RelatoriosPage() {
                   return (
                     <li key={task.id} className="flex items-center gap-3 px-5 py-3">
                       <div className="w-10 h-10 rounded-lg bg-[#FEF2F2] flex items-center justify-center flex-shrink-0">
-                        <span className="text-[1.05rem] font-mono font-bold tabular-nums text-[#DC2626]">
+                        <span className="text-[1.05rem] font-mono font-bold tabular-nums text-[#B91C1C]">
                           {diasAtraso}
                         </span>
                       </div>
@@ -928,6 +943,11 @@ export default function RelatoriosPage() {
                     <Bar dataKey="Concluídas" fill="#16A34A" fillOpacity={0.95} radius={[4, 4, 0, 0]} maxBarSize={28} />
                   </BarChart>
                 </ResponsiveContainer>
+                <ChartDataTable
+                  caption="Burndown: tarefas criadas e concluídas acumuladas no período"
+                  headers={['Data', 'Criadas', 'Concluídas']}
+                  rows={stats.burndownData.map(b => [b.label, String(b.Criadas), String(b.Concluídas)])}
+                />
               </div>
               <div className="px-5 pb-4 flex items-center gap-4 text-[0.72rem] text-[#71717A]">
                 <span className="inline-flex items-center gap-1.5">
@@ -953,14 +973,17 @@ export default function RelatoriosPage() {
             subtitle="Distribuição das tarefas criadas nas últimas 4 semanas"
           >
             <div className="p-5">
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-2" role="group" aria-label="Tarefas criadas por dia da semana nas últimas 4 semanas">
                 {stats.heatmapData.map((d) => (
                   <div key={d.label} className="flex flex-col items-center gap-1.5">
-                    <span className="text-[0.65rem] uppercase font-semibold tracking-wider text-[#71717A]">
+                    <span className="text-[0.65rem] uppercase font-semibold tracking-wider text-[#71717A]" aria-hidden>
                       {d.label}
                     </span>
                     <div
-                      className="w-full h-16 rounded-md flex items-center justify-center transition-all"
+                      role="img"
+                      aria-label={`${d.label}: ${d.value} tarefa${d.value !== 1 ? 's' : ''} criada${d.value !== 1 ? 's' : ''}`}
+                      tabIndex={0}
+                      className="w-full h-16 rounded-md flex items-center justify-center transition-all focus-visible:outline-2 focus-visible:outline-[#2563EB] focus-visible:outline-offset-2"
                       style={{
                         background: d.intensity === 0
                           ? '#F7F8FA'
@@ -987,10 +1010,16 @@ export default function RelatoriosPage() {
                     key={i}
                     className="w-3.5 h-3.5 rounded"
                     style={{ background: `rgba(124, 58, 237, ${opacity})` }}
+                    aria-hidden
                   />
                 ))}
                 <span>Mais</span>
               </div>
+              <ChartDataTable
+                caption="Tarefas criadas por dia da semana (últimas 4 semanas)"
+                headers={['Dia da semana', 'Tarefas criadas']}
+                rows={stats.heatmapData.map(d => [d.label, String(d.value)])}
+              />
             </div>
           </Section>
         </motion.div>
@@ -1077,7 +1106,7 @@ export default function RelatoriosPage() {
                           {task.titulo}
                         </div>
                         {resp && (
-                          <div className="text-[0.78rem] text-[#A1A1AA] mt-0.5">
+                          <div className="text-[0.78rem] text-[#71717A] mt-0.5">
                             {resp.nome}
                           </div>
                         )}
@@ -1086,7 +1115,7 @@ export default function RelatoriosPage() {
                         <div className="text-[0.9rem] text-[#DC2626] font-bold tabular-nums">
                           {pct}% usado
                         </div>
-                        <div className="text-[0.72rem] text-[#A1A1AA] tabular-nums">
+                        <div className="text-[0.72rem] text-[#71717A] tabular-nums">
                           +{formatMinutes(excess)} excedido
                         </div>
                       </div>

@@ -36,8 +36,13 @@ export function UserAvatar({ user, size = 32, textSize, className }: UserAvatarP
     <Avatar style={{ width: size, height: size }} className={cn('flex-shrink-0', className)}>
       {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={displayName} /> : null}
       <AvatarFallback
-        className={cn('font-semibold text-white', fallbackTextSize)}
-        style={{ background: color }}
+        className={cn('font-bold text-white', fallbackTextSize)}
+        style={{
+          // color-mix mistura a cor base com preto (32%) garantindo contraste
+          // 4.5:1 do texto branco mesmo quando avatar_color for claro (#10B981, #F59E0B, etc).
+          background: `color-mix(in srgb, ${color} 68%, #000)`,
+        }}
+        aria-label={displayName ? `Avatar de ${displayName}` : undefined}
       >
         {initials}
       </AvatarFallback>

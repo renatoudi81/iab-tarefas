@@ -19,6 +19,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar'
 import { useUsers } from '@/hooks/useUsers'
 import { useAuth } from '@/contexts/AuthContext'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
+import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -105,10 +106,10 @@ function DeltaHint({ delta, fallback }: { delta: number; fallback: React.ReactNo
   const isUp = delta > 0
   return (
     <span className="inline-flex items-center gap-1">
-      <span className={isUp ? 'text-[#16A34A]' : 'text-[#DC2626]'}>
+      <span className={isUp ? 'text-[#15803D]' : 'text-[#B91C1C]'}>
         {isUp ? '↑' : '↓'} {Math.abs(delta)}%
       </span>
-      <span className="text-[#A1A1AA]">vs período anterior</span>
+      <span className="text-[#71717A]">vs período anterior</span>
     </span>
   )
 }
@@ -543,7 +544,7 @@ export default function DashboardPage() {
           {/* Filtro por usuário — admin escolhe; outros perfis ocultos */}
           {isAdmin && users.length > 1 && (
             <Select value={filterUserId} onValueChange={setFilterUserId}>
-              <SelectTrigger className="h-9 w-[200px] text-sm bg-white">
+              <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
                 <SelectValue placeholder="Filtrar por usuário..." />
               </SelectTrigger>
               <SelectContent>
@@ -671,6 +672,11 @@ export default function DashboardPage() {
                 <Area type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={false} activeDot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
+            <ChartDataTable
+              caption="Tarefas criadas e concluídas por dia no período"
+              headers={['Data', 'Criadas', 'Concluídas']}
+              rows={chartData.map(d => [d.label, String(d.Criadas ?? 0), String(d.Concluídas ?? 0)])}
+            />
           </div>
         </BentoSection>
 
@@ -692,6 +698,11 @@ export default function DashboardPage() {
                 <Bar dataKey="Horas" fill="#7C3AED" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
+            <ChartDataTable
+              caption="Horas trabalhadas por dia no período"
+              headers={['Data', 'Horas']}
+              rows={chartData.map(d => [d.label, String(d.Horas ?? 0)])}
+            />
           </div>
         </BentoSection>
       </div>
@@ -705,7 +716,7 @@ export default function DashboardPage() {
         subtitle={`${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''} categorizadas`}
         action={
           tasks.length > 0 && (
-            <span className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-[#16A34A]">
+            <span className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-[#15803D]">
               <ArrowUpRight size={12} strokeWidth={2.5} />
               {metrics.donePct}% concluído
             </span>
@@ -736,7 +747,7 @@ export default function DashboardPage() {
                 <p className="text-[1.625rem] font-mono font-bold text-[#0F172A] tracking-[-0.02em] tabular-nums leading-none">
                   {count}
                 </p>
-                <p className="text-[0.72rem] text-[#A1A1AA] font-mono tabular-nums">{pct}% do total</p>
+                <p className="text-[0.72rem] text-[#71717A] font-mono tabular-nums">{pct}% do total</p>
               </motion.div>
             )
           })}
@@ -756,10 +767,10 @@ export default function DashboardPage() {
           {metrics.upcoming.length === 0 ? (
             <div className="px-5 py-8 flex flex-col items-center gap-2 text-center">
               <div className="w-10 h-10 rounded-full bg-[#F0FDF4] flex items-center justify-center">
-                <CheckCircle2 size={18} className="text-[#16A34A]" />
+                <CheckCircle2 size={18} className="text-[#15803D]" />
               </div>
               <p className="text-[0.82rem] text-[#52525B] font-medium">Nenhum prazo próximo</p>
-              <p className="text-[0.72rem] text-[#A1A1AA]">Você está tranquilo pelos próximos 7 dias.</p>
+              <p className="text-[0.72rem] text-[#71717A]">Você está tranquilo pelos próximos 7 dias.</p>
             </div>
           ) : (
             <ul className="divide-y divide-[#F4F4F5]">
@@ -814,10 +825,10 @@ export default function DashboardPage() {
           {metrics.topOverdue.length === 0 ? (
             <div className="px-5 py-8 flex flex-col items-center gap-2 text-center">
               <div className="w-10 h-10 rounded-full bg-[#F0FDF4] flex items-center justify-center">
-                <CheckCircle2 size={18} className="text-[#16A34A]" />
+                <CheckCircle2 size={18} className="text-[#15803D]" />
               </div>
               <p className="text-[0.82rem] text-[#52525B] font-medium">Tudo em dia</p>
-              <p className="text-[0.72rem] text-[#A1A1AA]">Nenhuma tarefa atrasada no momento.</p>
+              <p className="text-[0.72rem] text-[#71717A]">Nenhuma tarefa atrasada no momento.</p>
             </div>
           ) : (
             <ul className="divide-y divide-[#F4F4F5]">
@@ -826,7 +837,7 @@ export default function DashboardPage() {
                 return (
                   <li key={task.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[#FAFAFA] transition-colors">
                     <div className="w-10 h-10 rounded-lg bg-[#FEF2F2] flex items-center justify-center flex-shrink-0">
-                      <span className="text-[0.95rem] font-mono font-bold tabular-nums text-[#DC2626]">
+                      <span className="text-[0.95rem] font-mono font-bold tabular-nums text-[#B91C1C]">
                         {diasAtraso}
                       </span>
                     </div>

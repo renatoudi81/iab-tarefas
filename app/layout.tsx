@@ -6,6 +6,7 @@ import { ConfirmProvider } from '@/contexts/ConfirmContext'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { GrainOverlay } from '@/components/ui/GrainOverlay'
 import { ScrollProgress } from '@/components/ui/ScrollProgress'
+import { MotionProvider } from '@/components/MotionProvider'
 import './globals.css'
 
 // Fontes premium recomendadas pela skill design-taste-frontend:
@@ -40,16 +41,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <TooltipProvider delayDuration={400} skipDelayDuration={150}>
-          <ToastProvider>
-            <ConfirmProvider>
-              <AuthProvider>
-                <ScrollProgress />
-                {children}
-              </AuthProvider>
-            </ConfirmProvider>
-          </ToastProvider>
-        </TooltipProvider>
+        <MotionProvider>
+          <TooltipProvider delayDuration={400} skipDelayDuration={150}>
+            <ToastProvider>
+              <ConfirmProvider>
+                <AuthProvider>
+                  <ScrollProgress />
+                  {children}
+                </AuthProvider>
+              </ConfirmProvider>
+            </ToastProvider>
+          </TooltipProvider>
+        </MotionProvider>
         <GrainOverlay />
       </body>
     </html>

@@ -199,7 +199,7 @@ export default function ListaPage() {
       {/* Toolbar: busca + filtros */}
       <div className="flex gap-2.5 flex-wrap items-center mb-4">
         <div className="relative min-w-[200px] max-w-xs flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
           <Input
             type="text"
             className="pl-9 h-9 text-sm border-[#E4E4E7]"
@@ -209,7 +209,7 @@ export default function ListaPage() {
           />
         </div>
         <Select value={filterStatus || 'all'} onValueChange={v => setFilterStatus(v === 'all' ? '' : v)}>
-          <SelectTrigger className="h-9 w-auto min-w-[148px] text-sm border-[#E4E4E7] bg-white">
+          <SelectTrigger aria-label="Filtrar por status" className="h-9 w-auto min-w-[148px] text-sm border-[#E4E4E7] bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -219,7 +219,7 @@ export default function ListaPage() {
         </Select>
 
         <Select value={filterPriority || 'all'} onValueChange={v => setFilterPriority(v === 'all' ? '' : v)}>
-          <SelectTrigger className="h-9 w-auto min-w-[158px] text-sm border-[#E4E4E7] bg-white">
+          <SelectTrigger aria-label="Filtrar por prioridade" className="h-9 w-auto min-w-[158px] text-sm border-[#E4E4E7] bg-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -233,7 +233,7 @@ export default function ListaPage() {
             esse filtro perde a função pra ele. */}
         {isAdmin && users.length > 1 && (
           <Select value={filterUser || 'all'} onValueChange={v => setFilterUser(v === 'all' ? '' : v)}>
-            <SelectTrigger className="h-9 w-auto min-w-[165px] text-sm border-[#E4E4E7] bg-white">
+            <SelectTrigger aria-label="Filtrar por responsável" className="h-9 w-auto min-w-[165px] text-sm border-[#E4E4E7] bg-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -276,9 +276,10 @@ export default function ListaPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-[#F7F8FA] hover:bg-[#F7F8FA] border-b border-[#E4E4E7]">
-              {['Tarefa', 'Status', 'Prioridade', 'Responsável', 'Prazo', 'Progresso', ''].map((h, i) => (
+              {['Tarefa', 'Status', 'Prioridade', 'Responsável', 'Prazo', 'Progresso', 'Ações'].map((h, i) => (
                 <TableHead key={i} className="py-2.5 text-[0.72rem] font-bold uppercase tracking-wider text-[#71717A]">
-                  {h}
+                  {/* Última coluna (Ações) é apenas para leitores de tela */}
+                  {i === 6 ? <span className="sr-only">{h}</span> : h}
                 </TableHead>
               ))}
             </TableRow>
@@ -310,7 +311,7 @@ export default function ListaPage() {
               )}
               {!isInitialLoad && !loadingTasks && filtered.length === 0 && (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={7} className="py-16 text-center text-[#A1A1AA]">
+                  <TableCell colSpan={7} className="py-16 text-center text-[#71717A]">
                     <div className="flex flex-col items-center">
                       <EmptyIllustration variant={tasks.length === 0 ? 'tasks' : 'search'} size={104} />
                     </div>
@@ -391,7 +392,7 @@ export default function ListaPage() {
                         {task.titulo}
                       </div>
                       {task.descricao && (
-                        <div className="text-xs text-[#A1A1AA] mt-0.5 truncate">
+                        <div className="text-xs text-[#71717A] mt-0.5 truncate">
                           {stripHtml(task.descricao)}
                         </div>
                       )}
@@ -428,7 +429,7 @@ export default function ListaPage() {
                           <UserAvatar user={resp} size={26} textSize="text-[10px]" />
                           <span className="text-[0.8125rem] text-[#71717A]">{resp.nome.split(' ')[0]}</span>
                         </div>
-                      ) : <span className="text-[#A1A1AA]">—</span>}
+                      ) : <span className="text-[#71717A]">—</span>}
                     </TableCell>
 
                     {/* Prazo */}
@@ -442,7 +443,7 @@ export default function ListaPage() {
                           )}
                           {formatDateBR(task.data_prazo)}
                         </span>
-                      ) : <span className="text-[#A1A1AA]">—</span>}
+                      ) : <span className="text-[#71717A]">—</span>}
                     </TableCell>
 
                     {/* Progresso */}
@@ -451,11 +452,12 @@ export default function ListaPage() {
                         <span className={cn(isOver ? 'font-semibold text-[#DC2626]' : 'text-[#71717A]')}>
                           {formatMinutes(task.tempo_gasto_total)}
                         </span>
-                        <span className="text-[#A1A1AA]">{formatMinutes(task.tempo_estimado)}</span>
+                        <span className="text-[#71717A]">{formatMinutes(task.tempo_estimado)}</span>
                       </div>
                       <Progress
                         value={pct}
                         className={cn('h-1.5', isOver && '[&>div]:bg-destructive')}
+                        aria-label={`Progresso: ${Math.round(pct)}%`}
                       />
                     </TableCell>
 
@@ -463,7 +465,11 @@ export default function ListaPage() {
                     <TableCell className="py-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#F7F8FA] text-[#71717A] transition-colors cursor-pointer border-0 bg-transparent">
+                          <button
+                            type="button"
+                            aria-label={`Ações para tarefa "${task.titulo}"`}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#F7F8FA] text-[#71717A] transition-colors cursor-pointer border-0 bg-transparent"
+                          >
                             <MoreHorizontal size={16} />
                           </button>
                         </DropdownMenuTrigger>

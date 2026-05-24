@@ -105,16 +105,22 @@ function ToastViewport() {
   return (
     <div
       aria-live="polite"
+      aria-atomic="false"
+      role="region"
+      aria-label="Notificações"
       className="fixed top-4 right-4 z-[300] flex flex-col gap-2 w-[min(380px,calc(100vw-2rem))] pointer-events-none"
     >
       <AnimatePresence initial={false}>
         {toasts.map((t) => {
           const cfg = VARIANT_STYLES[t.variant]
           const Icon = cfg.icon
+          // role=alert para erros (interrompe SR), status para sucesso/info
+          const role = t.variant === 'error' ? 'alert' : 'status'
           return (
             <motion.div
               key={t.id}
               layout
+              role={role}
               initial={{ opacity: 0, x: 40, scale: 0.96 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 40, scale: 0.96, transition: { duration: 0.18 } }}

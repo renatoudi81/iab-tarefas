@@ -217,7 +217,7 @@ function StatCard({
       <div className="text-[1.4rem] font-mono font-bold leading-none tabular-nums tracking-[-0.02em]" style={{ color: pulse ? color : '#0F172A' }}>
         {value}
       </div>
-      <div className="text-[0.68rem] text-[#A1A1AA] mt-1">{hint}</div>
+      <div className="text-[0.68rem] text-[#71717A] mt-1">{hint}</div>
     </div>
   )
 }
@@ -351,10 +351,10 @@ export default function GanttPage() {
             Visualize a distribuição das tarefas ao longo do tempo, com data de início e prazo.
           </p>
         </div>
-        <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] p-16 flex flex-col items-center justify-center text-[#A1A1AA]">
+        <div className="bg-white border border-[#EDEEF1] rounded-2xl shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)] p-16 flex flex-col items-center justify-center text-[#71717A]">
           <EmptyIllustration variant="calendar" size={112} />
           <p className="font-semibold text-[#52525B] mb-1 mt-3">Nenhuma tarefa com datas definidas</p>
-          <p className="text-sm text-[#A1A1AA] max-w-sm text-center">
+          <p className="text-sm text-[#71717A] max-w-sm text-center">
             Defina data de início e vencimento nas tarefas para visualizá-las aqui.
           </p>
         </div>
@@ -393,7 +393,7 @@ export default function GanttPage() {
         <div className="bg-white border border-[#EDEEF1] rounded-2xl p-16 flex flex-col items-center text-center">
           <EmptyIllustration variant="search" size={104} />
           <p className="font-semibold text-[#52525B] mb-1 mt-3">Nenhuma tarefa nos filtros</p>
-          <p className="text-sm text-[#A1A1AA] max-w-sm">Ajuste os filtros acima para ver mais tarefas.</p>
+          <p className="text-sm text-[#71717A] max-w-sm">Ajuste os filtros acima para ver mais tarefas.</p>
         </div>
       </div>
     )
@@ -498,7 +498,7 @@ export default function GanttPage() {
               {ticks.map((w, i) => (
                 <span
                   key={i}
-                  className="absolute text-[0.68rem] text-[#A1A1AA] font-medium whitespace-nowrap"
+                  className="absolute text-[0.68rem] text-[#71717A] font-medium whitespace-nowrap"
                   style={{ left: `${w.left}%`, transform: 'translateX(-50%)', top: 0 }}
                 >
                   {w.label}
@@ -597,7 +597,7 @@ export default function GanttPage() {
             <div className="flex items-center gap-1 text-[0.72rem] text-[#DC2626]">
               <AlertTriangle size={11} /> Vencida
             </div>
-            <div className="flex items-center gap-1 text-[0.72rem] text-[#D97706]">
+            <div className="flex items-center gap-1 text-[0.72rem] text-[#B45309]">
               <span className="inline-block w-2 h-2 rounded-full bg-[#D97706]" /> Próxima do prazo (≤3 dias)
             </div>
           </div>
@@ -653,13 +653,13 @@ function PageHeader(p: PageHeaderProps) {
               <span className="font-mono tabular-nums">{p.count}</span> agendadas
             </span>
             {p.count !== p.totalCount && (
-              <span className="inline-flex items-center text-[0.7rem] font-medium text-[#71717A] bg-[#F4F4F5] px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center text-[0.7rem] font-medium text-[#52525B] bg-[#F4F4F5] px-2 py-0.5 rounded-full">
                 <span className="font-mono tabular-nums">{p.totalCount}</span>
                 <span className="ml-1">no total</span>
               </span>
             )}
             {p.minDate && p.maxDate && (
-              <span className="inline-flex items-center text-[0.7rem] font-mono tabular-nums text-[#71717A] bg-[#F4F4F5] px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center text-[0.7rem] font-mono tabular-nums text-[#52525B] bg-[#F4F4F5] px-2 py-0.5 rounded-full">
                 {formatDateBR(p.minDate)} → {formatDateBR(p.maxDate)}
               </span>
             )}
@@ -688,7 +688,7 @@ function PageHeader(p: PageHeaderProps) {
             <ZoomIn size={14} />
           </button>
           <Select value={p.granularity} onValueChange={v => p.setGranularity(v as Granularity)}>
-            <SelectTrigger className="w-[105px] h-9 text-sm border-0 rounded-none focus:ring-0 shadow-none">
+            <SelectTrigger aria-label="Escala de tempo" className="w-[105px] h-9 text-sm border-0 rounded-none focus:ring-0 shadow-none">
               <SelectValue placeholder="Escala" />
             </SelectTrigger>
             <SelectContent>
@@ -712,7 +712,7 @@ function PageHeader(p: PageHeaderProps) {
         </div>
 
         <Select value={p.colorBy} onValueChange={v => p.setColorBy(v as ColorBy)}>
-          <SelectTrigger className="w-[140px] h-9 text-sm border-[#E4E4E7] bg-white">
+          <SelectTrigger aria-label="Colorir barras por" className="w-[140px] h-9 text-sm border-[#E4E4E7] bg-white">
             <SelectValue placeholder="Colorir por" />
           </SelectTrigger>
           <SelectContent>
@@ -722,7 +722,7 @@ function PageHeader(p: PageHeaderProps) {
         </Select>
 
         <Select value={p.groupBy} onValueChange={v => p.setGroupBy(v as GroupBy)}>
-          <SelectTrigger className="w-[150px] h-9 text-sm border-[#E4E4E7] bg-white">
+          <SelectTrigger aria-label="Agrupar por" className="w-[150px] h-9 text-sm border-[#E4E4E7] bg-white">
             <SelectValue placeholder="Agrupar por" />
           </SelectTrigger>
           <SelectContent>
@@ -734,7 +734,7 @@ function PageHeader(p: PageHeaderProps) {
         </Select>
 
         <Select value={p.filterStatus} onValueChange={p.setFilterStatus}>
-          <SelectTrigger className="w-[150px] h-9 text-sm border-[#E4E4E7] bg-white">
+          <SelectTrigger aria-label="Filtrar por status" className="w-[150px] h-9 text-sm border-[#E4E4E7] bg-white">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -745,7 +745,7 @@ function PageHeader(p: PageHeaderProps) {
 
         {p.isAdmin && p.users.length > 1 && (
           <Select value={p.filterUserId} onValueChange={p.setFilterUserId}>
-            <SelectTrigger className="w-[180px] h-9 text-sm border-[#E4E4E7] bg-white">
+            <SelectTrigger aria-label="Filtrar por responsável" className="w-[180px] h-9 text-sm border-[#E4E4E7] bg-white">
               <SelectValue placeholder="Responsável" />
             </SelectTrigger>
             <SelectContent>
@@ -938,7 +938,7 @@ function TaskRow({
             <AlertTriangle size={11} className="text-[#DC2626] flex-shrink-0 animate-pulse" />
           )}
           {isNearDue && (
-            <Activity size={11} className="text-[#D97706] flex-shrink-0" />
+            <Activity size={11} className="text-[#B45309] flex-shrink-0" />
           )}
           <p className="text-[0.8125rem] font-medium text-[#111111] truncate flex-1">
             {task.titulo}
@@ -971,6 +971,33 @@ function TaskRow({
         <Tooltip delayDuration={drag ? 9999 : 300}>
           <TooltipTrigger asChild>
             <motion.div
+              role="button"
+              tabIndex={0}
+              aria-label={`${task.titulo}. Status ${task.status}. Prioridade ${task.prioridade}. De ${formatDateBR(effectiveStart)} até ${formatDateBR(effectiveEnd)}. Progresso ${Math.round(pct)} por cento.${overdue ? ' Atrasada.' : isNearDue ? ' Vence em breve.' : ''} Pressione Enter para abrir, setas para mover datas, Shift mais setas para redimensionar.`}
+              onKeyDown={(e) => {
+                // Enter / Space → abre drawer
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onClick()
+                  return
+                }
+                // Setas → move/redimensiona em incrementos de 1 dia
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                  e.preventDefault()
+                  const delta = e.key === 'ArrowRight' ? 1 : -1
+                  if (e.shiftKey) {
+                    // Redimensiona: só altera data_prazo
+                    let ne = addDays(task.data_prazo!, delta)
+                    if (ne < task.data_inicio!) ne = task.data_inicio!
+                    onUpdateDates(task.data_inicio!, ne)
+                  } else {
+                    // Move: altera ambas
+                    const ns = addDays(task.data_inicio!, delta)
+                    const ne = addDays(task.data_prazo!, delta)
+                    onUpdateDates(ns, ne)
+                  }
+                }
+              }}
               onPointerDown={startPointerDown('move')}
               initial={{ width: 0, opacity: 0 }}
               animate={{
@@ -983,7 +1010,10 @@ function TaskRow({
                 left: `${offset(effectiveStart)}%`,
                 top: '7px',
                 bottom: '7px',
-                background: color + 'ee',
+                // color-mix com preto garante contraste 4.5:1 do texto branco
+                // sobre a barra, mesmo quando STATUS_COLORS tem cor mais clara
+                // (ex: Concluída #15803D ainda fica boa com 88% saturação).
+                background: `color-mix(in srgb, ${color} 88%, #000)`,
                 borderRadius: '6px',
                 zIndex: drag ? 5 : 2,
                 overflow: 'hidden',
@@ -997,7 +1027,9 @@ function TaskRow({
                       ? `0 0 0 2px ${color}, 0 6px 16px -4px rgba(15,23,42,0.25)`
                       : `0 0 0 1.5px ${color}`,
                 animation: overdue && !drag ? 'gantt-overdue-pulse 2s ease-in-out infinite' : undefined,
+                outlineOffset: '2px',
               }}
+              className="focus-visible:outline-2 focus-visible:outline-[#2563EB]"
             >
               {pct > 0 && (
                 <div
@@ -1051,20 +1083,20 @@ function TaskRow({
         <div className={cn(
           'text-[0.72rem] tabular-nums',
           overdue ? 'text-[#DC2626] font-semibold'
-            : isNearDue ? 'text-[#D97706] font-semibold'
+            : isNearDue ? 'text-[#B45309] font-semibold'
             : 'text-[#71717A] font-normal',
         )}>
           {formatDateBR(task.data_prazo)}
         </div>
         {daysUntil !== null && daysUntil >= 0 && daysUntil <= 3 && (
-          <div className="text-[0.62rem] text-[#D97706] font-medium mt-0.5">
+          <div className="text-[0.62rem] text-[#B45309] font-medium mt-0.5">
             {daysUntil === 0 ? 'vence hoje' : daysUntil === 1 ? 'vence amanhã' : `em ${daysUntil} dias`}
           </div>
         )}
         {task.tempo_estimado > 0 && (
           <div className={cn(
             'text-[0.66rem] flex items-center gap-0.5 justify-end mt-0.5 tabular-nums',
-            isOver ? 'text-[#DC2626]' : 'text-[#A1A1AA]',
+            isOver ? 'text-[#DC2626]' : 'text-[#71717A]',
           )}>
             <Clock size={9} />
             {Math.round(pct)}%
@@ -1128,7 +1160,7 @@ function TaskTooltipContent({ task, resp, pct, isOver, overdue, isNearDue, daysU
           )
         })()}
         <div className="flex items-center gap-1.5 text-[#52525B] tabular-nums pt-1">
-          <Clock size={11} className="text-[#A1A1AA]" />
+          <Clock size={11} className="text-[#71717A]" />
           <span>{formatDateBR(task.data_inicio)} → {formatDateBR(task.data_prazo)}</span>
         </div>
 
@@ -1166,7 +1198,7 @@ function TaskTooltipContent({ task, resp, pct, isOver, overdue, isNearDue, daysU
           </div>
         )}
 
-        <div className="pt-2 text-[0.6rem] text-[#A1A1AA] border-t border-[#F4F4F5] mt-2">
+        <div className="pt-2 text-[0.6rem] text-[#71717A] border-t border-[#F4F4F5] mt-2">
           Clique para abrir detalhes
         </div>
       </div>

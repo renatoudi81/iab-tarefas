@@ -77,6 +77,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Skip link — visível só ao receber foco via Tab (a11y WCAG 2.4.1) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-3 focus:py-2 focus:rounded-md focus:bg-[#2563EB] focus:text-white focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none"
+      >
+        Pular para o conteúdo
+      </a>
       <CommandPalette />
       <Sidebar
         delayedCount={delayedCount}
@@ -108,6 +115,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
+              aria-label={unreadCount > 0 ? `${unreadCount} notificações não lidas` : 'Notificações'}
+              aria-expanded={notifOpen}
               className="relative h-8 w-8 text-[#71717A] hover:text-[#111111]"
               onClick={() => setNotifOpen(o => !o)}
             >
@@ -145,7 +154,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                 <div className="max-h-[340px] overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-[#A1A1AA] text-sm">
+                    <div className="px-4 py-8 text-center text-[#71717A] text-sm">
                       Nenhuma notificação
                     </div>
                   ) : (
@@ -169,7 +178,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           <div className="text-[0.75rem] text-[#71717A] mb-1 line-clamp-2">
                             {n.mensagem}
                           </div>
-                          <div className="text-[0.68rem] text-[#A1A1AA]">
+                          <div className="text-[0.68rem] text-[#71717A]">
                             {new Date(n.criado_em).toLocaleString('pt-BR', {
                               day: '2-digit',
                               month: '2-digit',
@@ -192,6 +201,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div ref={userRef} className="relative">
             <button
               onClick={() => setUserOpen(o => !o)}
+              aria-label={`Menu do usuário ${user.name}`}
+              aria-expanded={userOpen}
+              aria-haspopup="menu"
               className="flex items-center gap-2 h-8 px-2 rounded-lg border-0 bg-transparent cursor-pointer hover:bg-[#F7F8FA] transition-colors"
             >
               {/* Avatar */}
@@ -202,7 +214,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <div className="text-[0.8rem] font-semibold text-[#111111] leading-none">{firstName}</div>
                 <div className="text-[0.68rem] text-[#71717A] leading-none mt-0.5">{user.perfil}</div>
               </div>
-              <ChevronDown size={13} className={`text-[#A1A1AA] transition-transform ${userOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={13} className={`text-[#71717A] transition-transform ${userOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown usuário */}
@@ -233,7 +245,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       onClick={() => { setUserOpen(false); router.push('/perfil') }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-[#3F3F46] hover:bg-[#F7F8FA] transition-colors cursor-pointer border-0 bg-transparent text-left"
                     >
-                      <User size={14} className="text-[#A1A1AA]" />
+                      <User size={14} className="text-[#71717A]" />
                       Meu Perfil
                     </button>
                   </div>
@@ -260,7 +272,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Conteúdo principal — ml-0 em mobile, 220px em md+ */}
       <main
-        className="min-h-screen transition-all pt-14 flex-1 flex flex-col min-w-0 ml-0 md:ml-[220px]"
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-screen transition-all pt-14 flex-1 flex flex-col min-w-0 ml-0 md:ml-[220px] focus:outline-none"
       >
         <div className="p-6 flex-1 max-w-[1600px] mx-auto w-full">
           {/*
