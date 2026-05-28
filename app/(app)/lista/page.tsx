@@ -9,6 +9,9 @@ import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
 import TaskDrawer from '@/components/TaskDrawer'
 import TaskModal from '@/components/TaskModal'
+import { AITaskCreator } from '@/components/AITaskCreator'
+import type { TaskFormData } from '@/types'
+import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
@@ -64,7 +67,9 @@ export default function ListaPage() {
   const [filterUser, setFilterUser] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [modal, setModal] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null })
+  const [modal, setModal] = useState<{ open: boolean; task: Task | null; initialData?: Partial<TaskFormData> }>({ open: false, task: null })
+  // IA: modal de criação automatizada
+  const [aiOpen, setAiOpen] = useState(false)
   const [drawerTask, setDrawerTask] = useState<Task | null>(null)
   const [page, setPage] = useState(1)
 
@@ -143,6 +148,11 @@ export default function ListaPage() {
   const openNew = () => setModal({ open: true, task: null })
   const openEdit = (task: Task) => setModal({ open: true, task })
   const closeModal = () => setModal({ open: false, task: null })
+  // Fluxo IA → TaskModal pré-preenchido
+  const handleAIReady = (initialData: Partial<TaskFormData>) => {
+    setAiOpen(false)
+    setModal({ open: true, task: null, initialData })
+  }
 
   const onTaskClick = (task: Task) => setDrawerTask(task)
 
@@ -188,12 +198,21 @@ export default function ListaPage() {
             Gerencie todas as tarefas do projeto, filtre por status, prioridade ou responsável.
           </p>
         </div>
-        <MagneticButton
-          onClick={openNew}
-          className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
-        >
-          <Plus size={14} strokeWidth={2.5} /> Nova Tarefa
-        </MagneticButton>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAiOpen(true)}
+            className="h-9 inline-flex items-center gap-1.5 bg-gradient-to-br from-[#7C3AED] to-[#A78BFA] hover:opacity-90 active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(124,58,237,0.45)] transition-all cursor-pointer border-0"
+          >
+            <Sparkles size={14} strokeWidth={2.5} /> Nova com IA
+          </button>
+          <MagneticButton
+            onClick={openNew}
+            className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
+          >
+            <Plus size={14} strokeWidth={2.5} /> Nova Tarefa
+          </MagneticButton>
+        </div>
       </div>
 
       {/* Toolbar: busca + filtros — padrão mb-5 unificado (Kanban/Gantt/Relatórios) */}
@@ -508,7 +527,17 @@ export default function ListaPage() {
       </div>
 
       {/* Modal de criar/editar tarefa */}
-      <TaskModal open={modal.open} task={modal.task} onClose={closeModal} />
+      <TaskModal
+        open={modal.open}
+        task={modal.task}
+        initialData={modal.initialData}
+        onClose={closeModal}
+      />
+      <AITaskCreator
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        onReady={handleAIReady}
+      />
 
       {/* Task Drawer */}
       <TaskDrawer

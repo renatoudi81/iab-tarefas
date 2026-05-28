@@ -12,6 +12,7 @@
     "restore": "tsx scripts/import-firestore.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.99.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-checkbox": "^1.3.3",

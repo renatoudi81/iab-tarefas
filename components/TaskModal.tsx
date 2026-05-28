@@ -37,6 +37,8 @@ interface TaskModalProps {
   task?: Task | null
   /** Status pré-selecionado ao criar nova (útil no Kanban). Ignorado em edição. */
   initialStatus?: Status
+  /** Pré-preenchimento parcial ao criar nova (vem da IA). Ignorado em edição. */
+  initialData?: Partial<TaskFormData>
   onClose: () => void
   /** Callback opcional após save bem-sucedido (recebe a task atualizada/criada) */
   onSaved?: (task: Task) => void
@@ -46,7 +48,7 @@ interface TaskModalProps {
  * Modal reutilizável para criar e editar tarefas.
  * Usado em Lista (modo full) e Kanban (com status pré-selecionado).
  */
-export default function TaskModal({ open, task, initialStatus, onClose, onSaved }: TaskModalProps) {
+export default function TaskModal({ open, task, initialStatus, initialData, onClose, onSaved }: TaskModalProps) {
   const { addTask, updateTask } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
@@ -84,14 +86,17 @@ export default function TaskModal({ open, task, initialStatus, onClose, onSaved 
         data_retorno_esperada: task.data_retorno_esperada || null,
       })
     } else {
+      // Nova tarefa: parte do template vazio, aplica status do Kanban e
+      // depois merge com initialData (vem da IA). initialData tem prioridade.
       setForm({
         ...EMPTY_FORM,
         data_inicio: todayStr(),
         status: initialStatus || 'Pendente',
+        ...(initialData || {}),
       })
     }
     setSaveError('')
-  }, [open, task, initialStatus])
+  }, [open, task, initialStatus, initialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

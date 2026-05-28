@@ -12,6 +12,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import TaskModal from '@/components/TaskModal'
+import { AITaskCreator } from '@/components/AITaskCreator'
+import { Sparkles } from 'lucide-react'
+import type { TaskFormData } from '@/types'
 import { stripHtml } from '@/components/ui/RichTextEditor'
 import { getCategoryColor } from '@/lib/category-color'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
@@ -65,11 +68,17 @@ export default function KanbanPage() {
     open: boolean
     task: Task | null
     initialStatus?: Status
+    initialData?: Partial<TaskFormData>
   }>({ open: false, task: null })
+  const [aiOpen, setAiOpen] = useState(false)
 
   const openNew = (status?: Status) => setModal({ open: true, task: null, initialStatus: status })
   const openEdit = (task: Task) => setModal({ open: true, task })
   const closeModal = () => setModal({ open: false, task: null })
+  const handleAIReady = (initialData: Partial<TaskFormData>) => {
+    setAiOpen(false)
+    setModal({ open: true, task: null, initialData })
+  }
 
   const handleDelete = async (task: Task) => {
     const ok = await confirm({
@@ -183,13 +192,22 @@ export default function KanbanPage() {
             Arraste os cards entre colunas para atualizar o status — a mudança é persistida automaticamente.
           </p>
         </div>
-        <MagneticButton
-          onClick={() => openNew()}
-          className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
-        >
-          <Plus size={14} strokeWidth={2.5} />
-          Nova Tarefa
-        </MagneticButton>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAiOpen(true)}
+            className="h-9 inline-flex items-center gap-1.5 bg-gradient-to-br from-[#7C3AED] to-[#A78BFA] hover:opacity-90 active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(124,58,237,0.45)] transition-all cursor-pointer border-0"
+          >
+            <Sparkles size={14} strokeWidth={2.5} /> Nova com IA
+          </button>
+          <MagneticButton
+            onClick={() => openNew()}
+            className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            Nova Tarefa
+          </MagneticButton>
+        </div>
       </div>
 
       {/*
@@ -521,7 +539,13 @@ export default function KanbanPage() {
         open={modal.open}
         task={modal.task}
         initialStatus={modal.initialStatus}
+        initialData={modal.initialData}
         onClose={closeModal}
+      />
+      <AITaskCreator
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        onReady={handleAIReady}
       />
     </div>
   )
