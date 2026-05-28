@@ -172,7 +172,34 @@ ${usuariosList || '  (nenhum usuário cadastrado)'}
 
 8. TEMPO ESTIMADO: estime em minutos baseado na complexidade descrita. Tarefa simples = 30-60min, média = 120-240min, complexa = 480min+. null se incerto.
 
-9. DESCRIÇÃO: capture o contexto importante. Use <p> para parágrafos, <ul><li> para listas. NÃO repita o título.`
+9. DESCRIÇÃO (regra crítica de formatação):
+   - O campo aceita HTML rico (TipTap editor). USE FORMATAÇÃO sempre que possível.
+   - Tags permitidas: <p>, <h3>, <strong>, <em>, <u>, <ul><li>, <ol><li>, <blockquote>, <code>, <a>
+   - REGRAS:
+     • SEMPRE comece com 1 parágrafo curto resumindo o contexto/objetivo
+     • Se há múltiplas informações/requisitos, use <ul><li> ou <ol><li>
+     • Destaque nomes/datas/valores importantes com <strong>
+     • Se há prazo ou condição crítica, use <blockquote> ou <strong>
+     • Se houver passos numerados, use <ol><li>
+     • Se há materiais/itens enumeráveis, use <ul><li>
+     • Subtítulos de seção (Materiais, Equipe, Prazo) usam <h3>
+     • NÃO repita o título da tarefa na descrição
+     • NÃO use texto puro corrido — quebre em estrutura sempre que houver listas/seções
+   - EXEMPLO BOM (mensagem original: "Configurar acessos no SIG-IAB pra equipe de Coruripe. Equipe completa: João (gestor), Maria, Pedro. Materiais 1º ano: caligrafia, matemática. Prazo: dia 30."):
+     <p>Configurar acessos ao sistema <strong>SIG-IAB</strong> para a equipe do município de Coruripe - AL.</p>
+     <h3>Equipe com acesso completo</h3>
+     <ul>
+       <li><strong>João</strong> (gestor)</li>
+       <li>Maria</li>
+       <li>Pedro</li>
+     </ul>
+     <h3>Materiais 1º ano</h3>
+     <ul>
+       <li>Caligrafia</li>
+       <li>Matemática</li>
+     </ul>
+     <blockquote><strong>Prazo:</strong> dia 30</blockquote>
+   - EXEMPLO RUIM (não fazer): "Configurar acessos no SIG-IAB pra equipe de Coruripe. Equipe completa: João (gestor), Maria, Pedro. Materiais 1º ano: caligrafia, matemática. Prazo: dia 30."`
 
     const userPrompt = `Mensagem recebida via ${channel}:
 
