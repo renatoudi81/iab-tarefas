@@ -119,7 +119,7 @@ REGRAS RÍGIDAS:
 2. O JSON deve ter EXATAMENTE essa estrutura:
 
 {
-  "titulo": "string curta e acionável, máx 80 chars",
+  "titulo": "FORMATO OBRIGATÓRIO: [Categoria] Verbo + objeto",
   "descricao": "string em HTML simples (use <p>, <ul><li>, <strong>) com contexto e detalhes",
   "prioridade": "Baixa" | "Média" | "Alta" | "Crítica",
   "categoria": "uma das categorias da lista — escolha a mais próxima",
@@ -133,25 +133,40 @@ REGRAS RÍGIDAS:
   "confidence": "número de 0 a 100 indicando sua confiança geral na classificação"
 }
 
-3. PRIORIDADE:
+3. TÍTULO (regra crítica):
+   - FORMATO: [Categoria] Verbo + objeto curto
+   - MÁXIMO: 60 caracteres no TOTAL (incluindo o prefixo [...])
+   - A categoria entre colchetes DEVE ser exatamente a mesma do campo "categoria" abaixo
+   - Use verbo no infinitivo (Revisar, Criar, Organizar, Enviar, Atualizar)
+   - Seja CONCISO — sintetize a essência, não repita contexto da descrição
+   - Exemplos corretos:
+     • "[Avaliação] Revisar relatório anual de impacto"  (47 chars)
+     • "[Marketing] Produzir vídeo institucional"  (40 chars)
+     • "[Conteúdo] Criar caderno do 1º ano"  (35 chars)
+     • "[Formação] Organizar curso de professores"  (41 chars)
+   - Exemplos INCORRETOS (longos/sem prefixo):
+     • "Revisar o relatório anual de impacto social para apresentação no conselho da fundação"
+     • "Tarefa importante de revisar coisas"
+
+4. PRIORIDADE:
    - "Crítica": bloqueia operação, prazo iminente (<24h), risco financeiro/jurídico/imagem
    - "Alta": importante e com prazo curto (<7 dias) ou impacto em várias pessoas
    - "Média": padrão para a maioria das tarefas operacionais
    - "Baixa": melhoria, sugestão, não urgente, sem prazo definido
 
-4. CATEGORIA: escolha apenas dentre estas: ${categoriasList}
+5. CATEGORIA: escolha apenas dentre estas: ${categoriasList}
    Se nenhuma se aplica claramente, escolha a mais genérica disponível.
 
-5. RESPONSÁVEL: se o texto cita um nome ou função, encontre o usuário correspondente na lista abaixo e retorne seu id. Se não há indicação clara OU o nome não está na lista, retorne null em ambos os campos.
+6. RESPONSÁVEL: se o texto cita um nome ou função, encontre o usuário correspondente na lista abaixo e retorne seu id. Se não há indicação clara OU o nome não está na lista, retorne null em ambos os campos.
 
 USUÁRIOS DISPONÍVEIS:
 ${usuariosList || '  (nenhum usuário cadastrado)'}
 
-6. DATA: hoje é ${todayISO}. Se o texto menciona "amanhã", "sexta", "próxima semana", calcule a data ISO. Se não menciona, retorne null.
+7. DATA: hoje é ${todayISO}. Se o texto menciona "amanhã", "sexta", "próxima semana", calcule a data ISO. Se não menciona, retorne null.
 
-7. TEMPO ESTIMADO: estime em minutos baseado na complexidade descrita. Tarefa simples = 30-60min, média = 120-240min, complexa = 480min+. null se incerto.
+8. TEMPO ESTIMADO: estime em minutos baseado na complexidade descrita. Tarefa simples = 30-60min, média = 120-240min, complexa = 480min+. null se incerto.
 
-8. DESCRIÇÃO: capture o contexto importante. Use <p> para parágrafos, <ul><li> para listas. NÃO repita o título.`
+9. DESCRIÇÃO: capture o contexto importante. Use <p> para parágrafos, <ul><li> para listas. NÃO repita o título.`
 
     const userPrompt = `Mensagem recebida via ${channel}:
 
@@ -216,9 +231,28 @@ Extraia a tarefa em JSON conforme as regras.`
       ? Math.max(0, Math.min(100, Math.round(parsed.confidence)))
       : 70
 
+    // Garante que o título começa com [Categoria]. Se a IA esqueceu o
+    // prefixo, força a inclusão. Se a categoria mudou na sanitização
+    // acima, corrige o prefixo. Limite 60 chars.
+    let tituloFinal = String(parsed.titulo || '').trim()
+    const catRegex = /^\[[^\]]+\]\s*/
+    if (parsed.categoria && tituloFinal) {
+      if (!catRegex.test(tituloFinal)) {
+        // Sem prefixo: adiciona
+        tituloFinal = `[${parsed.categoria}] ${tituloFinal}`
+      } else {
+        // Tem prefixo mas pode estar com categoria errada: força a correta
+        tituloFinal = tituloFinal.replace(catRegex, `[${parsed.categoria}] `)
+      }
+    }
+    // Limita a 60 chars preservando o prefixo
+    if (tituloFinal.length > 60) {
+      tituloFinal = tituloFinal.slice(0, 60).trimEnd()
+    }
+
     const result: ApiResponse = {
       task: {
-        titulo: String(parsed.titulo || '').slice(0, 120),
+        titulo: tituloFinal,
         descricao: String(parsed.descricao || ''),
         prioridade: parsed.prioridade,
         categoria: String(parsed.categoria || ''),
