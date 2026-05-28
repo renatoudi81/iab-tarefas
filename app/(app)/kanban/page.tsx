@@ -193,13 +193,16 @@ export default function KanbanPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setAiOpen(true)}
-            className="h-9 inline-flex items-center gap-1.5 bg-gradient-to-br from-[#7C3AED] to-[#A78BFA] hover:opacity-90 active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(124,58,237,0.45)] transition-all cursor-pointer border-0"
-          >
-            <Sparkles size={14} strokeWidth={2.5} /> Nova com IA
-          </button>
+          {/* Botão IA: visível apenas para Administrador */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setAiOpen(true)}
+              className="h-9 inline-flex items-center gap-1.5 bg-gradient-to-br from-[#7C3AED] to-[#A78BFA] hover:opacity-90 active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(124,58,237,0.45)] transition-all cursor-pointer border-0"
+            >
+              <Sparkles size={14} strokeWidth={2.5} /> Nova com IA
+            </button>
+          )}
           <MagneticButton
             onClick={() => openNew()}
             className="h-9 inline-flex items-center bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-colors cursor-pointer"

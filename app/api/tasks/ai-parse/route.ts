@@ -53,10 +53,16 @@ interface ApiResponse {
 const VALID_PRIORIDADES = ['Baixa', 'Média', 'Alta', 'Crítica'] as const
 
 export async function POST(req: Request) {
-  // 1. Auth
+  // 1. Auth — recurso restrito ao Administrador (gate de UI + servidor)
   const user = await verifyAuth(req)
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+  if (user.perfil !== 'Administrador') {
+    return NextResponse.json(
+      { error: 'Recurso disponível apenas para administradores' },
+      { status: 403 },
+    )
   }
 
   // 2. Body

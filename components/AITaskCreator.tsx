@@ -11,6 +11,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 type Channel = 'email' | 'slack' | 'whatsapp' | 'form' | 'voice' | 'other'
 
@@ -73,7 +75,8 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
   const [error, setError] = useState('')
   const [preview, setPreview] = useState<ParsedResponse | null>(null)
 
-  if (!user) return null
+  // Defense in depth: só admin tem acesso ao modal (UI gate)
+  if (!user || user.perfil !== 'Administrador') return null
 
   const reset = () => {
     setMessage('')
@@ -150,32 +153,21 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#A78BFA] flex items-center justify-center shadow-[0_4px_14px_-4px_rgba(124,58,237,0.5)]">
-              <Sparkles size={17} className="text-white" />
-            </div>
-            <div>
-              <DialogTitle className="text-[1.15rem] font-bold text-[#0F172A] tracking-tight">
-                Nova tarefa com IA
-              </DialogTitle>
-              <p className="text-[0.78rem] text-[#71717A] mt-0.5">
-                Cole um e-mail, mensagem ou anotação — a IA preenche os campos pra você revisar.
-              </p>
-            </div>
-          </div>
+          <DialogTitle className="text-lg font-bold tracking-tight inline-flex items-center gap-2">
+            <Sparkles size={16} className="text-[#7C3AED]" />
+            Nova tarefa com IA
+          </DialogTitle>
         </DialogHeader>
 
         {/* ─── Etapa 1: Input ─────────────────────────────────────────── */}
         {!preview && (
-          <div className="space-y-4 mt-2">
+          <div className="flex flex-col gap-4">
             {/* Canal */}
-            <div>
-              <label className="text-[0.72rem] font-semibold uppercase tracking-wider text-[#71717A] mb-1.5 block">
-                Como você recebeu essa mensagem?
-              </label>
+            <div className="flex flex-col gap-1.5">
+              <Label>Canal de origem</Label>
               <div className="flex flex-wrap gap-1.5">
                 {CHANNELS.map(c => {
                   const Icon = c.icon
@@ -186,7 +178,7 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
                       type="button"
                       onClick={() => setChannel(c.id)}
                       className={
-                        'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-[0.78rem] font-medium border transition-colors cursor-pointer ' +
+                        'inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-sm font-medium border transition-colors cursor-pointer ' +
                         (active
                           ? 'bg-[#F5F3FF] border-[#A78BFA] text-[#6D28D9]'
                           : 'bg-white border-[#E4E4E7] text-[#52525B] hover:border-[#A78BFA] hover:text-[#6D28D9]')
@@ -201,28 +193,27 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
             </div>
 
             {/* Textarea */}
-            <div>
-              <label className="text-[0.72rem] font-semibold uppercase tracking-wider text-[#71717A] mb-1.5 block">
-                Mensagem original
-              </label>
-              <textarea
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="ai-message">Mensagem original *</Label>
+              <Textarea
+                id="ai-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder={`Cole aqui o conteúdo recebido via ${channel}...`}
+                placeholder="Cole aqui o e-mail, mensagem ou anotação recebida..."
                 rows={7}
                 maxLength={5000}
-                className="w-full px-3 py-2.5 rounded-lg border border-[#E4E4E7] bg-white text-sm text-[#0F172A] outline-none focus:border-[#A78BFA] focus:shadow-[0_0_0_3px_rgba(167,139,250,0.15)] transition-colors resize-none font-mono leading-relaxed"
+                className="font-mono text-[0.82rem] leading-relaxed resize-none"
               />
-              <div className="text-[0.7rem] text-[#A1A1AA] text-right mt-1 tabular-nums">
-                {message.length} / 5000
+              <div className="text-[0.7rem] text-[#A1A1AA] text-right tabular-nums">
+                {message.length} / 5000 caracteres
               </div>
             </div>
 
             {/* Exemplos */}
-            <div>
-              <label className="text-[0.7rem] uppercase tracking-wider text-[#A1A1AA] mb-1.5 block">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[0.7rem] uppercase tracking-wider text-[#71717A]">
                 Exemplos rápidos pra testar
-              </label>
+              </Label>
               <div className="flex flex-wrap gap-1.5">
                 {EXAMPLES.map((ex, i) => {
                   const Icon = CHANNELS.find(c => c.id === ex.channel)?.icon || FileText
@@ -242,7 +233,7 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-[#FEF2F2] border border-[#FCA5A5]">
+              <div className="flex items-start gap-2 p-3 rounded-md bg-[#FEF2F2] border border-[#FCA5A5]">
                 <AlertCircle size={14} className="text-[#B91C1C] flex-shrink-0 mt-0.5" />
                 <div className="text-[0.82rem] text-[#991B1B]">{error}</div>
               </div>
@@ -257,20 +248,20 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="space-y-3 mt-2"
+              className="flex flex-col gap-4"
             >
               {/* Confiança */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-[#F5F3FF] to-[#FAF5FF] border border-[#DDD6FE]">
+              <div className="flex items-center gap-3 p-3 rounded-md bg-[#F5F3FF] border border-[#DDD6FE]">
                 <Sparkles size={16} className="text-[#7C3AED] flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[0.7rem] uppercase tracking-wider text-[#6D28D9] font-semibold">
+                  <div className="text-[0.72rem] uppercase tracking-wider text-[#6D28D9] font-semibold">
                     Confiança da IA: {preview.confidence}%
                   </div>
-                  <div className="text-[0.78rem] text-[#52525B] mt-0.5 line-clamp-2">
+                  <div className="text-[0.82rem] text-[#52525B] mt-0.5 line-clamp-2">
                     {preview.task.reasoning}
                   </div>
                 </div>
-                <div className="w-16 h-1.5 bg-white rounded-full overflow-hidden border border-[#E4E4E7]">
+                <div className="w-16 h-1.5 bg-white rounded-full overflow-hidden border border-[#E4E4E7] flex-shrink-0">
                   <div
                     className="h-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] transition-all"
                     style={{ width: `${preview.confidence}%` }}
@@ -278,60 +269,96 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
                 </div>
               </div>
 
-              {/* Campos preenchidos */}
-              <div className="space-y-2.5 p-4 rounded-lg border border-[#E4E4E7] bg-white">
-                <PreviewField label="Título" value={preview.task.titulo} />
-                <div className="grid grid-cols-2 gap-3">
-                  <PreviewField label="Prioridade">
-                    <span className={`inline-flex text-[0.72rem] font-semibold px-2 py-0.5 rounded-md border ${prioColors[preview.task.prioridade]}`}>
-                      {preview.task.prioridade}
-                    </span>
-                  </PreviewField>
-                  <PreviewField label="Categoria" value={preview.task.categoria || '—'} />
+              {/* Título */}
+              <div className="flex flex-col gap-1.5">
+                <Label>Título</Label>
+                <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A] font-medium">
+                  {preview.task.titulo}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <PreviewField label="Responsável" value={preview.task.responsavel_nome || 'Não atribuído'} />
-                  <PreviewField label="Prazo sugerido" value={preview.task.data_prazo_sugerida ? new Date(preview.task.data_prazo_sugerida + 'T00:00:00').toLocaleDateString('pt-BR') : '—'} />
-                </div>
-                <PreviewField
-                  label="Tempo estimado"
-                  value={preview.task.tempo_estimado_minutos ? `${preview.task.tempo_estimado_minutos} min` : '—'}
-                />
-
-                {preview.task.subtasks.length > 0 && (
-                  <PreviewField label="Subtarefas sugeridas">
-                    <ul className="text-[0.82rem] text-[#3F3F46] space-y-0.5 mt-1">
-                      {preview.task.subtasks.map((s, i) => (
-                        <li key={i} className="flex gap-1.5">
-                          <span className="text-[#A78BFA]">·</span>
-                          <span>{s}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </PreviewField>
-                )}
-
-                {preview.task.tags.length > 0 && (
-                  <PreviewField label="Tags">
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {preview.task.tags.map((t, i) => (
-                        <span key={i} className="text-[0.7rem] font-medium text-[#6D28D9] bg-[#F5F3FF] border border-[#DDD6FE] px-1.5 py-0.5 rounded">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </PreviewField>
-                )}
               </div>
 
-              <div className="text-[0.72rem] text-[#71717A] italic px-1">
+              {/* Categoria | Responsável */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Categoria</Label>
+                  <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A]">
+                    {preview.task.categoria || '—'}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Responsável</Label>
+                  <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A]">
+                    {preview.task.responsavel_nome || 'Não atribuído'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Prioridade | Estimado | Prazo */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Prioridade</Label>
+                  <div>
+                    <span className={`inline-flex text-[0.78rem] font-semibold px-2 py-1 rounded-md border ${prioColors[preview.task.prioridade]}`}>
+                      {preview.task.prioridade}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Estimado (min)</Label>
+                  <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A] tabular-nums">
+                    {preview.task.tempo_estimado_minutos ?? '—'}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Prazo sugerido</Label>
+                  <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A] tabular-nums">
+                    {preview.task.data_prazo_sugerida
+                      ? new Date(preview.task.data_prazo_sugerida + 'T00:00:00').toLocaleDateString('pt-BR')
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Subtarefas (se houver) */}
+              {preview.task.subtasks.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <Label>Subtarefas sugeridas</Label>
+                  <ul className="rounded-md border border-[#E4E4E7] bg-[#FAFAFA] divide-y divide-[#E4E4E7]">
+                    {preview.task.subtasks.map((s, i) => (
+                      <li key={i} className="px-3 py-2 text-[0.82rem] text-[#3F3F46] flex gap-2">
+                        <span className="text-[#A78BFA] font-mono tabular-nums">{i + 1}.</span>
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Tags (se houver) */}
+              {preview.task.tags.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <Label>Tags</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {preview.task.tags.map((t, i) => (
+                      <span
+                        key={i}
+                        className="text-[0.72rem] font-medium text-[#6D28D9] bg-[#F5F3FF] border border-[#DDD6FE] px-2 py-0.5 rounded-md"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-[0.72rem] text-[#71717A] italic">
                 Você poderá revisar e editar todos os campos no próximo passo antes de salvar.
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <DialogFooter className="flex !justify-between gap-2 mt-3 pt-3 border-t border-[#E4E4E7]">
+        <DialogFooter className="flex !justify-between gap-2 mt-4 pt-4 border-t border-[#E4E4E7]">
           {!preview ? (
             <>
               <Button type="button" variant="ghost" onClick={handleClose}>
@@ -367,16 +394,5 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-function PreviewField({
-  label, value, children,
-}: { label: string; value?: string; children?: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-[#71717A]">{label}</div>
-      {children || <div className="text-[0.85rem] text-[#0F172A] mt-0.5">{value}</div>}
-    </div>
   )
 }
