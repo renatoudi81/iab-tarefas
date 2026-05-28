@@ -123,14 +123,19 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      {/* max-h-[90vh] + flex column garante que o footer com os botões
+          'Cancelar/Salvar' fique sempre visível em modo edição (que tem
+          MUITOS campos e estoura a viewport sem isso). p-0 + gap-0 anulam
+          o padding/gap default do DialogContent — restauramos por dentro. */}
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-3 flex-shrink-0">
           <DialogTitle className="text-lg font-bold tracking-tight">
             {isEditing ? 'Editar Tarefa' : 'Nova Tarefa'}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-2">
           <div className="flex flex-col gap-4">
             {/* Título */}
             <div className="flex flex-col gap-1.5">
@@ -349,8 +354,11 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
           </div>
 
           <FormError message={saveError} className="mt-4" />
+          </div>
 
-          <DialogFooter className="border-t border-border pt-4 mt-5">
+          {/* Footer fixo abaixo do scroll — sempre visível, mesmo com
+              o form bem grande em modo edição. */}
+          <DialogFooter className="border-t border-border px-6 py-3 flex-shrink-0 bg-white">
             <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
               Cancelar
             </Button>

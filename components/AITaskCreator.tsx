@@ -154,13 +154,16 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      {/* Footer fixo (mesmo padrão do TaskModal) — body com scroll interno. */}
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-3 flex-shrink-0">
           <DialogTitle className="text-lg font-bold tracking-tight inline-flex items-center gap-2">
             <Sparkles size={16} className="text-[#7C3AED]" />
             Nova tarefa com IA
           </DialogTitle>
         </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-2">
 
         {/* ─── Etapa 1: Input ─────────────────────────────────────────── */}
         {!preview && (
@@ -358,7 +361,9 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
           )}
         </AnimatePresence>
 
-        <DialogFooter className="flex !justify-between gap-2 mt-4 pt-4 border-t border-[#E4E4E7]">
+        </div>
+
+        <DialogFooter className="flex !justify-between gap-2 px-6 py-3 border-t border-[#E4E4E7] flex-shrink-0 bg-white">
           {!preview ? (
             <>
               <Button type="button" variant="ghost" onClick={handleClose}>
