@@ -415,18 +415,26 @@ function TempoTab({ task }: { task: Task }) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const handleStart = () => {
+    if (running) return // evita iniciar dois intervals
     startTimeRef.current = new Date()
+    setSeconds(0)
     setRunning(true)
+    // O interval só atualiza a EXIBIÇÃO. A duração real é calculada por
+    // timestamp no stop — imune ao throttle de timers em aba de fundo.
     intervalRef.current = setInterval(() => {
-      setSeconds(s => s + 1)
+      if (startTimeRef.current) {
+        setSeconds(Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000))
+      }
     }, 1000)
   }
 
   const handleStop = async () => {
     if (intervalRef.current) clearInterval(intervalRef.current)
     setRunning(false)
-    const duracao = Math.round(seconds / 60) || 1
     const now = new Date()
+    // Duração real pelo tempo decorrido (não pela contagem do interval)
+    const elapsedMs = startTimeRef.current ? now.getTime() - startTimeRef.current.getTime() : 0
+    const duracao = Math.max(1, Math.round(elapsedMs / 60000))
     const horaFim = now.toTimeString().slice(0, 5)
     const horaInicio = startTimeRef.current ? startTimeRef.current.toTimeString().slice(0, 5) : horaFim
     const data = now.toISOString().split('T')[0]

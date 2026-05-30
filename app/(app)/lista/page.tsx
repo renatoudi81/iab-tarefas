@@ -74,7 +74,13 @@ export default function ListaPage() {
   const [modal, setModal] = useState<{ open: boolean; task: Task | null; initialData?: Partial<TaskFormData> }>({ open: false, task: null })
   // IA: modal de criação automatizada
   const [aiOpen, setAiOpen] = useState(false)
-  const [drawerTask, setDrawerTask] = useState<Task | null>(null)
+  // Guarda só o ID; a task é derivada do array vivo (evita dados stale
+  // após edição/optimistic update — o drawer reflete sempre o estado atual).
+  const [drawerTaskId, setDrawerTaskId] = useState<string | null>(null)
+  const drawerTask = useMemo(
+    () => (drawerTaskId ? tasks.find(t => t.id === drawerTaskId) ?? null : null),
+    [drawerTaskId, tasks],
+  )
   const [page, setPage] = useState(1)
 
   // Ordenação da Lista:
@@ -142,7 +148,7 @@ export default function ListaPage() {
   // o usuário poderia ficar numa página "vazia" após filtrar)
   useEffect(() => {
     setPage(1)
-  }, [search, filterStatus, filterPriority, filterUser, dateFrom, dateTo])
+  }, [search, filterProject, filterStatus, filterPriority, filterUser, dateFrom, dateTo])
 
   // Slice da página atual
   const paginated = useMemo(() => {
@@ -168,7 +174,7 @@ export default function ListaPage() {
     }
   }
 
-  const onTaskClick = (task: Task) => setDrawerTask(task)
+  const onTaskClick = (task: Task) => setDrawerTaskId(task.id)
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
@@ -186,7 +192,7 @@ export default function ListaPage() {
     }
   }
 
-  const hasFilters = filterStatus || filterPriority || filterUser || search || dateFrom || dateTo
+  const hasFilters = filterProject || filterStatus || filterPriority || filterUser || search || dateFrom || dateTo
 
   return (
     <div>
@@ -300,7 +306,7 @@ export default function ListaPage() {
             size="sm"
             className="gap-1 text-red-500 hover:text-red-700"
             onClick={() => {
-              setSearch(''); setFilterStatus(''); setFilterPriority(''); setFilterUser('')
+              setSearch(''); setFilterProject(''); setFilterStatus(''); setFilterPriority(''); setFilterUser('')
               setDateFrom(''); setDateTo('')
             }}
           >
@@ -572,8 +578,8 @@ export default function ListaPage() {
       {/* Task Drawer */}
       <TaskDrawer
         task={drawerTask}
-        onClose={() => setDrawerTask(null)}
-        onEdit={(task) => { setDrawerTask(null); openEdit(task) }}
+        onClose={() => setDrawerTaskId(null)}
+        onEdit={(task) => { setDrawerTaskId(null); openEdit(task) }}
       />
     </div>
   )

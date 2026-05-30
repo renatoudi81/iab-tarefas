@@ -102,7 +102,11 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
       })
     }
     setSaveError('')
-  }, [open, task, initialStatus, initialData])
+    // Depende de task?.id (não do objeto task): a revalidação do SWR cria
+    // novos objetos Task a cada 30s; depender do objeto reexecutaria este
+    // effect e sobrescreveria o que o usuário está digitando no modal aberto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, task?.id, initialStatus, initialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
