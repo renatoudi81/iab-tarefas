@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
+import { useProjects } from '@/hooks/useProjects'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, formatDateBR } from '@/types'
 import type { Status, Task } from '@/types'
 import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react'
@@ -51,6 +52,7 @@ function sortTasks(tasks: Task[]): Task[] {
 export default function KanbanPage() {
   const { tasks: swrTasks, updateTask, deleteTask, isLoading, isInitialLoad } = useTasks()
   const { users } = useUsers()
+  const { projects } = useProjects()
   const { toast } = useToast()
   const { confirm } = useConfirm()
   const { user: authUser } = useAuth()
@@ -60,8 +62,9 @@ export default function KanbanPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [filterUserId, setFilterUserId] = useState<string>('all')
-  const hasFilter = !!dateFrom || !!dateTo || filterUserId !== 'all'
-  const clearFilters = () => { setDateFrom(''); setDateTo(''); setFilterUserId('all') }
+  const [filterProject, setFilterProject] = useState<string>('all')
+  const hasFilter = !!dateFrom || !!dateTo || filterUserId !== 'all' || filterProject !== 'all'
+  const clearFilters = () => { setDateFrom(''); setDateTo(''); setFilterUserId('all'); setFilterProject('all') }
 
   // Modal de criar/editar tarefa
   const [modal, setModal] = useState<{
@@ -112,6 +115,7 @@ export default function KanbanPage() {
   // que de fato está visível.
   const filteredTasks = useMemo(() => {
     return localTasks.filter(t => {
+      if (filterProject !== 'all' && t.projeto_id !== filterProject) return false
       // Filtro por responsável (admin escolhe; não-admin sempre vê só
       // o que a API retorna — que já é o próprio)
       if (filterUserId !== 'all' && t.responsavel_id !== filterUserId) return false
@@ -122,7 +126,7 @@ export default function KanbanPage() {
       if (dateTo && t.data_prazo && t.data_prazo > dateTo) return false
       return true
     })
-  }, [localTasks, filterUserId, dateFrom, dateTo])
+  }, [localTasks, filterProject, filterUserId, dateFrom, dateTo])
 
   const columns = useMemo(() =>
     COLUMNS.map(status => {
@@ -220,6 +224,21 @@ export default function KanbanPage() {
         (não-admin já vê apenas as próprias tarefas via filtro server-side).
       */}
       <div className="mb-5 flex items-center gap-2 flex-wrap">
+        {/* Projeto */}
+        {projects.length > 0 && (
+          <Select value={filterProject} onValueChange={setFilterProject}>
+            <SelectTrigger aria-label="Filtrar por projeto" className="h-9 w-[170px] text-sm bg-white">
+              <SelectValue placeholder="Projeto..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os projetos</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         {/* Esquerda: filtros conceituais (responsável) */}
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>

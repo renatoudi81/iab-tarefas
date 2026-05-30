@@ -18,6 +18,12 @@ export interface Category {
   criado_em: string
 }
 
+export interface Project {
+  id: string
+  nome: string
+  criado_em: string
+}
+
 export type Status = 'Pendente' | 'Em andamento' | 'Atrasada' | 'Aguardando' | 'Concluída'
 export type Prioridade = 'Baixa' | 'Média' | 'Alta' | 'Crítica'
 
@@ -32,6 +38,7 @@ export interface Task {
   titulo: string
   descricao: string | null
   observacoes: string | null
+  projeto_id: string
   categoria: string
   prioridade: Prioridade
   status: Status

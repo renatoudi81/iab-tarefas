@@ -33,6 +33,8 @@ interface ParsedTask {
   titulo: string
   descricao: string
   prioridade: 'Baixa' | 'Média' | 'Alta' | 'Crítica'
+  projeto_id: string | null
+  projeto_nome: string | null
   categoria: string
   responsavel_id: string | null
   responsavel_nome: string | null
@@ -91,12 +93,13 @@ export async function POST(req: Request) {
     )
   }
 
-  // 4. Carrega vocabulário do banco (categorias + usuários) pra IA escolher
-  //    valores reais. Mantém a resposta amarrada ao schema da empresa.
+  // 4. Carrega vocabulário do banco (projetos + categorias + usuários) pra IA
+  //    escolher valores reais. Mantém a resposta amarrada ao schema da empresa.
   try {
-    const [categoriesSnap, usersSnap] = await Promise.all([
+    const [categoriesSnap, usersSnap, projectsSnap] = await Promise.all([
       adminDb.collection('categories').get(),
       adminDb.collection('users').get(),
+      adminDb.collection('projects').get(),
     ])
     const categorias = categoriesSnap.docs
       .map(d => (d.data() as { nome?: string }).nome)
@@ -110,6 +113,10 @@ export async function POST(req: Request) {
         perfil: u.perfil || '',
       }
     })
+    const projetos = projectsSnap.docs.map(d => ({
+      id: d.id,
+      nome: (d.data() as { nome?: string }).nome || '',
+    }))
 
     // 5. Monta prompt
     const todayISO = new Date().toISOString().split('T')[0]
@@ -117,6 +124,9 @@ export async function POST(req: Request) {
       .map(u => `  - id="${u.id}" nome="${u.nome}" perfil="${u.perfil}"`)
       .join('\n')
     const categoriasList = categorias.map(c => `"${c}"`).join(', ') || '(nenhuma cadastrada)'
+    const projetosList = projetos
+      .map(p => `  - id="${p.id}" nome="${p.nome}"`)
+      .join('\n') || '  (nenhum projeto cadastrado)'
 
     const systemPrompt = `Você é um assistente do Instituto Alfa e Beto (IAB), uma instituição educacional brasileira. Sua função é INTERPRETAR mensagens em linguagem natural (e-mails, anotações, transcrições) e PROPOR uma tarefa acionável para o sistema de Controle de Atividades.
 
@@ -130,6 +140,8 @@ REGRAS RÍGIDAS:
   "titulo": "FORMATO OBRIGATÓRIO: [Categoria] Verbo + objeto",
   "descricao": "string em HTML simples (use <p>, <ul><li>, <strong>) com contexto e detalhes",
   "prioridade": "Baixa" | "Média" | "Alta" | "Crítica",
+  "projeto_id": "id de um projeto da lista — escolha o mais provável; se só houver 1 projeto, use ele",
+  "projeto_nome": "nome do projeto escolhido",
   "categoria": "uma das categorias da lista — escolha a mais próxima",
   "responsavel_id": "id de um usuário da lista OU null se não há indicação clara",
   "responsavel_nome": "nome do usuário escolhido OU null",
@@ -164,6 +176,12 @@ REGRAS RÍGIDAS:
 
 5. CATEGORIA: escolha apenas dentre estas: ${categoriasList}
    Se nenhuma se aplica claramente, escolha a mais genérica disponível.
+
+5b. PROJETO (obrigatório): escolha o id de um projeto da lista abaixo, o mais
+   provável pelo contexto. Se houver só 1 projeto, use ele. Retorne projeto_id e projeto_nome.
+
+PROJETOS DISPONÍVEIS:
+${projetosList}
 
 6. RESPONSÁVEL: se o texto cita um nome ou função, encontre o usuário correspondente na lista abaixo e retorne seu id. Se não há indicação clara OU o nome não está na lista, retorne null em ambos os campos.
 
@@ -286,6 +304,14 @@ Extraia a tarefa em JSON conforme as regras.`
       // Categoria fora da lista — assume a primeira
       parsed.categoria = categorias[0]
     }
+    // Projeto: valida id; se inválido/ausente e há projetos, assume o primeiro
+    const projMatch = projetos.find(p => p.id === parsed.projeto_id)
+    if (!projMatch) {
+      parsed.projeto_id = projetos[0]?.id || null
+      parsed.projeto_nome = projetos[0]?.nome || null
+    } else {
+      parsed.projeto_nome = projMatch.nome
+    }
     if (parsed.responsavel_id && !usuarios.find(u => u.id === parsed.responsavel_id)) {
       // ID inválido — limpa
       parsed.responsavel_id = null
@@ -323,6 +349,8 @@ Extraia a tarefa em JSON conforme as regras.`
         titulo: tituloFinal,
         descricao: String(parsed.descricao || ''),
         prioridade: parsed.prioridade,
+        projeto_id: parsed.projeto_id || null,
+        projeto_nome: parsed.projeto_nome || null,
         categoria: String(parsed.categoria || ''),
         responsavel_id: parsed.responsavel_id || null,
         responsavel_nome: parsed.responsavel_nome || null,

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
+import { useProjects } from '@/hooks/useProjects'
 import { STATUSES, PRIORITIES, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, todayStr, formatDateBR } from '@/types'
 import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
@@ -56,6 +57,7 @@ export default function ListaPage() {
   const { tasks, deleteTask, isLoading: loadingTasks, isInitialLoad } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
+  const { projects } = useProjects()
   const { toast } = useToast()
   const { confirm } = useConfirm()
   const { user: authUser } = useAuth()
@@ -65,6 +67,7 @@ export default function ListaPage() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPriority, setFilterPriority] = useState('')
   const [filterUser, setFilterUser] = useState('')
+  const [filterProject, setFilterProject] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [modal, setModal] = useState<{ open: boolean; task: Task | null; initialData?: Partial<TaskFormData> }>({ open: false, task: null })
@@ -102,6 +105,7 @@ export default function ListaPage() {
     const s = search.toLowerCase()
     return tasks
       .filter(t => {
+        if (filterProject && t.projeto_id !== filterProject) return false
         if (filterStatus && t.status !== filterStatus) return false
         if (filterPriority && t.prioridade !== filterPriority) return false
         if (filterUser && t.responsavel_id !== filterUser) return false
@@ -131,7 +135,7 @@ export default function ListaPage() {
         const bC = b.criado_em ?? ''
         return aC < bC ? -1 : 1
       })
-  }, [tasks, search, filterStatus, filterPriority, filterUser, dateFrom, dateTo, STATUS_ORDER, PRIORITY_ORDER])
+  }, [tasks, search, filterProject, filterStatus, filterPriority, filterUser, dateFrom, dateTo, STATUS_ORDER, PRIORITY_ORDER])
 
   // Reset para página 1 sempre que filtros mudarem (caso contrário,
   // o usuário poderia ficar numa página "vazia" após filtrar)
@@ -230,6 +234,18 @@ export default function ListaPage() {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
+        {projects.length > 0 && (
+          <Select value={filterProject || 'all'} onValueChange={v => setFilterProject(v === 'all' ? '' : v)}>
+            <SelectTrigger aria-label="Filtrar por projeto" className="h-9 w-auto min-w-[150px] text-sm border-[#E4E4E7] bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os projetos</SelectItem>
+              {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
         <Select value={filterStatus || 'all'} onValueChange={v => setFilterStatus(v === 'all' ? '' : v)}>
           <SelectTrigger aria-label="Filtrar por status" className="h-9 w-auto min-w-[148px] text-sm border-[#E4E4E7] bg-white">
             <SelectValue />

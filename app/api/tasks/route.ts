@@ -95,12 +95,13 @@ export async function POST(req: Request) {
   try { body = await req.json() }
   catch { return NextResponse.json({ error: 'JSON inválido' }, { status: 400 }) }
 
-  const { titulo, descricao, observacoes, categoria, prioridade, status,
+  const { titulo, descricao, observacoes, projeto_id, categoria, prioridade, status,
     responsavel_id, equipe, data_inicio, data_prazo, data_conclusao,
     tempo_estimado, tempo_gasto_total, tags, anexos,
     aguardando_quem, data_retorno_esperada } = body
 
   if (!titulo?.trim()) return NextResponse.json({ error: 'Título obrigatório' }, { status: 400 })
+  if (!projeto_id?.trim()) return NextResponse.json({ error: 'Projeto obrigatório' }, { status: 400 })
   if (!categoria?.trim()) return NextResponse.json({ error: 'Categoria obrigatória' }, { status: 400 })
 
   if (prioridade && !VALID_PRIORIDADES.includes(prioridade)) {
@@ -109,6 +110,10 @@ export async function POST(req: Request) {
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: `Status inválido. Use: ${VALID_STATUSES.join(', ')}` }, { status: 400 })
   }
+
+  // Projeto precisa existir
+  const projSnap = await adminDb.collection('projects').doc(projeto_id).get()
+  if (!projSnap.exists) return NextResponse.json({ error: 'Projeto não cadastrado' }, { status: 400 })
 
   // Categoria precisa existir
   const catDup = await adminDb.collection('categories').where('nome', '==', categoria).limit(1).get()
@@ -123,6 +128,7 @@ export async function POST(req: Request) {
     titulo: titulo.trim(),
     descricao: descricao || null,
     observacoes: observacoes || null,
+    projeto_id,
     categoria,
     prioridade: prioridade || 'Média',
     status: status || 'Pendente',

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
+import { useProjects } from '@/hooks/useProjects'
 import { STATUSES, PRIORITIES, todayStr } from '@/types'
 import type { Task, TaskFormData, Status, Prioridade } from '@/types'
 import { Loader2 } from 'lucide-react'
@@ -23,7 +24,7 @@ import { FormError } from '@/components/ui/FormError'
 import { useToast } from '@/contexts/ToastContext'
 
 const EMPTY_FORM: TaskFormData = {
-  titulo: '', descricao: '', observacoes: '', categoria: '', responsavel_id: null,
+  titulo: '', descricao: '', observacoes: '', projeto_id: '', categoria: '', responsavel_id: null,
   equipe: [], prioridade: 'Média', status: 'Pendente',
   tempo_estimado: 60, tempo_gasto_total: 0,
   data_inicio: '', data_prazo: '', data_conclusao: null, tags: [], anexos: [],
@@ -52,6 +53,7 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
   const { addTask, updateTask } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
+  const { projects } = useProjects()
   const { toast } = useToast()
 
   const [form, setForm] = useState<TaskFormData>({ ...EMPTY_FORM, data_inicio: todayStr() })
@@ -70,6 +72,7 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
         titulo: task.titulo,
         descricao: task.descricao || '',
         observacoes: task.observacoes || '',
+        projeto_id: task.projeto_id || '',
         categoria: task.categoria,
         responsavel_id: task.responsavel_id,
         equipe: task.equipe || [],
@@ -161,8 +164,25 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
               />
             </div>
 
-            {/* Categoria | Responsável */}
+            {/* Projeto | Categoria */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label>Projeto *</Label>
+                <Select
+                  required
+                  value={form.projeto_id || ''}
+                  onValueChange={(v) => setForm((p) => ({ ...p, projeto_id: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label>Categoria *</Label>
                 <Select
@@ -180,6 +200,10 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Responsável */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label>Responsável *</Label>
                 <Select

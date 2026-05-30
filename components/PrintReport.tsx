@@ -33,6 +33,7 @@ interface PrintReportProps {
     byStatus: { name: Status; value: number; color: string }[]
     byPriority: { name: Prioridade; value: number; color: string }[]
     byCategory: { name: string; total: number; horas: number }[]
+    byProject: { name: string; total: number; done: number; horas: number }[]
     byUser: {
       user: { id: string; nome: string }
       total: number
@@ -136,6 +137,28 @@ export function PrintReport({
         <section className="pr-section">
           <h2>Distribuição por prioridade</h2>
           <DistroBars items={stats.byPriority.map(p => ({ label: p.name, value: p.value, color: p.color }))} total={totalTasks} />
+        </section>
+      )}
+
+      {/* Projetos (tabela) */}
+      {stats.byProject.length > 0 && (
+        <section className="pr-section">
+          <h2>Tarefas por projeto</h2>
+          <table className="pr-table">
+            <thead>
+              <tr><th>Projeto</th><th className="num">Tarefas</th><th className="num">Concluídas</th><th className="num">Horas</th></tr>
+            </thead>
+            <tbody>
+              {stats.byProject.map(p => (
+                <tr key={p.name}>
+                  <td>{p.name}</td>
+                  <td className="num">{p.total}</td>
+                  <td className="num">{p.done}</td>
+                  <td className="num">{p.horas}h</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, ClipboardList, LayoutGrid,
   GanttChart, FileBarChart2, Settings,
-  Users, Tag, X,
+  Users, Tag, X, FolderKanban,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -20,8 +20,9 @@ const BASE_NAV = [
 ]
 
 const ADMIN_SUB_NAV = [
-  { id: 'admin-usuarios',   icon: Users, label: 'Usuários',   href: '/admin/usuarios' },
-  { id: 'admin-categorias', icon: Tag,   label: 'Categorias', href: '/admin/categorias' },
+  { id: 'admin-usuarios',   icon: Users,        label: 'Usuários',   href: '/admin/usuarios' },
+  { id: 'admin-projetos',   icon: FolderKanban, label: 'Projetos',   href: '/admin/projetos' },
+  { id: 'admin-categorias', icon: Tag,          label: 'Categorias', href: '/admin/categorias' },
 ]
 
 export const SIDEBAR_WIDTH = 220

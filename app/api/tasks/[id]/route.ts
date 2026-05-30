@@ -7,7 +7,7 @@ type Params = { params: Promise<{ id: string }> }
 const TRACKED_FIELDS = ['titulo', 'status', 'prioridade', 'responsavel_id', 'data_prazo'] as const
 
 const ALLOWED_UPDATE_FIELDS = [
-  'titulo', 'descricao', 'observacoes', 'categoria', 'prioridade', 'status',
+  'titulo', 'descricao', 'observacoes', 'projeto_id', 'categoria', 'prioridade', 'status',
   'responsavel_id', 'equipe', 'data_inicio', 'data_prazo', 'data_conclusao',
   'tempo_estimado', 'tempo_gasto_total', 'tags', 'anexos',
   'aguardando_quem', 'data_retorno_esperada',

@@ -17,6 +17,7 @@ import {
 import { formatDateBR } from '@/types'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { useUsers } from '@/hooks/useUsers'
+import { useProjects } from '@/hooks/useProjects'
 import { useAuth } from '@/contexts/AuthContext'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
@@ -374,23 +375,30 @@ export default function DashboardPage() {
   const { tasks: allTasks, isLoading: loadingTasks } = useTasks()
   const { entries: allEntries } = useTimeEntries()
   const { users } = useUsers()
+  const { projects } = useProjects()
   const { user: authUser } = useAuth()
   const isAdmin = authUser?.perfil === 'Administrador'
 
   // Filtro por usuário (admin escolhe; não-admin sempre vê o próprio)
   const [filterUserId, setFilterUserId] = useState<string>('all')
+  const [filterProject, setFilterProject] = useState<string>('all')
   const effectiveUserId = isAdmin ? filterUserId : (authUser?.id || 'all')
 
-  // Escopo: filtra tudo pelo usuário escolhido. Filtro server-side já
-  // restringe não-admins; aqui o admin alterna entre "Todos" e indivíduo.
+  // Escopo: filtra tudo pelo usuário escolhido + projeto. Filtro server-side
+  // já restringe não-admins; aqui o admin alterna entre "Todos" e indivíduo.
   const tasks = useMemo(() => {
-    if (effectiveUserId === 'all') return allTasks
-    return allTasks.filter(t => t.responsavel_id === effectiveUserId)
-  }, [allTasks, effectiveUserId])
+    let arr = effectiveUserId === 'all' ? allTasks : allTasks.filter(t => t.responsavel_id === effectiveUserId)
+    if (filterProject !== 'all') arr = arr.filter(t => t.projeto_id === filterProject)
+    return arr
+  }, [allTasks, effectiveUserId, filterProject])
   const entries = useMemo(() => {
-    if (effectiveUserId === 'all') return allEntries
-    return allEntries.filter(e => e.usuario_id === effectiveUserId)
-  }, [allEntries, effectiveUserId])
+    let arr = effectiveUserId === 'all' ? allEntries : allEntries.filter(e => e.usuario_id === effectiveUserId)
+    if (filterProject !== 'all') {
+      const taskIds = new Set(tasks.map(t => t.id))
+      arr = arr.filter(e => taskIds.has(e.tarefa_id))
+    }
+    return arr
+  }, [allEntries, effectiveUserId, filterProject, tasks])
 
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 6)
@@ -541,6 +549,20 @@ export default function DashboardPage() {
 
       {/* Toolbar de filtros — linha separada (padrão Kanban/Lista/Gantt) */}
       <motion.div variants={itemVariants} className="mb-5 flex items-center gap-2 flex-wrap">
+        {/* Filtro por projeto */}
+        {projects.length > 0 && (
+          <Select value={filterProject} onValueChange={setFilterProject}>
+            <SelectTrigger aria-label="Filtrar por projeto" className="h-9 w-[180px] text-sm bg-white">
+              <SelectValue placeholder="Projeto..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os projetos</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         {/* Filtro por usuário — admin escolhe; outros perfis ocultos */}
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>

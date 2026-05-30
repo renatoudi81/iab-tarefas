@@ -52,6 +52,8 @@ interface ParsedResponse {
     titulo: string
     descricao: string
     prioridade: 'Baixa' | 'Média' | 'Alta' | 'Crítica'
+    projeto_id: string | null
+    projeto_nome: string | null
     categoria: string
     responsavel_id: string | null
     responsavel_nome: string | null
@@ -132,6 +134,7 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
       titulo: preview.task.titulo,
       descricao: preview.task.descricao,
       prioridade: preview.task.prioridade,
+      projeto_id: preview.task.projeto_id || '',
       categoria: preview.task.categoria,
       responsavel_id: preview.task.responsavel_id,
       tempo_estimado: preview.task.tempo_estimado_minutos || 60,
@@ -280,14 +283,24 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
                 </div>
               </div>
 
-              {/* Categoria | Responsável */}
+              {/* Projeto | Categoria */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Projeto</Label>
+                  <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A]">
+                    {preview.task.projeto_nome || '—'}
+                  </div>
+                </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>Categoria</Label>
                   <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A]">
                     {preview.task.categoria || '—'}
                   </div>
                 </div>
+              </div>
+
+              {/* Responsável */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Label>Responsável</Label>
                   <div className="px-3 py-2 rounded-md border border-[#E4E4E7] bg-[#FAFAFA] text-sm text-[#0F172A]">

@@ -5,6 +5,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
+import { useProjects } from '@/hooks/useProjects'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -20,7 +21,7 @@ import {
 import {
   Printer, AlertTriangle, Users, Tag, Clock,
   Download, PieChart as PieChartIcon, BarChart2,
-  ListChecks, TrendingUp, Activity, CheckCircle2,
+  ListChecks, TrendingUp, Activity, CheckCircle2, FolderKanban,
 } from 'lucide-react'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
@@ -162,24 +163,29 @@ export default function RelatoriosPage() {
   const { entries: allEntries } = useTimeEntries()
   const { users } = useUsers()
   const { categories } = useCategories()
+  const { projects } = useProjects()
   const { user: authUser } = useAuth()
 
   const isAdmin = authUser?.perfil === 'Administrador'
 
   // Filtro por usuário — apenas admin pode escolher; outros perfis sempre veem o próprio
   const [filterUserId, setFilterUserId] = useState<string>('all')
+  const [filterProject, setFilterProject] = useState<string>('all')
   const effectiveUserId = isAdmin ? filterUserId : (authUser?.id || 'all')
 
   // Filtro por período — aplica em todas as métricas do Relatório
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
-  // Aplica filtros em cadeia: usuário → período. Pra tasks, considera
+  // Aplica filtros em cadeia: usuário → projeto → período. Pra tasks, considera
   // sobreposição com o período (não exige estar 100% dentro).
   const tasks = useMemo(() => {
     let arr = allTasks
     if (effectiveUserId !== 'all') {
       arr = arr.filter(t => t.responsavel_id === effectiveUserId)
+    }
+    if (filterProject !== 'all') {
+      arr = arr.filter(t => t.projeto_id === filterProject)
     }
     if (dateFrom || dateTo) {
       arr = arr.filter(t => {
@@ -254,6 +260,25 @@ export default function RelatoriosPage() {
         }
       })
       .filter((c) => c.total > 0)
+      .sort((a, b) => b.total - a.total)
+
+    const byProject = projects
+      .map((p) => {
+        const projTasks = tasks.filter((t) => t.projeto_id === p.id)
+        const minFromEntries = entries
+          .filter((e) => projTasks.some((t) => t.id === e.tarefa_id))
+          .reduce((s, e) => s + e.duracao, 0)
+        const minFromTasks = projTasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
+        const totalMin = minFromEntries > 0 ? minFromEntries : minFromTasks
+        const done = projTasks.filter((t) => t.status === 'Concluída').length
+        return {
+          name: p.nome,
+          total: projTasks.length,
+          done,
+          horas: Math.round((totalMin / 60) * 10) / 10,
+        }
+      })
+      .filter((p) => p.total > 0)
       .sort((a, b) => b.total - a.total)
 
     const exceeded = tasks.filter(
@@ -396,6 +421,7 @@ export default function RelatoriosPage() {
       byStatus,
       byUser,
       byCategory,
+      byProject,
       byPriority,
       plannedVsActual,
       topAtrasadas,
@@ -411,7 +437,7 @@ export default function RelatoriosPage() {
       pendentes,
       atrasadas,
     }
-  }, [tasks, entries, users, categories, dateFrom, dateTo])
+  }, [tasks, entries, users, categories, projects, dateFrom, dateTo])
 
   const handleExportCSV = () => {
     const rows = [
@@ -524,6 +550,19 @@ export default function RelatoriosPage() {
       {/* Toolbar de filtros — linha separada (padrão Kanban/Lista/Gantt) */}
       {/* data-print-toolbar="hide": removida do PDF gerado via window.print() */}
       <div data-print-toolbar="hide" className="mb-5 flex items-center gap-2 flex-wrap">
+        {projects.length > 0 && (
+          <Select value={filterProject} onValueChange={setFilterProject}>
+            <SelectTrigger aria-label="Filtrar por projeto" className="h-9 w-[180px] text-sm bg-white">
+              <SelectValue placeholder="Projeto..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os projetos</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>
             <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
@@ -721,6 +760,40 @@ export default function RelatoriosPage() {
             </div>
           </Section>
         </motion.div>
+
+        {/* ──────────────── Tarefas por projeto ──────────────── */}
+        {stats.byProject.length > 0 && (
+          <motion.div variants={item}>
+            <Section
+              icon={FolderKanban}
+              title="Tarefas por projeto"
+              subtitle={`${stats.byProject.length} projeto${stats.byProject.length !== 1 ? 's' : ''} ativo${stats.byProject.length !== 1 ? 's' : ''}`}
+              iconColor="#2563EB"
+              iconBg="#EFF6FF"
+            >
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E4E4E7]">
+                    <th className="text-left font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-5 py-2.5">Projeto</th>
+                    <th className="text-right font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-3 py-2.5">Tarefas</th>
+                    <th className="text-right font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-3 py-2.5">Concluídas</th>
+                    <th className="text-right font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-5 py-2.5">Horas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.byProject.map((p) => (
+                    <tr key={p.name} className="border-b border-[#F4F4F5] last:border-0 hover:bg-[#FAFAFA] transition-colors">
+                      <td className="px-5 py-3 font-medium text-[#0F172A]">{p.name}</td>
+                      <td className="px-3 py-3 text-right tabular-nums text-[#3F3F46]">{p.total}</td>
+                      <td className="px-3 py-3 text-right tabular-nums text-[#15803D] font-semibold">{p.done}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[#3F3F46]">{p.horas}h</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Section>
+          </motion.div>
+        )}
 
         {/* ──────────────── Produtividade por usuário ──────────────── */}
         <motion.div variants={item}>
