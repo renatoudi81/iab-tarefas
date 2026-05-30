@@ -281,6 +281,18 @@ export default function RelatoriosPage() {
       .filter((p) => p.total > 0)
       .sort((a, b) => b.total - a.total)
 
+    // Distribuição por canal de origem (classificação de chamado)
+    const CANAIS = ['WhatsApp', 'E-mail', 'Chat', 'Telefone', 'Portal web', 'Redes sociais']
+    const byChannel = CANAIS
+      .map((c) => ({ name: c, total: tasks.filter((t) => t.canal === c).length }))
+      .filter((c) => c.total > 0)
+      .sort((a, b) => b.total - a.total)
+
+    // Distribuição por tipo de público
+    const byPublico = (['Externo', 'Interno'] as const)
+      .map((p) => ({ name: p, total: tasks.filter((t) => t.tipo_publico === p).length }))
+      .filter((p) => p.total > 0)
+
     const exceeded = tasks.filter(
       (t) =>
         t.tempo_estimado > 0 &&
@@ -422,6 +434,8 @@ export default function RelatoriosPage() {
       byUser,
       byCategory,
       byProject,
+      byChannel,
+      byPublico,
       byPriority,
       plannedVsActual,
       topAtrasadas,
@@ -791,6 +805,52 @@ export default function RelatoriosPage() {
                   ))}
                 </tbody>
               </table>
+            </Section>
+          </motion.div>
+        )}
+
+        {/* ──────────────── Origem dos chamados (canal + público) ──────────────── */}
+        {(stats.byChannel.length > 0 || stats.byPublico.length > 0) && (
+          <motion.div variants={item}>
+            <Section
+              icon={Activity}
+              title="Origem dos chamados"
+              subtitle="Distribuição por canal de entrada e tipo de público"
+              iconColor="#0EA5E9"
+              iconBg="#E0F2FE"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-[#F4F4F5]">
+                <div className="p-5">
+                  <div className="text-[0.72rem] font-semibold uppercase tracking-wider text-[#71717A] mb-3">Canal de origem</div>
+                  {stats.byChannel.length === 0 ? (
+                    <p className="text-sm text-[#A1A1AA]">Nenhum canal informado.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-2">
+                      {stats.byChannel.map((c) => (
+                        <li key={c.name} className="flex justify-between items-center text-sm">
+                          <span className="text-[#3F3F46]">{c.name}</span>
+                          <span className="font-semibold text-[#0F172A] tabular-nums">{c.total}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="p-5">
+                  <div className="text-[0.72rem] font-semibold uppercase tracking-wider text-[#71717A] mb-3">Tipo de público</div>
+                  {stats.byPublico.length === 0 ? (
+                    <p className="text-sm text-[#A1A1AA]">Nenhum público classificado.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-2">
+                      {stats.byPublico.map((p) => (
+                        <li key={p.name} className="flex justify-between items-center text-sm">
+                          <span className="text-[#3F3F46]">{p.name === 'Externo' ? 'Externo (cliente)' : 'Interno (equipe)'}</span>
+                          <span className="font-semibold text-[#0F172A] tabular-nums">{p.total}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </Section>
           </motion.div>
         )}

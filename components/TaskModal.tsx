@@ -24,7 +24,8 @@ import { FormError } from '@/components/ui/FormError'
 import { useToast } from '@/contexts/ToastContext'
 
 const EMPTY_FORM: TaskFormData = {
-  titulo: '', descricao: '', observacoes: '', projeto_id: '', categoria: '', responsavel_id: null,
+  titulo: '', descricao: '', observacoes: '', projeto_id: '', categoria: '',
+  tipo_publico: null, canal: null, responsavel_id: null,
   equipe: [], prioridade: 'Média', status: 'Pendente',
   tempo_estimado: 60, tempo_gasto_total: 0,
   data_inicio: '', data_prazo: '', data_conclusao: null, tags: [], anexos: [],
@@ -74,6 +75,8 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
         observacoes: task.observacoes || '',
         projeto_id: task.projeto_id || '',
         categoria: task.categoria,
+        tipo_publico: task.tipo_publico ?? null,
+        canal: task.canal ?? null,
         responsavel_id: task.responsavel_id,
         equipe: task.equipe || [],
         prioridade: task.prioridade,
@@ -217,6 +220,43 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
                   <SelectContent>
                     {users.map((u) => (
                       <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Tipo de público | Canal (classificação de chamado — opcionais) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label>Tipo de público</Label>
+                <Select
+                  value={form.tipo_publico || 'none'}
+                  onValueChange={(v) => setForm((p) => ({ ...p, tipo_publico: v === 'none' ? null : (v as 'Externo' | 'Interno') }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Não classificado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não classificado</SelectItem>
+                    <SelectItem value="Externo">Externo (cliente)</SelectItem>
+                    <SelectItem value="Interno">Interno (equipe)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Canal de origem</Label>
+                <Select
+                  value={form.canal || 'none'}
+                  onValueChange={(v) => setForm((p) => ({ ...p, canal: v === 'none' ? null : v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Não informado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não informado</SelectItem>
+                    {['WhatsApp', 'E-mail', 'Chat', 'Telefone', 'Portal web', 'Redes sociais'].map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

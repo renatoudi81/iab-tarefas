@@ -35,6 +35,7 @@ interface ParsedTask {
   prioridade: 'Baixa' | 'Média' | 'Alta' | 'Crítica'
   projeto_id: string | null
   projeto_nome: string | null
+  tipo_publico: 'Externo' | 'Interno' | null
   categoria: string
   responsavel_id: string | null
   responsavel_nome: string | null
@@ -142,6 +143,7 @@ REGRAS RÍGIDAS:
   "prioridade": "Baixa" | "Média" | "Alta" | "Crítica",
   "projeto_id": "id de um projeto da lista — escolha o mais provável; se só houver 1 projeto, use ele",
   "projeto_nome": "nome do projeto escolhido",
+  "tipo_publico": "Externo" | "Interno" | null,
   "categoria": "uma das categorias da lista — escolha a mais próxima",
   "responsavel_id": "id de um usuário da lista OU null se não há indicação clara",
   "responsavel_nome": "nome do usuário escolhido OU null",
@@ -182,6 +184,11 @@ REGRAS RÍGIDAS:
 
 PROJETOS DISPONÍVEIS:
 ${projetosList}
+
+5c. TIPO DE PÚBLICO: classifique a origem do chamado:
+   - "Externo": pedido de um cliente/escola/usuário final (dúvida de uso, erro no sistema, cobrança, etc.)
+   - "Interno": demanda entre equipes internas (TI, financeiro, pedagógico, comercial, gerencial)
+   - null se não for possível inferir com clareza
 
 6. RESPONSÁVEL: se o texto cita um nome ou função, encontre o usuário correspondente na lista abaixo e retorne seu id. Se não há indicação clara OU o nome não está na lista, retorne null em ambos os campos.
 
@@ -321,6 +328,10 @@ Extraia a tarefa em JSON conforme as regras.`
       const u = usuarios.find(u => u.id === parsed.responsavel_id)
       if (u) parsed.responsavel_nome = u.nome
     }
+    // Tipo de público: só aceita os 2 valores válidos
+    if (parsed.tipo_publico !== 'Externo' && parsed.tipo_publico !== 'Interno') {
+      parsed.tipo_publico = null
+    }
     const confidence = typeof parsed.confidence === 'number'
       ? Math.max(0, Math.min(100, Math.round(parsed.confidence)))
       : 70
@@ -351,6 +362,7 @@ Extraia a tarefa em JSON conforme as regras.`
         prioridade: parsed.prioridade,
         projeto_id: parsed.projeto_id || null,
         projeto_nome: parsed.projeto_nome || null,
+        tipo_publico: parsed.tipo_publico,
         categoria: String(parsed.categoria || ''),
         responsavel_id: parsed.responsavel_id || null,
         responsavel_nome: parsed.responsavel_nome || null,

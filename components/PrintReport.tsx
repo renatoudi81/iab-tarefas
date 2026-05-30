@@ -34,6 +34,8 @@ interface PrintReportProps {
     byPriority: { name: Prioridade; value: number; color: string }[]
     byCategory: { name: string; total: number; horas: number }[]
     byProject: { name: string; total: number; done: number; horas: number }[]
+    byChannel: { name: string; total: number }[]
+    byPublico: { name: string; total: number }[]
     byUser: {
       user: { id: string; nome: string }
       total: number
@@ -156,6 +158,26 @@ export function PrintReport({
                   <td className="num">{p.done}</td>
                   <td className="num">{p.horas}h</td>
                 </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* Origem dos chamados */}
+      {(stats.byChannel.length > 0 || stats.byPublico.length > 0) && (
+        <section className="pr-section">
+          <h2>Origem dos chamados</h2>
+          <table className="pr-table">
+            <thead>
+              <tr><th>Tipo</th><th>Valor</th><th className="num">Qtd</th></tr>
+            </thead>
+            <tbody>
+              {stats.byPublico.map(p => (
+                <tr key={`pub-${p.name}`}><td>Público</td><td>{p.name}</td><td className="num">{p.total}</td></tr>
+              ))}
+              {stats.byChannel.map(c => (
+                <tr key={`ch-${c.name}`}><td>Canal</td><td>{c.name}</td><td className="num">{c.total}</td></tr>
               ))}
             </tbody>
           </table>

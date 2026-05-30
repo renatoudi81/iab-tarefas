@@ -54,6 +54,7 @@ interface ParsedResponse {
     prioridade: 'Baixa' | 'Média' | 'Alta' | 'Crítica'
     projeto_id: string | null
     projeto_nome: string | null
+    tipo_publico: 'Externo' | 'Interno' | null
     categoria: string
     responsavel_id: string | null
     responsavel_nome: string | null
@@ -130,11 +131,18 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
 
   const handleConfirm = () => {
     if (!preview) return
+    // Mapeia o canal da UI (email/slack/...) pro nome canônico persistido
+    const canalMap: Record<string, string | null> = {
+      email: 'E-mail', whatsapp: 'WhatsApp', slack: 'Chat',
+      form: 'Portal web', voice: 'Telefone', other: null,
+    }
     const initialData: Partial<TaskFormData> = {
       titulo: preview.task.titulo,
       descricao: preview.task.descricao,
       prioridade: preview.task.prioridade,
       projeto_id: preview.task.projeto_id || '',
+      tipo_publico: preview.task.tipo_publico,
+      canal: canalMap[preview.channel] ?? null,
       categoria: preview.task.categoria,
       responsavel_id: preview.task.responsavel_id,
       tempo_estimado: preview.task.tempo_estimado_minutos || 60,

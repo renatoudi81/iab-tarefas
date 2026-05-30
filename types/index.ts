@@ -40,6 +40,10 @@ export interface Task {
   observacoes: string | null
   projeto_id: string
   categoria: string
+  /** Classificação de chamado — opcional */
+  tipo_publico: 'Externo' | 'Interno' | null
+  /** Canal de origem do chamado — opcional */
+  canal: string | null
   prioridade: Prioridade
   status: Status
   responsavel_id: string | null

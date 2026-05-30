@@ -95,7 +95,8 @@ export async function POST(req: Request) {
   try { body = await req.json() }
   catch { return NextResponse.json({ error: 'JSON inválido' }, { status: 400 }) }
 
-  const { titulo, descricao, observacoes, projeto_id, categoria, prioridade, status,
+  const { titulo, descricao, observacoes, projeto_id, categoria, tipo_publico, canal,
+    prioridade, status,
     responsavel_id, equipe, data_inicio, data_prazo, data_conclusao,
     tempo_estimado, tempo_gasto_total, tags, anexos,
     aguardando_quem, data_retorno_esperada } = body
@@ -130,6 +131,8 @@ export async function POST(req: Request) {
     observacoes: observacoes || null,
     projeto_id,
     categoria,
+    tipo_publico: tipo_publico === 'Externo' || tipo_publico === 'Interno' ? tipo_publico : null,
+    canal: canal || null,
     prioridade: prioridade || 'Média',
     status: status || 'Pendente',
     responsavel_id: responsavel_id || null,
