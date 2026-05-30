@@ -26,7 +26,12 @@ export async function PATCH(req: Request, { params }: Params) {
     dataFs.nome = body.nome.trim()
     dataAuth.displayName = body.nome.trim()
   }
-  if (body.avatar_color) dataFs.avatar_color = body.avatar_color
+  if (body.avatar_color) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(body.avatar_color)) {
+      return NextResponse.json({ error: 'Cor de avatar inválida (use hex #RRGGBB)' }, { status: 400 })
+    }
+    dataFs.avatar_color = body.avatar_color
+  }
   // avatar_url: string para definir foto, null para remover (volta às iniciais)
   if (body.avatar_url !== undefined) {
     // Validações básicas: aceita data URL de imagem OU null
@@ -46,7 +51,12 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   if (isAdmin) {
-    if (body.perfil !== undefined) dataFs.perfil = body.perfil
+    if (body.perfil !== undefined) {
+      if (body.perfil !== 'Administrador' && body.perfil !== 'Usuário') {
+        return NextResponse.json({ error: 'Perfil inválido' }, { status: 400 })
+      }
+      dataFs.perfil = body.perfil
+    }
     if (body.ativo !== undefined) {
       dataFs.ativo = body.ativo
       dataAuth.disabled = !body.ativo

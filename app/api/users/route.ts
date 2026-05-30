@@ -25,6 +25,12 @@ export async function POST(req: Request) {
 
   if (!nome?.trim()) return NextResponse.json({ error: 'Nome obrigatório' }, { status: 400 })
   if (!email?.trim()) return NextResponse.json({ error: 'E-mail obrigatório' }, { status: 400 })
+  if (perfil !== undefined && perfil !== 'Administrador' && perfil !== 'Usuário') {
+    return NextResponse.json({ error: 'Perfil inválido' }, { status: 400 })
+  }
+  if (avatar_color !== undefined && !/^#[0-9a-fA-F]{6}$/.test(avatar_color)) {
+    return NextResponse.json({ error: 'Cor de avatar inválida (use hex #RRGGBB)' }, { status: 400 })
+  }
 
   // Senha é OPCIONAL:
   // - Com senha: admin define a senha inicial (pode informar ao usuário separadamente)

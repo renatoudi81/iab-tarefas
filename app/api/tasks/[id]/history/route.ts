@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { loadTaskAndCheck } from '@/lib/task-access'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -11,8 +12,11 @@ export async function GET(req: Request, { params }: Params) {
   const { id } = await params
 
   try {
-    const snap = await adminDb.collection('tasks').doc(id)
-      .collection('history').orderBy('criado_em', 'desc').get()
+    const access = await loadTaskAndCheck(id, user)
+    if (!access.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+    if (!access.allowed) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
+
+    const snap = await access.ref.collection('history').orderBy('criado_em', 'desc').get()
     if (snap.empty) return NextResponse.json({ history: [] })
 
     // Popula `usuario` para cada entrada
@@ -33,6 +37,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json({ history })
   } catch (e: any) {
-    return NextResponse.json({ error: 'Erro ao buscar histórico', detail: e.message }, { status: 500 })
+    console.error('[history GET]', e)
+    return NextResponse.json({ error: 'Erro ao buscar histórico' }, { status: 500 })
   }
 }

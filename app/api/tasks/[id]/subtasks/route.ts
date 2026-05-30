@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { loadTaskAndCheck } from '@/lib/task-access'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -11,12 +12,16 @@ export async function GET(req: Request, { params }: Params) {
   const { id } = await params
 
   try {
-    const snap = await adminDb.collection('tasks').doc(id)
-      .collection('subtasks').orderBy('ordem', 'asc').get()
+    const access = await loadTaskAndCheck(id, user)
+    if (!access.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+    if (!access.allowed) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
+
+    const snap = await access.ref.collection('subtasks').orderBy('ordem', 'asc').get()
     const subtasks = snap.docs.map(d => ({ id: d.id, ...d.data() }))
     return NextResponse.json({ subtasks })
   } catch (e: any) {
-    return NextResponse.json({ error: 'Erro ao buscar subtarefas', detail: e.message }, { status: 500 })
+    console.error('[subtasks GET]', e)
+    return NextResponse.json({ error: 'Erro ao buscar subtarefas' }, { status: 500 })
   }
 }
 
@@ -31,10 +36,11 @@ export async function POST(req: Request, { params }: Params) {
     const { titulo } = body
     if (!titulo?.trim()) return NextResponse.json({ error: 'Título obrigatório' }, { status: 400 })
 
-    const taskRef = adminDb.collection('tasks').doc(id)
-    const taskSnap = await taskRef.get()
-    if (!taskSnap.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+    const access = await loadTaskAndCheck(id, user)
+    if (!access.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+    if (!access.allowed) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
 
+    const taskRef = access.ref
     // Pega a última ordem para incrementar
     const lastSnap = await taskRef.collection('subtasks').orderBy('ordem', 'desc').limit(1).get()
     const ordem = lastSnap.empty ? 1 : ((lastSnap.docs[0].data() as any).ordem ?? 0) + 1
@@ -49,6 +55,7 @@ export async function POST(req: Request, { params }: Params) {
     const ref = await taskRef.collection('subtasks').add(data)
     return NextResponse.json({ subtask: { id: ref.id, ...data } }, { status: 201 })
   } catch (e: any) {
-    return NextResponse.json({ error: 'Erro ao criar subtarefa', detail: e.message }, { status: 500 })
+    console.error('[subtasks POST]', e)
+    return NextResponse.json({ error: 'Erro ao criar subtarefa' }, { status: 500 })
   }
 }

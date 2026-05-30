@@ -24,6 +24,7 @@ export async function DELETE(req: Request, { params }: Params) {
     await ref.delete()
     return NextResponse.json({ ok: true })
   } catch (e: any) {
-    return NextResponse.json({ error: 'Erro ao excluir comentário', detail: e.message }, { status: 500 })
+    console.error('[comment DELETE]', e)
+    return NextResponse.json({ error: 'Erro ao excluir comentário' }, { status: 500 })
   }
 }

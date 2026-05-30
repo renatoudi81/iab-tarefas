@@ -48,17 +48,32 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Status inválido' }, { status: 400 })
   }
 
+  // Campos sensíveis (reatribuir tarefa / mudar equipe / projeto) só podem
+  // ser alterados por admin ou pelo responsável atual — não por membro de
+  // equipe (que poderia se promover ou sequestrar a tarefa).
+  const SENSITIVE_FIELDS = ['responsavel_id', 'equipe', 'projeto_id']
+  const canEditSensitive = isAdmin || isResponsavel
+
   // Whitelist
   const data: Record<string, any> = {}
   for (const field of ALLOWED_UPDATE_FIELDS) {
-    if (field in body) data[field] = body[field]
+    if (!(field in body)) continue
+    if (SENSITIVE_FIELDS.includes(field) && !canEditSensitive) continue
+    data[field] = body[field]
   }
 
   if (body.status === 'Concluída' && !existing.data_conclusao) {
     data.data_conclusao = new Date().toISOString().split('T')[0]
   }
-  if (body.tempo_estimado !== undefined) data.tempo_estimado = Number(body.tempo_estimado)
-  if (body.tempo_gasto_total !== undefined) data.tempo_gasto_total = Number(body.tempo_gasto_total)
+  // tempo_* com fallback + validação (evita gravar NaN/negativo)
+  if (body.tempo_estimado !== undefined) {
+    const n = Number(body.tempo_estimado)
+    data.tempo_estimado = Number.isFinite(n) && n >= 0 ? n : (existing.tempo_estimado ?? 60)
+  }
+  if (body.tempo_gasto_total !== undefined) {
+    const n = Number(body.tempo_gasto_total)
+    data.tempo_gasto_total = Number.isFinite(n) && n >= 0 ? n : (existing.tempo_gasto_total ?? 0)
+  }
 
   data.atualizado_em = new Date().toISOString()
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { loadTaskAndCheck } from '@/lib/task-access'
 
 // Recomputa tempo_gasto_total da tarefa somando todos os time_entries
 async function recomputeTaskTotal(tarefaId: string) {
@@ -42,11 +43,15 @@ export async function POST(req: Request) {
   const userId = authUser.uid
 
   if (!tarefa_id) return NextResponse.json({ error: 'tarefa_id obrigatório' }, { status: 400 })
-  if (!duracao || Number(duracao) < 1) return NextResponse.json({ error: 'Duração inválida' }, { status: 400 })
+  const dur = Number(duracao)
+  if (!Number.isFinite(dur) || dur < 1 || dur > 60 * 24) {
+    return NextResponse.json({ error: 'Duração inválida' }, { status: 400 })
+  }
 
-  const taskRef = adminDb.collection('tasks').doc(tarefa_id)
-  const taskSnap = await taskRef.get()
-  if (!taskSnap.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+  const access = await loadTaskAndCheck(tarefa_id, authUser)
+  if (!access.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+  if (!access.allowed) return NextResponse.json({ error: 'Sem permissão para lançar tempo nesta tarefa' }, { status: 403 })
+  const taskRef = access.ref
 
   const entryData = {
     tarefa_id,
@@ -54,7 +59,7 @@ export async function POST(req: Request) {
     data: data || new Date().toISOString().split('T')[0],
     hora_inicio: hora_inicio || '',
     hora_fim: hora_fim || '',
-    duracao: Number(duracao),
+    duracao: dur,
     tipo: tipo || 'manual',
     criado_em: new Date().toISOString(),
   }

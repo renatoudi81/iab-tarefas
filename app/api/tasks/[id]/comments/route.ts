@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { loadTaskAndCheck } from '@/lib/task-access'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -16,8 +17,11 @@ export async function GET(req: Request, { params }: Params) {
   const { id } = await params
 
   try {
-    const snap = await adminDb.collection('tasks').doc(id)
-      .collection('comments').orderBy('criado_em', 'asc').get()
+    const access = await loadTaskAndCheck(id, user)
+    if (!access.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+    if (!access.allowed) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
+
+    const snap = await access.ref.collection('comments').orderBy('criado_em', 'asc').get()
     if (snap.empty) return NextResponse.json({ comments: [] })
 
     // Carrega usuários referenciados para popular `usuario`
@@ -31,7 +35,8 @@ export async function GET(req: Request, { params }: Params) {
     ))
     return NextResponse.json({ comments })
   } catch (e: any) {
-    return NextResponse.json({ error: 'Erro ao buscar comentários', detail: e.message }, { status: 500 })
+    console.error('[comments GET]', e)
+    return NextResponse.json({ error: 'Erro ao buscar comentários' }, { status: 500 })
   }
 }
 
@@ -47,10 +52,11 @@ export async function POST(req: Request, { params }: Params) {
     const { texto } = body
     if (!texto?.trim()) return NextResponse.json({ error: 'Texto obrigatório' }, { status: 400 })
 
-    const taskRef = adminDb.collection('tasks').doc(id)
-    const taskSnap = await taskRef.get()
-    if (!taskSnap.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
-    const task = taskSnap.data() as any
+    const access = await loadTaskAndCheck(id, authUser)
+    if (!access.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
+    if (!access.allowed) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 })
+    const taskRef = access.ref
+    const task = access.data as any
 
     const now = new Date().toISOString()
     const commentData = {
@@ -86,6 +92,7 @@ export async function POST(req: Request, { params }: Params) {
 
     return NextResponse.json({ comment }, { status: 201 })
   } catch (e: any) {
-    return NextResponse.json({ error: 'Erro ao criar comentário', detail: e.message }, { status: 500 })
+    console.error('[comments POST]', e)
+    return NextResponse.json({ error: 'Erro ao criar comentário' }, { status: 500 })
   }
 }
