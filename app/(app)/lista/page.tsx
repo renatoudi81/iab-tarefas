@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
 import { useProjects } from '@/hooks/useProjects'
-import { STATUSES, PRIORITIES, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, todayStr, formatDateBR } from '@/types'
+import { STATUSES, PRIORITIES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR } from '@/types'
 import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
 import TaskDrawer from '@/components/TaskDrawer'
@@ -29,7 +29,6 @@ const PAGE_SIZE = 20
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
 import {

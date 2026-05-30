@@ -14,7 +14,7 @@
  * O conteúdo da tela (gráficos Recharts etc.) é escondido em print
  * via `.print:hidden` no Tailwind v4.
  */
-import { formatDateBR, formatMinutes } from '@/types'
+import { formatDateBR } from '@/types'
 import type { Status, Prioridade } from '@/types'
 
 interface UserLite {

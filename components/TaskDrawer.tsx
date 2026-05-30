@@ -62,7 +62,7 @@ function fmtSeconds(secs: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-/* â”€â”€â”€ Sub-components â”€â”€â”€ */
+/* ─── Sub-components ─── */
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -115,7 +115,7 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
               </Avatar>
               <span className="font-medium">{resp.nome}</span>
             </div>
-          ) : <span className="text-[#71717A]">â€”</span>}
+          ) : <span className="text-[#71717A]">—</span>}
         </div>
         <div>
           <SectionLabel>Data Início</SectionLabel>
@@ -495,7 +495,7 @@ function TempoTab({ task }: { task: Task }) {
                   <div className="flex-1">
                     <div className="text-sm font-medium">{formatMinutes(e.duracao)}</div>
                     <div className="text-xs text-[#71717A]">
-                      {fmtDate(e.data)} Â· {e.hora_inicio} â€” {e.hora_fim}
+                      {fmtDate(e.data)} · {e.hora_inicio} — {e.hora_fim}
                       {e.tipo === 'automatico' && (
                         <span className="ml-1.5 text-[0.68rem] bg-primary/10 text-primary px-1 py-0.5 rounded">
                           timer
@@ -587,7 +587,7 @@ function HistoricoTab({ taskId }: { taskId: string }) {
   )
 }
 
-/* â”€â”€â”€ Main Drawer â”€â”€â”€ */
+/* ─── Main Drawer ─── */
 export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
   const [activeTab, setActiveTab] = useState<DrawerTab>('detalhes')
   const { users } = useUsers()

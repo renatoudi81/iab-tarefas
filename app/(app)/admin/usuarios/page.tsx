@@ -1,8 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useUsers } from '@/hooks/useUsers'
-import { getInitials } from '@/types'
 import type { User } from '@/types'
 import {
   Plus, Loader2, Shield, Search, MoreHorizontal, Pencil, Trash2, Mail, KeyRound,
@@ -24,7 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { MagneticButton } from '@/components/ui/MagneticButton'
 import { useToast } from '@/contexts/ToastContext'
