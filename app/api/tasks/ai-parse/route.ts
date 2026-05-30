@@ -28,6 +28,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 interface ParsedTask {
   titulo: string
@@ -65,6 +66,17 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: 'Recurso disponível apenas para administradores' },
       { status: 403 },
+    )
+  }
+
+  // 1b. Rate limit — protege o orçamento da Anthropic contra abuso/loop.
+  // 20 análises por minuto por usuário.
+  const rl = await checkRateLimit(`ai-parse:${user.uid}`, 20, 60_000)
+  if (!rl.allowed) {
+    const secs = Math.ceil(rl.retryAfterMs / 1000)
+    return NextResponse.json(
+      { error: `Muitas análises seguidas. Aguarde ${secs}s e tente de novo.` },
+      { status: 429, headers: { 'Retry-After': String(secs) } },
     )
   }
 
