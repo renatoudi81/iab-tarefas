@@ -3,6 +3,7 @@ import { useMemo, useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
+import { useProjects } from '@/hooks/useProjects'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, todayStr, formatDateBR,
@@ -10,7 +11,7 @@ import {
 import type { Task, Status } from '@/types'
 import {
   GanttChart, AlertTriangle, Clock, AlertCircle, CheckCircle2,
-  Activity, TrendingUp, Eye, EyeOff, ChevronDown, ChevronRight,
+  Activity, TrendingUp, ChevronDown, ChevronRight,
   Users, Tag as TagIcon, Layers, ZoomIn, ZoomOut,
 } from 'lucide-react'
 import {
@@ -268,18 +269,22 @@ function addDays(dateStr: string, days: number): string {
 export default function GanttPage() {
   const { tasks, isLoading: loadingTasks, isInitialLoad, updateTask } = useTasks()
   const { users } = useUsers()
+  const { projects } = useProjects()
   const { user: authUser } = useAuth()
   const isAdmin = authUser?.perfil === 'Administrador'
 
   const today = todayStr()
-  const [colorBy, setColorBy] = useState<ColorBy>('status')
+  // Cor por status e sem agrupamento são fixos (toolbar enxuta). Concluídas
+  // antigas (>7d) ficam ocultas por padrão — comportamento, não opção.
+  const colorBy: ColorBy = 'status'
+  const groupBy: GroupBy = 'none'
+  const hideOldDone = true
   const [granularity, setGranularity] = useState<Granularity>('week')
 
   // Filtros
+  const [filterProject, setFilterProject] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterUserId, setFilterUserId] = useState<string>('all')
-  const [hideOldDone, setHideOldDone] = useState(true)
-  const [groupBy, setGroupBy] = useState<GroupBy>('none')
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -305,6 +310,7 @@ export default function GanttPage() {
 
     return tasks
       .filter(t => t.data_inicio && t.data_prazo)
+      .filter(t => filterProject === 'all' || t.projeto_id === filterProject)
       .filter(t => filterStatus === 'all' || t.status === filterStatus)
       .filter(t => filterUserId === 'all' || t.responsavel_id === filterUserId)
       .filter(t => {
@@ -328,7 +334,7 @@ export default function GanttPage() {
         if (aOver !== bOver) return aOver - bOver
         return (a.data_inicio || '') < (b.data_inicio || '') ? -1 : 1
       })
-  }, [tasks, filterStatus, filterUserId, hideOldDone, dateFrom, dateTo])
+  }, [tasks, filterProject, filterStatus, filterUserId, hideOldDone, dateFrom, dateTo])
 
   if (isInitialLoad || (loadingTasks && tasks.length === 0)) {
     return <GanttSkeleton />
@@ -369,20 +375,17 @@ export default function GanttPage() {
         <PageHeader
           count={0}
           totalCount={tasksTotalWithDates}
-          colorBy={colorBy}
-          setColorBy={setColorBy}
           granularity={granularity}
           setGranularity={setGranularity}
+          filterProject={filterProject}
+          setFilterProject={setFilterProject}
+          projects={projects}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
           filterUserId={filterUserId}
           setFilterUserId={setFilterUserId}
           isAdmin={isAdmin}
           users={users}
-          hideOldDone={hideOldDone}
-          setHideOldDone={setHideOldDone}
-          groupBy={groupBy}
-          setGroupBy={setGroupBy}
           dateFrom={dateFrom}
           setDateFrom={setDateFrom}
           dateTo={dateTo}
@@ -466,20 +469,17 @@ export default function GanttPage() {
       <PageHeader
         count={tasksWithDates.length}
         totalCount={tasksTotalWithDates}
-        colorBy={colorBy}
-        setColorBy={setColorBy}
         granularity={granularity}
         setGranularity={setGranularity}
+        filterProject={filterProject}
+        setFilterProject={setFilterProject}
+        projects={projects}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
         filterUserId={filterUserId}
         setFilterUserId={setFilterUserId}
         isAdmin={isAdmin}
         users={users}
-        hideOldDone={hideOldDone}
-        setHideOldDone={setHideOldDone}
-        groupBy={groupBy}
-        setGroupBy={setGroupBy}
         dateFrom={dateFrom}
         setDateFrom={setDateFrom}
         dateTo={dateTo}
@@ -619,20 +619,17 @@ export default function GanttPage() {
 interface PageHeaderProps {
   count: number
   totalCount: number
-  colorBy: ColorBy
-  setColorBy: (v: ColorBy) => void
   granularity: Granularity
   setGranularity: (v: Granularity) => void
+  filterProject: string
+  setFilterProject: (v: string) => void
+  projects: { id: string; nome: string }[]
   filterStatus: string
   setFilterStatus: (v: string) => void
   filterUserId: string
   setFilterUserId: (v: string) => void
   isAdmin: boolean
   users: any[]
-  hideOldDone: boolean
-  setHideOldDone: (v: boolean) => void
-  groupBy: GroupBy
-  setGroupBy: (v: GroupBy) => void
   dateFrom: string
   setDateFrom: (v: string) => void
   dateTo: string
@@ -667,7 +664,7 @@ function PageHeader(p: PageHeaderProps) {
           </div>
           <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">Gantt</h1>
           <p className="text-[#71717A] text-sm mt-1.5">
-            Acompanhe a linha do tempo do projeto — barras coloridas indicam {p.colorBy === 'status' ? 'status' : 'prioridade'}.
+            Acompanhe a linha do tempo do projeto — barras coloridas indicam o status.
           </p>
         </div>
       </div>
@@ -712,27 +709,19 @@ function PageHeader(p: PageHeaderProps) {
           </button>
         </div>
 
-        <Select value={p.colorBy} onValueChange={v => p.setColorBy(v as ColorBy)}>
-          <SelectTrigger aria-label="Colorir barras por" className="w-[140px] h-9 text-sm border-[#E4E4E7] bg-white">
-            <SelectValue placeholder="Colorir por" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="status">Cor: Status</SelectItem>
-            <SelectItem value="prioridade">Cor: Prioridade</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={p.groupBy} onValueChange={v => p.setGroupBy(v as GroupBy)}>
-          <SelectTrigger aria-label="Agrupar por" className="w-[150px] h-9 text-sm border-[#E4E4E7] bg-white">
-            <SelectValue placeholder="Agrupar por" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Sem agrupamento</SelectItem>
-            <SelectItem value="responsavel">Por responsável</SelectItem>
-            <SelectItem value="status">Por status</SelectItem>
-            <SelectItem value="categoria">Por categoria</SelectItem>
-          </SelectContent>
-        </Select>
+        {p.projects.length > 0 && (
+          <Select value={p.filterProject} onValueChange={p.setFilterProject}>
+            <SelectTrigger aria-label="Filtrar por projeto" className="w-[160px] h-9 text-sm border-[#E4E4E7] bg-white">
+              <SelectValue placeholder="Projeto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os projetos</SelectItem>
+              {p.projects.map((pr) => (
+                <SelectItem key={pr.id} value={pr.id}>{pr.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Select value={p.filterStatus} onValueChange={p.setFilterStatus}>
           <SelectTrigger aria-label="Filtrar por status" className="w-[150px] h-9 text-sm border-[#E4E4E7] bg-white">
@@ -757,24 +746,6 @@ function PageHeader(p: PageHeaderProps) {
             </SelectContent>
           </Select>
         )}
-
-        {/* Toggle "amostragem inteligente" */}
-        <button
-          type="button"
-          onClick={() => p.setHideOldDone(!p.hideOldDone)}
-          className={cn(
-            'inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[0.78rem] font-medium transition-colors cursor-pointer border',
-            p.hideOldDone
-              ? 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'
-              : 'bg-white text-[#52525B] border-[#E4E4E7] hover:bg-[#F4F4F5]',
-          )}
-          title={p.hideOldDone
-            ? 'Concluídas há mais de 7 dias estão ocultas. Clique para mostrar.'
-            : 'Mostrando todas as concluídas. Clique para ocultar antigas.'}
-        >
-          {p.hideOldDone ? <EyeOff size={13} /> : <Eye size={13} />}
-          {p.hideOldDone ? 'Concluídas antigas ocultas' : 'Mostrar todas concluídas'}
-        </button>
 
         {/* Direita: date range — alinhado com Kanban e Lista */}
         <div className="ml-auto">
