@@ -139,8 +139,8 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
     if (!preview) return
     // Mapeia o canal da UI (email/slack/...) pro nome canônico persistido
     const canalMap: Record<string, string | null> = {
-      email: 'E-mail', whatsapp: 'WhatsApp', slack: 'Chat',
-      form: 'Portal web', voice: 'Telefone', other: null,
+      email: 'E-mail', whatsapp: 'WhatsApp', voice: 'Telefone',
+      slack: null, form: null, other: null,
     }
     const initialData: Partial<TaskFormData> = {
       titulo: preview.task.titulo,

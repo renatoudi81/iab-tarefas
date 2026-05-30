@@ -282,7 +282,7 @@ export default function RelatoriosPage() {
       .sort((a, b) => b.total - a.total)
 
     // Distribuição por canal de origem (classificação de chamado)
-    const CANAIS = ['WhatsApp', 'E-mail', 'Chat', 'Telefone', 'Portal web', 'Redes sociais']
+    const CANAIS = ['WhatsApp', 'Telefone', 'E-mail', 'Redes sociais']
     const byChannel = CANAIS
       .map((c) => ({ name: c, total: tasks.filter((t) => t.canal === c).length }))
       .filter((c) => c.total > 0)
