@@ -43,8 +43,14 @@ const EXAMPLES: { channel: Channel; text: string }[] = [
 interface AITaskCreatorProps {
   open: boolean
   onClose: () => void
-  /** Chamado com o initialData quando a IA termina. O parent abre o TaskModal. */
-  onReady: (initialData: Partial<TaskFormData>, meta: { confidence: number; reasoning: string }) => void
+  /** Chamado com o initialData quando a IA termina. O parent abre o TaskModal.
+   *  aiContext leva a mensagem original + a proposta da IA pra registrar
+   *  aprendizado quando o humano corrige antes de salvar. */
+  onReady: (
+    initialData: Partial<TaskFormData>,
+    meta: { confidence: number; reasoning: string },
+    aiContext: { mensagem: string; proposta: { categoria: string | null; tipo_publico: string | null; canal: string | null; prioridade: string | null } },
+  ) => void
 }
 
 interface ParsedResponse {
@@ -149,10 +155,19 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
       data_prazo: preview.task.data_prazo_sugerida || '',
       tags: preview.task.tags || [],
     }
-    onReady(initialData, {
-      confidence: preview.confidence,
-      reasoning: preview.task.reasoning,
-    })
+    onReady(
+      initialData,
+      { confidence: preview.confidence, reasoning: preview.task.reasoning },
+      {
+        mensagem: message.trim(),
+        proposta: {
+          categoria: preview.task.categoria || null,
+          tipo_publico: preview.task.tipo_publico,
+          canal: canalMap[preview.channel] ?? null,
+          prioridade: preview.task.prioridade || null,
+        },
+      },
+    )
     reset()
   }
 

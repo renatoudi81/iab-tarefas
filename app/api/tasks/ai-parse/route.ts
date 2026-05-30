@@ -97,10 +97,13 @@ export async function POST(req: Request) {
   // 4. Carrega vocabulário do banco (projetos + categorias + usuários) pra IA
   //    escolher valores reais. Mantém a resposta amarrada ao schema da empresa.
   try {
-    const [categoriesSnap, usersSnap, projectsSnap] = await Promise.all([
+    const [categoriesSnap, usersSnap, projectsSnap, feedbackSnap] = await Promise.all([
       adminDb.collection('categories').get(),
       adminDb.collection('users').get(),
       adminDb.collection('projects').get(),
+      // Últimas 10 correções humanas — aprendizado por contexto (few-shot)
+      adminDb.collection('ai_feedback').orderBy('criado_em', 'desc').limit(10).get()
+        .catch(() => ({ docs: [] as never[] })),
     ])
     const categorias = categoriesSnap.docs
       .map(d => (d.data() as { nome?: string }).nome)
@@ -128,6 +131,23 @@ export async function POST(req: Request) {
     const projetosList = projetos
       .map(p => `  - id="${p.id}" nome="${p.nome}"`)
       .join('\n') || '  (nenhum projeto cadastrado)'
+
+    // Aprendizado: exemplos de classificações corrigidas por humanos.
+    // Ensina o padrão real da operação sem treinar o modelo (few-shot).
+    const correcoes = (feedbackSnap.docs as { data: () => Record<string, unknown> }[])
+      .map(d => d.data() as { mensagem?: string; final?: { categoria?: string; tipo_publico?: string; canal?: string; prioridade?: string } })
+      .filter(c => c.final)
+    const aprendizadoBlock = correcoes.length === 0 ? '' : `
+
+APRENDIZADO (classificações validadas/corrigidas por humanos — siga estes padrões):
+${correcoes.map((c, i) => {
+  const f = c.final || {}
+  const msg = (c.mensagem || '').slice(0, 160).replace(/\s+/g, ' ').trim()
+  return `${i + 1}. Mensagem: "${msg}"
+   → categoria: ${f.categoria || '—'} | público: ${f.tipo_publico || '—'} | canal: ${f.canal || '—'} | prioridade: ${f.prioridade || '—'}`
+}).join('\n')}
+
+Use esses exemplos como referência forte: se a mensagem atual for parecida com alguma acima, classifique de forma consistente com a correção humana.`
 
     const systemPrompt = `Você é um assistente do Instituto Alfa e Beto (IAB), uma instituição educacional brasileira. Sua função é INTERPRETAR mensagens em linguagem natural (e-mails, anotações, transcrições) e PROPOR uma tarefa acionável para o sistema de Controle de Atividades.
 
@@ -259,7 +279,7 @@ ${usuariosList || '  (nenhum usuário cadastrado)'}
    - Pulou "Oi Renato, tudo bem", "Conforme combinado", "Pode ser?"
    - Resumiu "preciso da sua ajuda com uma coisa importante" → o título já diz
    - Manteve TODOS os nomes, materiais e o prazo
-   - Reorganizou em seções claras pra leitura rápida`
+   - Reorganizou em seções claras pra leitura rápida${aprendizadoBlock}`
 
     const userPrompt = `Mensagem recebida via ${channel}:
 

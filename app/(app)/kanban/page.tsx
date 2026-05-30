@@ -5,6 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
+import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, getInitials, formatMinutes, formatDateBR } from '@/types'
 import type { Status, Task } from '@/types'
 import { Calendar, CheckSquare, Clock, Plus, Tag, LayoutGrid, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react'
@@ -78,9 +79,17 @@ export default function KanbanPage() {
   const openNew = (status?: Status) => setModal({ open: true, task: null, initialStatus: status })
   const openEdit = (task: Task) => setModal({ open: true, task })
   const closeModal = () => setModal({ open: false, task: null })
-  const handleAIReady = (initialData: Partial<TaskFormData>) => {
+  const aiContextRef = useRef<AIContext | null>(null)
+  const handleAIReady = (initialData: Partial<TaskFormData>, _meta: unknown, aiContext: AIContext) => {
+    aiContextRef.current = aiContext
     setAiOpen(false)
     setModal({ open: true, task: null, initialData })
+  }
+  const handleTaskSaved = (task: Task) => {
+    if (aiContextRef.current) {
+      registrarAprendizadoIA(aiContextRef.current, task)
+      aiContextRef.current = null
+    }
   }
 
   const handleDelete = async (task: Task) => {
@@ -563,6 +572,7 @@ export default function KanbanPage() {
         initialStatus={modal.initialStatus}
         initialData={modal.initialData}
         onClose={closeModal}
+        onSaved={handleTaskSaved}
       />
       <AITaskCreator
         open={aiOpen}

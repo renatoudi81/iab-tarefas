@@ -1,5 +1,6 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
@@ -152,10 +153,19 @@ export default function ListaPage() {
   const openNew = () => setModal({ open: true, task: null })
   const openEdit = (task: Task) => setModal({ open: true, task })
   const closeModal = () => setModal({ open: false, task: null })
-  // Fluxo IA → TaskModal pré-preenchido
-  const handleAIReady = (initialData: Partial<TaskFormData>) => {
+  // Fluxo IA → TaskModal pré-preenchido. Guarda o contexto da IA pra
+  // registrar aprendizado quando a tarefa for salva (se houver correção).
+  const aiContextRef = useRef<AIContext | null>(null)
+  const handleAIReady = (initialData: Partial<TaskFormData>, _meta: unknown, aiContext: AIContext) => {
+    aiContextRef.current = aiContext
     setAiOpen(false)
     setModal({ open: true, task: null, initialData })
+  }
+  const handleTaskSaved = (task: Task) => {
+    if (aiContextRef.current) {
+      registrarAprendizadoIA(aiContextRef.current, task)
+      aiContextRef.current = null
+    }
   }
 
   const onTaskClick = (task: Task) => setDrawerTask(task)
@@ -551,6 +561,7 @@ export default function ListaPage() {
         task={modal.task}
         initialData={modal.initialData}
         onClose={closeModal}
+        onSaved={handleTaskSaved}
       />
       <AITaskCreator
         open={aiOpen}
