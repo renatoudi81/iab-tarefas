@@ -118,7 +118,9 @@ export async function POST(req: Request) {
       .join('\n')
     const categoriasList = categorias.map(c => `"${c}"`).join(', ') || '(nenhuma cadastrada)'
 
-    const systemPrompt = `Você é um assistente do Instituto Alfa e Beto (IAB), uma instituição educacional brasileira. Sua função é converter mensagens em linguagem natural (e-mails, anotações, transcrições) em tarefas estruturadas para o sistema de Controle de Atividades.
+    const systemPrompt = `Você é um assistente do Instituto Alfa e Beto (IAB), uma instituição educacional brasileira. Sua função é INTERPRETAR mensagens em linguagem natural (e-mails, anotações, transcrições) e PROPOR uma tarefa acionável para o sistema de Controle de Atividades.
+
+FILOSOFIA: você NÃO é um transcritor. Você é um analista que entende a intenção do remetente, identifica o que precisa ser feito, e organiza isso como um chamado claro. Pode (e deve) sintetizar, reduzir verbosidade e reformular — o que importa é preservar a IDEIA CENTRAL e os DADOS ACIONÁVEIS.
 
 REGRAS RÍGIDAS:
 1. Responda APENAS com um JSON válido — nada de texto antes ou depois, nada de markdown, sem \`\`\`json.
@@ -172,34 +174,67 @@ ${usuariosList || '  (nenhum usuário cadastrado)'}
 
 8. TEMPO ESTIMADO: estime em minutos baseado na complexidade descrita. Tarefa simples = 30-60min, média = 120-240min, complexa = 480min+. null se incerto.
 
-9. DESCRIÇÃO (regra crítica de formatação):
-   - O campo aceita HTML rico (TipTap editor). USE FORMATAÇÃO sempre que possível.
+9. DESCRIÇÃO (regra crítica — interpretação + síntese + formatação):
+
+   COMPORTAMENTO ESPERADO:
+   - INTERPRETE o texto: identifique o que precisa ser feito, quem está envolvido,
+     prazos, materiais, condições. Filtre saudações, agradecimentos, justificativas
+     longas e digressões — fique só com o essencial pra execução.
+   - SINTETIZE com liberdade: se a mensagem tem 500 palavras enroladas, sua
+     descrição pode ter 60 palavras estruturadas. Se o remetente repete a mesma
+     informação 3 vezes em formas diferentes, escreva 1 vez.
+   - REFORMULE pra clareza: troque jargões e frases ambíguas por linguagem
+     direta. Use voz ativa, verbos no infinitivo ou imperativo.
+   - PRESERVE 100% dos dados acionáveis: nomes próprios, datas, números,
+     materiais específicos, sistemas citados, condições. Nunca invente.
+
+   FORMATO (HTML rico, compatível com TipTap):
    - Tags permitidas: <p>, <h3>, <strong>, <em>, <u>, <ul><li>, <ol><li>, <blockquote>, <code>, <a>
-   - REGRAS:
-     • SEMPRE comece com 1 parágrafo curto resumindo o contexto/objetivo
-     • Se há múltiplas informações/requisitos, use <ul><li> ou <ol><li>
-     • Destaque nomes/datas/valores importantes com <strong>
-     • Se há prazo ou condição crítica, use <blockquote> ou <strong>
-     • Se houver passos numerados, use <ol><li>
-     • Se há materiais/itens enumeráveis, use <ul><li>
-     • Subtítulos de seção (Materiais, Equipe, Prazo) usam <h3>
-     • NÃO repita o título da tarefa na descrição
-     • NÃO use texto puro corrido — quebre em estrutura sempre que houver listas/seções
-   - EXEMPLO BOM (mensagem original: "Configurar acessos no SIG-IAB pra equipe de Coruripe. Equipe completa: João (gestor), Maria, Pedro. Materiais 1º ano: caligrafia, matemática. Prazo: dia 30."):
-     <p>Configurar acessos ao sistema <strong>SIG-IAB</strong> para a equipe do município de Coruripe - AL.</p>
-     <h3>Equipe com acesso completo</h3>
-     <ul>
-       <li><strong>João</strong> (gestor)</li>
-       <li>Maria</li>
-       <li>Pedro</li>
-     </ul>
-     <h3>Materiais 1º ano</h3>
-     <ul>
-       <li>Caligrafia</li>
-       <li>Matemática</li>
-     </ul>
-     <blockquote><strong>Prazo:</strong> dia 30</blockquote>
-   - EXEMPLO RUIM (não fazer): "Configurar acessos no SIG-IAB pra equipe de Coruripe. Equipe completa: João (gestor), Maria, Pedro. Materiais 1º ano: caligrafia, matemática. Prazo: dia 30."`
+   - Comece com 1 parágrafo curto que dá o contexto/objetivo (1-2 frases)
+   - Use <h3> pra agrupar blocos quando há mais de 1 tema (Equipe, Materiais, Prazo)
+   - Use <ul><li> pra listas de itens; <ol><li> pra passos sequenciais
+   - Destaque com <strong>: nomes próprios, datas críticas, sistemas, valores
+   - Use <blockquote> pra prazos absolutos ou condições bloqueantes
+   - NÃO repita o título da tarefa
+   - NÃO comece com "Olá", "Bom dia", "Conforme conversamos" — vá direto ao ponto
+   - NÃO use texto corrido se houver 3+ itens enumeráveis
+
+   EXEMPLO — Síntese e reformulação (não copia literal):
+
+   Texto original (174 palavras):
+   "Oi Renato, tudo bem? Espero que sim. Estou te escrevendo porque preciso da
+   sua ajuda com uma coisa importante. A gente combinou com o pessoal da equipe
+   pedagógica de Coruripe que ia configurar uns acessos pra eles no sistema
+   SIG-IAB, lembra? Então, conforme combinado, segue a lista de quem precisa
+   ter acesso completo: o João, que é o gestor da equipe, a Maria e o Pedro.
+   Eles estão identificados em vermelho na aba 'dados do município'. Outra
+   coisa: a gente também precisa configurar quais materiais eles vão poder
+   ver. Pro 1º ano, são os de Alfabetização: Caligrafia, Aprender a Ler,
+   Matemática, Ciências, Minilivros, Livro Gigante. Pro 2º ano, materiais do
+   Ensino Estruturado I Semestre: Livro A, Matemática volumes I e II,
+   Ciências, Jogos e Atividades. Tem que estar pronto até dia 30 do mês que
+   vem. Pode ser? Qualquer dúvida me avisa. Abraço!"
+
+   Descrição gerada (39 palavras, HTML):
+   <p>Configurar acessos no <strong>SIG-IAB</strong> para a equipe pedagógica de Coruripe (identificada em vermelho na aba 'dados do município').</p>
+   <h3>Equipe com acesso completo</h3>
+   <ul>
+     <li><strong>João</strong> (gestor)</li>
+     <li>Maria</li>
+     <li>Pedro</li>
+   </ul>
+   <h3>Materiais a liberar</h3>
+   <ul>
+     <li><strong>1º ano</strong> — Alfabetização: Caligrafia, Aprender a Ler, Matemática, Ciências, Minilivros, Livro Gigante</li>
+     <li><strong>2º ano</strong> — Ensino Estruturado I Semestre: Livro A, Matemática (I e II), Ciências, Jogos e Atividades</li>
+   </ul>
+   <blockquote><strong>Prazo:</strong> dia 30 do mês seguinte</blockquote>
+
+   Note como a descrição:
+   - Pulou "Oi Renato, tudo bem", "Conforme combinado", "Pode ser?"
+   - Resumiu "preciso da sua ajuda com uma coisa importante" → o título já diz
+   - Manteve TODOS os nomes, materiais e o prazo
+   - Reorganizou em seções claras pra leitura rápida`
 
     const userPrompt = `Mensagem recebida via ${channel}:
 
@@ -214,7 +249,7 @@ Extraia a tarefa em JSON conforme as regras.`
     const modelo = 'claude-sonnet-4-5'
     const response = await client.messages.create({
       model: modelo,
-      max_tokens: 1500,
+      max_tokens: 2000,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     })
