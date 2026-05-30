@@ -579,8 +579,8 @@ export default function RelatoriosPage() {
         )}
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>
-            <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
-              <SelectValue placeholder="Filtrar por usuário..." />
+            <SelectTrigger aria-label="Filtrar por responsável" className="h-9 w-[200px] text-sm bg-white">
+              <SelectValue placeholder="Responsável..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os usuários</SelectItem>

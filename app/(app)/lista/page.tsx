@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
 import { useProjects } from '@/hooks/useProjects'
-import { STATUSES, PRIORITIES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR } from '@/types'
+import { STATUSES, PRIORITIES, STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR } from '@/types'
 import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
 import TaskDrawer from '@/components/TaskDrawer'
@@ -457,7 +457,7 @@ export default function ListaPage() {
                         className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full text-white"
                         style={{ background: STATUS_COLORS[task.status] }}
                       >
-                        {task.status}
+                        {STATUS_LABELS[task.status]}
                       </span>
                     </TableCell>
 

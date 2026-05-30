@@ -36,6 +36,7 @@ export default function UsuariosPage() {
   // Gate de admin já é aplicado em app/(app)/admin/layout.tsx via AdminGuard
   const { users, addUser, updateUser, deleteUser } = useUsers()
   const [search, setSearch] = useState('')
+  const [filterPerfil, setFilterPerfil] = useState('all')
   const [modal, setModal] = useState<{ open: boolean; user: User | null }>({ open: false, user: null })
   const [form, setForm] = useState<UserForm>(EMPTY_USER)
   const [saving, setSaving] = useState(false)
@@ -113,10 +114,13 @@ export default function UsuariosPage() {
     }
   }
 
-  // Filtro por busca (tabs são só UI por enquanto)
-  const filtered = users.filter(u =>
-    !search || u.nome.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
-  )
+  // Filtro por busca + perfil
+  const filtered = users.filter(u => {
+    if (filterPerfil !== 'all' && u.perfil !== filterPerfil) return false
+    if (!search) return true
+    const s = search.toLowerCase()
+    return u.nome.toLowerCase().includes(s) || u.email.toLowerCase().includes(s)
+  })
 
   return (
     <div>
@@ -156,8 +160,8 @@ export default function UsuariosPage() {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <Select defaultValue="all">
-          <SelectTrigger className="h-9 w-auto min-w-[148px] text-sm border-[#E4E4E7] bg-white">
+        <Select value={filterPerfil} onValueChange={setFilterPerfil}>
+          <SelectTrigger aria-label="Filtrar por função" className="h-9 w-auto min-w-[148px] text-sm border-[#E4E4E7] bg-white">
             <SelectValue placeholder="Todas as funções" />
           </SelectTrigger>
           <SelectContent>

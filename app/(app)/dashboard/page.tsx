@@ -510,12 +510,13 @@ export default function DashboardPage() {
     return data
   }, [tasks, entries, dateFrom, dateTo])
 
+  // Usa a paleta canônica STATUS_COLORS (mesma de Lista/Kanban/Gantt/Relatórios)
   const STATUS_DIST = [
-    { label: 'Pendente',     color: '#64748b', key: STATUSES.PENDING },
-    { label: 'Em andamento', color: '#3b82f6', key: STATUSES.PROGRESS },
-    { label: 'Aguardando',   color: '#f59e0b', key: STATUSES.WAITING },
-    { label: 'Atrasada',     color: '#ef4444', key: STATUSES.DELAYED },
-    { label: 'Concluída',    color: '#22c55e', key: STATUSES.DONE },
+    { label: 'Pendente',     color: STATUS_COLORS['Pendente'],     key: STATUSES.PENDING },
+    { label: 'Em andamento', color: STATUS_COLORS['Em andamento'], key: STATUSES.PROGRESS },
+    { label: 'Aguardando',   color: STATUS_COLORS['Aguardando'],   key: STATUSES.WAITING },
+    { label: 'Atrasada',     color: STATUS_COLORS['Atrasada'],     key: STATUSES.DELAYED },
+    { label: 'Concluída',    color: STATUS_COLORS['Concluída'],    key: STATUSES.DONE },
   ]
 
   if (loadingTasks && tasks.length === 0) {
@@ -566,8 +567,8 @@ export default function DashboardPage() {
         {/* Filtro por usuário — admin escolhe; outros perfis ocultos */}
         {isAdmin && users.length > 1 && (
           <Select value={filterUserId} onValueChange={setFilterUserId}>
-            <SelectTrigger aria-label="Filtrar por usuário" className="h-9 w-[200px] text-sm bg-white">
-              <SelectValue placeholder="Filtrar por usuário..." />
+            <SelectTrigger aria-label="Filtrar por responsável" className="h-9 w-[200px] text-sm bg-white">
+              <SelectValue placeholder="Responsável..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os usuários</SelectItem>

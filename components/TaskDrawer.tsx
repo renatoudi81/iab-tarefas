@@ -10,12 +10,14 @@ import { useSubtasks } from '@/hooks/useSubtasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
 import { useTaskHistory } from '@/hooks/useTaskHistory'
 import { useUsers } from '@/hooks/useUsers'
-import type { Task } from '@/types'
+import { useProjects } from '@/hooks/useProjects'
+import type { Task, Project } from '@/types'
 import {
   getInitials, formatMinutes,
-  STATUS_COLORS, PRIORITY_COLORS,
+  STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS,
   formatDateBR, formatDateTimeBR,
 } from '@/types'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
@@ -72,8 +74,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof useUsers>['users'] }) {
+function DetalhesTab({ task, users, projects }: { task: Task; users: ReturnType<typeof useUsers>['users']; projects: Project[] }) {
   const resp = users.find(u => u.id === task.responsavel_id)
+  const projeto = projects.find(p => p.id === task.projeto_id)
   const pct = task.tempo_estimado > 0 ? Math.min(100, Math.round((task.tempo_gasto_total / task.tempo_estimado) * 100)) : 0
   const isOver = task.tempo_gasto_total > task.tempo_estimado
 
@@ -81,6 +84,10 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
     <div className="flex flex-col gap-5">
       {/* Info grid */}
       <div className="grid grid-cols-2 gap-4">
+        <div>
+          <SectionLabel>Projeto</SectionLabel>
+          <div className="font-medium">{projeto?.nome || '—'}</div>
+        </div>
         <div>
           <SectionLabel>Categoria</SectionLabel>
           {task.categoria ? (() => {
@@ -105,14 +112,7 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
           <SectionLabel>Responsável</SectionLabel>
           {resp ? (
             <div className="flex items-center gap-2">
-              <Avatar className="w-7 h-7 shrink-0">
-                <AvatarFallback
-                  className="text-[11px] font-semibold text-white"
-                  style={{ background: resp.avatar_color }}
-                >
-                  {getInitials(resp.nome)}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar user={resp} size={28} textSize="text-[11px]" />
               <span className="font-medium">{resp.nome}</span>
             </div>
           ) : <span className="text-[#71717A]">—</span>}
@@ -125,6 +125,19 @@ function DetalhesTab({ task, users }: { task: Task; users: ReturnType<typeof use
           <SectionLabel>Vencimento</SectionLabel>
           <div className="text-[#71717A]">{fmtDate(task.data_prazo)}</div>
         </div>
+        {/* Classificação de chamado — só aparece quando preenchida */}
+        {task.tipo_publico && (
+          <div>
+            <SectionLabel>Tipo de público</SectionLabel>
+            <div className="font-medium">{task.tipo_publico === 'Externo' ? 'Externo (cliente)' : 'Interno (equipe)'}</div>
+          </div>
+        )}
+        {task.canal && (
+          <div>
+            <SectionLabel>Canal de origem</SectionLabel>
+            <div className="font-medium">{task.canal}</div>
+          </div>
+        )}
       </div>
 
       <Separator />
@@ -591,6 +604,7 @@ function HistoricoTab({ taskId }: { taskId: string }) {
 export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
   const [activeTab, setActiveTab] = useState<DrawerTab>('detalhes')
   const { users } = useUsers()
+  const { projects } = useProjects()
 
   // Reset aba ao trocar de tarefa
   useEffect(() => { setActiveTab('detalhes') }, [task?.id])
@@ -616,7 +630,7 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
                         border: `1px solid ${STATUS_COLORS[task.status]}30`,
                       }}
                     >
-                      {task.status}
+                      {STATUS_LABELS[task.status]}
                     </Badge>
                     <Badge
                       variant="outline"
@@ -687,7 +701,7 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
                       transition={{ duration: 0.15 }}
                     >
                       <TabsContent value="detalhes" forceMount className={activeTab !== 'detalhes' ? 'hidden' : ''}>
-                        <DetalhesTab task={task} users={users} />
+                        <DetalhesTab task={task} users={users} projects={projects} />
                       </TabsContent>
                       <TabsContent value="subtarefas" forceMount className={activeTab !== 'subtarefas' ? 'hidden' : ''}>
                         <SubtarefasTab taskId={task.id} />
