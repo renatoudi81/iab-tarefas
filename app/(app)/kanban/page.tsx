@@ -342,7 +342,7 @@ export default function KanbanPage() {
                       {...provided.droppableProps}
                       className="flex flex-col gap-2 flex-1 min-h-[100px] rounded-xl p-1.5 transition-colors duration-150"
                       style={{
-                        background: snapshot.isDraggingOver ? color + '08' : '#F7F8FA',
+                        background: snapshot.isDraggingOver ? color + '08' : 'var(--surface-subtle)',
                         border: snapshot.isDraggingOver ? `1.5px dashed ${color}45` : '1.5px solid transparent',
                       }}
                     >
