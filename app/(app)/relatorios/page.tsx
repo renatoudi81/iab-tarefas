@@ -1,6 +1,6 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
 import { useUsers } from '@/hooks/useUsers'
@@ -21,7 +21,7 @@ import {
 import {
   Printer, AlertTriangle, Users, Tag, Clock,
   Download, PieChart as PieChartIcon, BarChart2,
-  ListChecks, TrendingUp, Activity, CheckCircle2, FolderKanban, CalendarDays,
+  ListChecks, TrendingUp, Activity, CheckCircle2, FolderKanban, CalendarDays, ChevronDown,
 } from 'lucide-react'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
@@ -176,6 +176,16 @@ export default function RelatoriosPage() {
   // Filtro por período — aplica em todas as métricas do Relatório
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+
+  // Sanfona "Tarefas executadas por dia": dias expandidos (vazio = todos fechados)
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
+  const toggleDay = (d: string) =>
+    setExpandedDays((prev) => {
+      const next = new Set(prev)
+      if (next.has(d)) next.delete(d)
+      else next.add(d)
+      return next
+    })
 
   // Aplica filtros em cadeia: usuário → projeto → período. Pra tasks, considera
   // sobreposição com o período (não exige estar 100% dentro).
@@ -880,7 +890,7 @@ export default function RelatoriosPage() {
             iconColor="#2563EB"
             iconBg="#EFF6FF"
             title="Tarefas executadas por dia"
-            subtitle="Tarefas concluídas e tempo lançado por dia — projeto, chamado e duração, com total diário"
+            subtitle="Clique em um dia para ver as tarefas — projeto, chamado e duração, com total diário"
           >
             {stats.byDay.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-[#71717A] gap-2">
@@ -888,39 +898,65 @@ export default function RelatoriosPage() {
                 <p className="text-sm">Nenhuma tarefa concluída nem tempo lançado no período</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#E4E4E7]">
-                      <th className="text-left font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-5 py-2.5 w-[28%]">Projeto</th>
-                      <th className="text-left font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-3 py-2.5">Chamado</th>
-                      <th className="text-right font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-5 py-2.5">Tempo</th>
-                    </tr>
-                  </thead>
-                  {stats.byDay.map((dia) => (
-                    <tbody key={dia.data}>
-                      <tr className="bg-[#FAFAFA] border-y border-[#EDEEF1]">
-                        <th scope="colgroup" colSpan={2} className="text-left px-5 py-2 font-semibold text-[0.82rem] text-[#0F172A]">
-                          <span className="tabular-nums">{formatDateBR(dia.data)}</span>
-                          <span className="ml-2 font-normal text-[0.72rem] text-[#71717A]">{weekdayBR(dia.data)}</span>
-                        </th>
-                        <td className="px-5 py-2 text-right">
-                          <span className="inline-flex items-center gap-1 text-[0.78rem] font-bold text-[#2563EB] tabular-nums">
-                            <Clock size={12} /> {formatMinutes(dia.totalMin)}
-                          </span>
-                        </td>
-                      </tr>
-                      {dia.items.map((r) => (
-                        <tr key={r.tarefa_id} className="border-b border-[#F4F4F5] hover:bg-[#FAFAFA] transition-colors">
-                          <td className="px-5 py-2.5 align-top text-[0.82rem] text-[#71717A]">{r.projeto}</td>
-                          <td className="px-3 py-2.5 align-top font-medium text-[#0F172A]">{r.titulo}</td>
-                          <td className="px-5 py-2.5 align-top text-right tabular-nums text-[#3F3F46] whitespace-nowrap">{formatMinutes(r.minutos)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  ))}
-                </table>
-              </div>
+              <ul className="divide-y divide-[#F4F4F5]">
+                {stats.byDay.map((dia) => {
+                  const aberto = expandedDays.has(dia.data)
+                  return (
+                    <li key={dia.data}>
+                      {/* Cabeçalho do dia (clicável — sanfona) */}
+                      <button
+                        type="button"
+                        onClick={() => toggleDay(dia.data)}
+                        aria-expanded={aberto}
+                        aria-controls={`dia-${dia.data}`}
+                        className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+                      >
+                        <ChevronDown
+                          size={16}
+                          className={cn('text-[#A1A1AA] transition-transform flex-shrink-0', aberto && 'rotate-180')}
+                          aria-hidden
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-[0.9rem] text-[#0F172A] tabular-nums">{formatDateBR(dia.data)}</span>
+                          <span className="ml-2 text-[0.75rem] text-[#71717A]">{weekdayBR(dia.data)}</span>
+                        </div>
+                        <span className="text-[0.72rem] text-[#71717A] tabular-nums hidden sm:inline">
+                          {dia.items.length} {dia.items.length === 1 ? 'tarefa' : 'tarefas'}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[0.82rem] font-bold text-[#2563EB] tabular-nums justify-end min-w-[72px]">
+                          <Clock size={12} /> {formatMinutes(dia.totalMin)}
+                        </span>
+                      </button>
+
+                      {/* Conteúdo colapsável: tarefas do dia */}
+                      <AnimatePresence initial={false}>
+                        {aberto && (
+                          <motion.div
+                            id={`dia-${dia.data}`}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            className="overflow-hidden"
+                          >
+                            <table className="w-full text-sm pb-1">
+                              <tbody>
+                                {dia.items.map((r) => (
+                                  <tr key={r.tarefa_id} className="border-t border-[#F4F4F5]">
+                                    <td className="py-2 pl-12 pr-3 align-top text-[0.82rem] text-[#71717A] w-[30%]">{r.projeto}</td>
+                                    <td className="py-2 px-3 align-top font-medium text-[#0F172A]">{r.titulo}</td>
+                                    <td className="py-2 px-5 align-top text-right tabular-nums text-[#3F3F46] whitespace-nowrap">{formatMinutes(r.minutos)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
           </Section>
         </motion.div>
