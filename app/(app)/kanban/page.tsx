@@ -8,7 +8,7 @@ import { useProjects } from '@/hooks/useProjects'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange } from '@/types'
 import type { Status, Task } from '@/types'
-import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react'
+import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Trash2, X, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -21,6 +21,7 @@ import { stripHtml } from '@/components/ui/RichTextEditor'
 import { getCategoryColor } from '@/lib/category-color'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -58,6 +59,7 @@ export default function KanbanPage() {
   const { confirm } = useConfirm()
   const { user: authUser } = useAuth()
   const isAdmin = authUser?.perfil === 'Administrador'
+  const router = useRouter()
 
   // Filtros — date range (data_prazo) e usuário responsável (admin-only)
   const mesAtual = currentMonthRange()
@@ -436,7 +438,14 @@ export default function KanbanPage() {
                                             <MoreHorizontal size={14} />
                                           </button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-36">
+                                        <DropdownMenuContent align="end" className="w-40">
+                                          <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); router.push(`/tarefas/${task.id}`) }}
+                                            className="gap-2 cursor-pointer text-[0.82rem]"
+                                          >
+                                            <Maximize2 size={13} />
+                                            Abrir
+                                          </DropdownMenuItem>
                                           <DropdownMenuItem
                                             onClick={(e) => { e.stopPropagation(); openEdit(task) }}
                                             className="gap-2 cursor-pointer text-[0.82rem]"

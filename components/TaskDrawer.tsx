@@ -1,9 +1,10 @@
 ﻿'use client'
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import {
   X, Edit2, CheckSquare, MessageSquare, Clock, History,
-  Play, Square, Plus, Trash2, ChevronRight, Loader2, Check
+  Play, Square, Plus, Trash2, ChevronRight, Loader2, Check, Maximize2
 } from 'lucide-react'
 import { useComments } from '@/hooks/useComments'
 import { useSubtasks } from '@/hooks/useSubtasks'
@@ -67,7 +68,7 @@ function fmtSeconds(secs: number): string {
 
 /* ─── Sub-components ─── */
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-[0.72rem] font-bold tracking-[0.06em] uppercase text-[#71717A] mb-1.5">
       {children}
@@ -75,7 +76,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function DetalhesTab({ task, users, projects }: { task: Task; users: ReturnType<typeof useUsers>['users']; projects: Project[] }) {
+export function DetalhesTab({ task, users, projects }: { task: Task; users: ReturnType<typeof useUsers>['users']; projects: Project[] }) {
   const resp = users.find(u => u.id === task.responsavel_id)
   const projeto = projects.find(p => p.id === task.projeto_id)
   const pct = task.tempo_estimado > 0 ? Math.min(100, Math.round((task.tempo_gasto_total / task.tempo_estimado) * 100)) : 0
@@ -212,7 +213,7 @@ function DetalhesTab({ task, users, projects }: { task: Task; users: ReturnType<
   )
 }
 
-function SubtarefasTab({ taskId }: { taskId: string }) {
+export function SubtarefasTab({ taskId }: { taskId: string }) {
   const { subtasks, addSubtask, toggleSubtask, deleteSubtask, isLoading, completedCount, totalCount } = useSubtasks(taskId)
   const [newTitulo, setNewTitulo] = useState('')
   const [adding, setAdding] = useState(false)
@@ -319,7 +320,7 @@ function SubtarefasTab({ taskId }: { taskId: string }) {
   )
 }
 
-function ComentariosTab({ taskId }: { taskId: string }) {
+export function ComentariosTab({ taskId }: { taskId: string }) {
   const { comments, addComment, deleteComment, isLoading } = useComments(taskId)
   const [texto, setTexto] = useState('')
   const [sending, setSending] = useState(false)
@@ -417,7 +418,7 @@ function ComentariosTab({ taskId }: { taskId: string }) {
   )
 }
 
-function TempoTab({ task }: { task: Task }) {
+export function TempoTab({ task }: { task: Task }) {
   const { entries, addTimeEntry, updateTimeEntry, deleteTimeEntry, isLoading } = useTimeEntries()
   const taskEntries = entries.filter(e => e.tarefa_id === task.id)
   const { toast } = useToast()
@@ -687,7 +688,7 @@ function TempoTab({ task }: { task: Task }) {
   )
 }
 
-function HistoricoTab({ taskId }: { taskId: string }) {
+export function HistoricoTab({ taskId }: { taskId: string }) {
   const { history, isLoading } = useTaskHistory(taskId)
 
   return (
@@ -748,6 +749,7 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
   const [activeTab, setActiveTab] = useState<DrawerTab>('detalhes')
   const { users } = useUsers()
   const { projects } = useProjects()
+  const router = useRouter()
 
   // Reset aba ao trocar de tarefa
   useEffect(() => { setActiveTab('detalhes') }, [task?.id])
@@ -788,6 +790,15 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
                   </div>
                 </div>
                 <div className="flex gap-1.5 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => { router.push(`/tarefas/${task.id}`); onClose() }}
+                    className="w-[34px] h-[34px]"
+                    title="Abrir em tela cheia"
+                  >
+                    <Maximize2 size={15} />
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
