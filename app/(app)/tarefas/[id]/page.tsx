@@ -30,7 +30,7 @@ export default function TarefaPage() {
   // Loading inicial
   if (isInitialLoad || (isLoading && !task)) {
     return (
-      <div className="pb-10 max-w-4xl animate-pulse">
+      <div className="pb-10 max-w-5xl animate-pulse">
         <div className="h-4 w-20 rounded bg-[#F4F4F5] mb-6" />
         <div className="h-7 w-2/3 rounded-md bg-[#F4F4F5] mb-3" />
         <div className="h-4 w-40 rounded bg-[#F4F4F5] mb-8" />
@@ -43,7 +43,7 @@ export default function TarefaPage() {
   // Tarefa inexistente
   if (!task) {
     return (
-      <div className="pb-10 max-w-4xl flex flex-col items-center justify-center py-20 text-center gap-3">
+      <div className="pb-10 max-w-5xl flex flex-col items-center justify-center py-20 text-center gap-3">
         <FileText size={40} className="text-[#D4D4D8]" />
         <h1 className="text-lg font-bold text-[#0F172A]">Tarefa não encontrada</h1>
         <p className="text-sm text-[#71717A]">Ela pode ter sido excluída ou o link está incorreto.</p>
@@ -70,7 +70,7 @@ export default function TarefaPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="pb-10 max-w-4xl"
+      className="pb-10 max-w-5xl"
     >
       {/* Voltar */}
       <button
@@ -107,12 +107,13 @@ export default function TarefaPage() {
               </span>
             )}
           </div>
-          <h1 className="text-[1.6rem] font-bold text-[#0F172A] tracking-[-0.02em] leading-tight break-words">
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.15] break-words">
             {task.titulo}
           </h1>
-          {projeto && (
-            <p className="text-[#71717A] text-sm mt-1.5">{projeto.nome}</p>
-          )}
+          <p className="text-[#71717A] text-sm mt-1.5">
+            {projeto?.nome || 'Sem projeto'}
+            {task.categoria ? ` · ${task.categoria}` : ''}
+          </p>
         </div>
         <button
           onClick={() => setEditing(true)}

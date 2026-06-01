@@ -8,7 +8,7 @@ import { useProjects } from '@/hooks/useProjects'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange } from '@/types'
 import type { Status, Task } from '@/types'
-import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Trash2, X, Maximize2 } from 'lucide-react'
+import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -80,7 +80,6 @@ export default function KanbanPage() {
   const [aiOpen, setAiOpen] = useState(false)
 
   const openNew = (status?: Status) => setModal({ open: true, task: null, initialStatus: status })
-  const openEdit = (task: Task) => setModal({ open: true, task })
   const closeModal = () => setModal({ open: false, task: null })
   const aiContextRef = useRef<AIContext | null>(null)
   const handleAIReady = (initialData: Partial<TaskFormData>, _meta: unknown, aiContext: AIContext) => {
@@ -441,13 +440,6 @@ export default function KanbanPage() {
                                         <DropdownMenuContent align="end" className="w-40">
                                           <DropdownMenuItem
                                             onClick={(e) => { e.stopPropagation(); router.push(`/tarefas/${task.id}`) }}
-                                            className="gap-2 cursor-pointer text-[0.82rem]"
-                                          >
-                                            <Maximize2 size={13} />
-                                            Abrir
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem
-                                            onClick={(e) => { e.stopPropagation(); openEdit(task) }}
                                             className="gap-2 cursor-pointer text-[0.82rem]"
                                           >
                                             <Pencil size={13} />

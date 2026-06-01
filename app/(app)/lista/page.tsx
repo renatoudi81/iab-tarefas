@@ -9,7 +9,7 @@ import { useProjects } from '@/hooks/useProjects'
 import { STATUSES, PRIORITIES, STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR, currentMonthRange } from '@/types'
 import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
-import TaskDrawer from '@/components/TaskDrawer'
+import { useRouter } from 'next/navigation'
 import TaskModal from '@/components/TaskModal'
 import { AITaskCreator } from '@/components/AITaskCreator'
 import type { TaskFormData } from '@/types'
@@ -63,6 +63,7 @@ export default function ListaPage() {
   const { user: authUser } = useAuth()
   const isAdmin = authUser?.perfil === 'Administrador'
 
+  const router = useRouter()
   const mesAtual = currentMonthRange()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -74,13 +75,6 @@ export default function ListaPage() {
   const [modal, setModal] = useState<{ open: boolean; task: Task | null; initialData?: Partial<TaskFormData> }>({ open: false, task: null })
   // IA: modal de criação automatizada
   const [aiOpen, setAiOpen] = useState(false)
-  // Guarda só o ID; a task é derivada do array vivo (evita dados stale
-  // após edição/optimistic update — o drawer reflete sempre o estado atual).
-  const [drawerTaskId, setDrawerTaskId] = useState<string | null>(null)
-  const drawerTask = useMemo(
-    () => (drawerTaskId ? tasks.find(t => t.id === drawerTaskId) ?? null : null),
-    [drawerTaskId, tasks],
-  )
   const [page, setPage] = useState(1)
 
   // Ordenação da Lista:
@@ -157,7 +151,6 @@ export default function ListaPage() {
   }, [filtered, page])
 
   const openNew = () => setModal({ open: true, task: null })
-  const openEdit = (task: Task) => setModal({ open: true, task })
   const closeModal = () => setModal({ open: false, task: null })
   // Fluxo IA → TaskModal pré-preenchido. Guarda o contexto da IA pra
   // registrar aprendizado quando a tarefa for salva (se houver correção).
@@ -174,7 +167,7 @@ export default function ListaPage() {
     }
   }
 
-  const onTaskClick = (task: Task) => setDrawerTaskId(task.id)
+  const onTaskClick = (task: Task) => router.push(`/tarefas/${task.id}`)
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
@@ -528,7 +521,7 @@ export default function ListaPage() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-36">
-                          <DropdownMenuItem onClick={() => openEdit(task)} className="gap-2 cursor-pointer">
+                          <DropdownMenuItem onClick={() => router.push(`/tarefas/${task.id}`)} className="gap-2 cursor-pointer">
                             <Pencil size={13} />
                             Editar
                           </DropdownMenuItem>
@@ -573,13 +566,6 @@ export default function ListaPage() {
         open={aiOpen}
         onClose={() => setAiOpen(false)}
         onReady={handleAIReady}
-      />
-
-      {/* Task Drawer */}
-      <TaskDrawer
-        task={drawerTask}
-        onClose={() => setDrawerTaskId(null)}
-        onEdit={(task) => { setDrawerTaskId(null); openEdit(task) }}
       />
     </div>
   )
