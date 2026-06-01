@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR } from '@/types'
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange } from '@/types'
 import type { Status, Task } from '@/types'
 import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -60,12 +60,13 @@ export default function KanbanPage() {
   const isAdmin = authUser?.perfil === 'Administrador'
 
   // Filtros — date range (data_prazo) e usuário responsável (admin-only)
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const mesAtual = currentMonthRange()
+  const [dateFrom, setDateFrom] = useState(mesAtual.from)
+  const [dateTo, setDateTo] = useState(mesAtual.to)
   const [filterUserId, setFilterUserId] = useState<string>('all')
   const [filterProject, setFilterProject] = useState<string>('all')
-  const hasFilter = !!dateFrom || !!dateTo || filterUserId !== 'all' || filterProject !== 'all'
-  const clearFilters = () => { setDateFrom(''); setDateTo(''); setFilterUserId('all'); setFilterProject('all') }
+  const hasFilter = dateFrom !== mesAtual.from || dateTo !== mesAtual.to || filterUserId !== 'all' || filterProject !== 'all'
+  const clearFilters = () => { setDateFrom(mesAtual.from); setDateTo(mesAtual.to); setFilterUserId('all'); setFilterProject('all') }
 
   // Modal de criar/editar tarefa
   const [modal, setModal] = useState<{

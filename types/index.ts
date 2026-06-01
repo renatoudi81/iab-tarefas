@@ -193,6 +193,23 @@ export function todayStr(): string {
 }
 
 /**
+ * Range padrão dos filtros de data: 1º ao último dia do mês corrente.
+ * Ex.: em junho/2026 → { from: '2026-06-01', to: '2026-06-30' }.
+ * Usa horário local — filtros operam sobre dias absolutos (YYYY-MM-DD).
+ */
+export function currentMonthRange(): { from: string; to: string } {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth() // 0-11
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const lastDay = new Date(y, m + 1, 0).getDate()
+  return {
+    from: `${y}-${pad(m + 1)}-01`,
+    to: `${y}-${pad(m + 1)}-${pad(lastDay)}`,
+  }
+}
+
+/**
  * Formata uma data para o padrão brasileiro (DD/MM/AAAA).
  *
  * Aceita:

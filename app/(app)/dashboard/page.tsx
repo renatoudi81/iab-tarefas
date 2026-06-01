@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
-import { STATUSES, STATUS_COLORS, todayStr } from '@/types'
+import { STATUSES, STATUS_COLORS, currentMonthRange } from '@/types'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -400,11 +400,8 @@ export default function DashboardPage() {
     return arr
   }, [allEntries, effectiveUserId, filterProject, tasks])
 
-  const [dateFrom, setDateFrom] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 6)
-    return d.toISOString().split('T')[0]
-  })
-  const [dateTo, setDateTo] = useState(todayStr)
+  const [dateFrom, setDateFrom] = useState(() => currentMonthRange().from)
+  const [dateTo, setDateTo] = useState(() => currentMonthRange().to)
 
   const metrics = useMemo(() => {
     const inPeriod = tasks.filter(t =>

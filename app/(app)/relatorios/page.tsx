@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, weekdayBR } from '@/types'
+import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, weekdayBR, currentMonthRange } from '@/types'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import { PrintReport } from '@/components/PrintReport'
@@ -173,9 +173,9 @@ export default function RelatoriosPage() {
   const [filterProject, setFilterProject] = useState<string>('all')
   const effectiveUserId = isAdmin ? filterUserId : (authUser?.id || 'all')
 
-  // Filtro por período — aplica em todas as métricas do Relatório
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  // Filtro por período — inicia no mês corrente (1º ao último dia); o usuário pode alterar
+  const [dateFrom, setDateFrom] = useState(() => currentMonthRange().from)
+  const [dateTo, setDateTo] = useState(() => currentMonthRange().to)
 
   // Sanfona "Tarefas executadas por dia": dias expandidos (vazio = todos fechados)
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())

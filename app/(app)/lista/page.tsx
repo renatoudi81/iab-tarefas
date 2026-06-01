@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
 import { useProjects } from '@/hooks/useProjects'
-import { STATUSES, PRIORITIES, STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR } from '@/types'
+import { STATUSES, PRIORITIES, STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR, currentMonthRange } from '@/types'
 import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
 import TaskDrawer from '@/components/TaskDrawer'
@@ -63,13 +63,14 @@ export default function ListaPage() {
   const { user: authUser } = useAuth()
   const isAdmin = authUser?.perfil === 'Administrador'
 
+  const mesAtual = currentMonthRange()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPriority, setFilterPriority] = useState('')
   const [filterUser, setFilterUser] = useState('')
   const [filterProject, setFilterProject] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [dateFrom, setDateFrom] = useState(mesAtual.from)
+  const [dateTo, setDateTo] = useState(mesAtual.to)
   const [modal, setModal] = useState<{ open: boolean; task: Task | null; initialData?: Partial<TaskFormData> }>({ open: false, task: null })
   // IA: modal de criação automatizada
   const [aiOpen, setAiOpen] = useState(false)
@@ -191,7 +192,7 @@ export default function ListaPage() {
     }
   }
 
-  const hasFilters = filterProject || filterStatus || filterPriority || filterUser || search || dateFrom || dateTo
+  const hasFilters = filterProject || filterStatus || filterPriority || filterUser || search || dateFrom !== mesAtual.from || dateTo !== mesAtual.to
 
   return (
     <div>
@@ -306,7 +307,7 @@ export default function ListaPage() {
             className="gap-1 text-red-500 hover:text-red-700"
             onClick={() => {
               setSearch(''); setFilterProject(''); setFilterStatus(''); setFilterPriority(''); setFilterUser('')
-              setDateFrom(''); setDateTo('')
+              setDateFrom(mesAtual.from); setDateTo(mesAtual.to)
             }}
           >
             <X size={13} /> Limpar

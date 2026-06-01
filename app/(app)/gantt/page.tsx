@@ -6,7 +6,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, todayStr, formatDateBR,
+  STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, todayStr, formatDateBR, currentMonthRange,
 } from '@/types'
 import type { Task, Status } from '@/types'
 import {
@@ -286,8 +286,8 @@ export default function GanttPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterUserId, setFilterUserId] = useState<string>('all')
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [dateFrom, setDateFrom] = useState(() => currentMonthRange().from)
+  const [dateTo, setDateTo] = useState(() => currentMonthRange().to)
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => {
