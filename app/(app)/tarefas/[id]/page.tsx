@@ -1,17 +1,16 @@
 'use client'
-import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
 import {
-  DetalhesTab, SubtarefasTab, ComentariosTab, TempoTab, HistoricoTab,
+  SubtarefasTab, ComentariosTab, TempoTab, HistoricoTab,
 } from '@/components/TaskDrawer'
-import TaskModal from '@/components/TaskModal'
+import { TaskForm } from '@/components/TaskForm'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
-  ArrowLeft, Pencil, FileText, ListChecks, MessageSquare, Clock, History as HistoryIcon,
+  ArrowLeft, FileText, ListChecks, MessageSquare, Clock, History as HistoryIcon,
 } from 'lucide-react'
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '@/types'
 import { getCategoryColor } from '@/lib/category-color'
@@ -23,7 +22,6 @@ export default function TarefaPage() {
   const { tasks, isLoading, isInitialLoad } = useTasks()
   const { users } = useUsers()
   const { projects } = useProjects()
-  const [editing, setEditing] = useState(false)
 
   const task = tasks.find((t) => t.id === id)
 
@@ -81,49 +79,41 @@ export default function TarefaPage() {
       </button>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <span
+            className="inline-flex items-center gap-1.5 text-[0.7rem] font-semibold px-2 py-0.5 rounded-full"
+            style={{ background: statusColor + '18', color: statusColor }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
+            {STATUS_LABELS[task.status]}
+          </span>
+          <span
+            className="text-[0.62rem] font-bold uppercase tracking-wider px-2 py-[3px] rounded-full"
+            style={{ background: prioColor + '22', color: prioColor }}
+          >
+            {task.prioridade}
+          </span>
+          {catColor && (
             <span
-              className="inline-flex items-center gap-1.5 text-[0.7rem] font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: statusColor + '18', color: statusColor }}
+              className="inline-flex items-center gap-1 text-[0.65rem] font-semibold px-1.5 py-[2px] rounded"
+              style={{ background: catColor.bg, color: catColor.hex }}
             >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
-              {STATUS_LABELS[task.status]}
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: catColor.hex }} />
+              {task.categoria}
             </span>
-            <span
-              className="text-[0.62rem] font-bold uppercase tracking-wider px-2 py-[3px] rounded-full"
-              style={{ background: prioColor + '22', color: prioColor }}
-            >
-              {task.prioridade}
-            </span>
-            {catColor && (
-              <span
-                className="inline-flex items-center gap-1 text-[0.65rem] font-semibold px-1.5 py-[2px] rounded"
-                style={{ background: catColor.bg, color: catColor.hex }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: catColor.hex }} />
-                {task.categoria}
-              </span>
-            )}
-          </div>
-          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.15] break-words">
-            {task.titulo}
-          </h1>
-          <p className="text-[#71717A] text-sm mt-1.5">
-            {projeto?.nome || 'Sem projeto'}
-            {task.categoria ? ` · ${task.categoria}` : ''}
-          </p>
+          )}
         </div>
-        <button
-          onClick={() => setEditing(true)}
-          className="h-9 inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98] text-white text-sm font-medium px-4 rounded-lg shadow-[0_4px_14px_-4px_rgba(37,99,235,0.45)] transition-all cursor-pointer flex-shrink-0"
-        >
-          <Pencil size={14} /> Editar
-        </button>
+        <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.15] break-words">
+          {task.titulo}
+        </h1>
+        <p className="text-[#71717A] text-sm mt-1.5">
+          {projeto?.nome || 'Sem projeto'}
+          {task.categoria ? ` · ${task.categoria}` : ''}
+        </p>
       </div>
 
-      {/* Abas — reusa os mesmos componentes do TaskDrawer */}
+      {/* Abas — Detalhes é o formulário editável; as demais reusam o painel */}
       <Tabs defaultValue="detalhes">
         <TabsList className="bg-[#F4F4F5] flex-wrap h-auto">
           <TabsTrigger value="detalhes" className={tabTriggerCls}><FileText size={14} /> Detalhes</TabsTrigger>
@@ -135,7 +125,8 @@ export default function TarefaPage() {
 
         <div className="bg-white border border-[#EDEEF1] rounded-2xl p-6 mt-4 shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]">
           <TabsContent value="detalhes" className="mt-0">
-            <DetalhesTab task={task} users={users} projects={projects} />
+            {/* Edição direta: os campos já vêm editáveis, com botão Salvar */}
+            <TaskForm task={task} variant="page" />
           </TabsContent>
           <TabsContent value="subtarefas" className="mt-0">
             <SubtarefasTab taskId={task.id} />
@@ -151,16 +142,6 @@ export default function TarefaPage() {
           </TabsContent>
         </div>
       </Tabs>
-
-      {/* Modal de edição (reusa o TaskModal) */}
-      {editing && (
-        <TaskModal
-          open={editing}
-          task={task}
-          onClose={() => setEditing(false)}
-          onSaved={() => setEditing(false)}
-        />
-      )}
     </motion.div>
   )
 }

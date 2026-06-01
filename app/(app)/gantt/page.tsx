@@ -25,7 +25,7 @@ import { EmptyIllustration } from '@/components/ui/EmptyIllustration'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { getCategoryColor } from '@/lib/category-color'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
-import TaskDrawer from '@/components/TaskDrawer'
+import { useRouter } from 'next/navigation'
 
 type ColorBy = 'status' | 'prioridade'
 type Granularity = 'week' | 'fortnight' | 'month'
@@ -297,10 +297,7 @@ export default function GanttPage() {
     })
   }
 
-  // Drawer — guarda só o ID; task derivada do array vivo (reflete
-  // optimistic updates de drag/resize sem ficar stale).
-  const [drawerTaskId, setDrawerTaskId] = useState<string | null>(null)
-  const drawerTask = drawerTaskId ? tasks.find(t => t.id === drawerTaskId) ?? null : null
+  const router = useRouter()
 
   // Filtragem em cadeia: precisa de data_inicio + data_prazo, depois aplica
   // filtros do usuário, depois aplica regra de amostragem inteligente
@@ -572,7 +569,7 @@ export default function GanttPage() {
                     width={width}
                     totalDays={totalDays}
                     color={getColor(task)}
-                    onClick={() => setDrawerTaskId(task.id)}
+                    onClick={() => router.push(`/tarefas/${task.id}`)}
                     onUpdateDates={async (newStart, newEnd) => {
                       try {
                         await updateTask(task.id, { data_inicio: newStart, data_prazo: newEnd })
@@ -606,12 +603,6 @@ export default function GanttPage() {
         </div>
       </div>
 
-      {/* Drawer de detalhes — abre ao clicar em qualquer row */}
-      <TaskDrawer
-        task={drawerTask}
-        onClose={() => setDrawerTaskId(null)}
-        onEdit={() => { /* edição via Drawer/Lista; aqui só leitura */ }}
-      />
     </div>
   )
 }

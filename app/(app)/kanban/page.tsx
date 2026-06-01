@@ -373,6 +373,7 @@ export default function KanbanPage() {
                                 ref={drag.innerRef}
                                 {...drag.draggableProps}
                                 {...drag.dragHandleProps}
+                                onClick={() => router.push(`/tarefas/${task.id}`)}
                                 className={cn(
                                   // Altura natural: o card encolhe ao conteúdo,
                                   // sem espaço vazio interno (line-clamp já limita
