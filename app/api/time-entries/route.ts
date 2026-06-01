@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   if (!authUser) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { tarefa_id, duracao, tipo, hora_inicio, hora_fim, data, comentario } = body
+  const { tarefa_id, duracao, tipo, hora_inicio, hora_fim, data, comentario, atividade } = body
   const userId = authUser.uid
 
   if (!tarefa_id) return NextResponse.json({ error: 'tarefa_id obrigatório' }, { status: 400 })
@@ -62,6 +62,7 @@ export async function POST(req: Request) {
     duracao: dur,
     tipo: tipo || 'manual',
     comentario: String(comentario || '').slice(0, 255),
+    atividade: String(atividade || '').slice(0, 60),
     criado_em: new Date().toISOString(),
   }
 

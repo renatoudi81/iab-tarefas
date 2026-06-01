@@ -15,7 +15,7 @@ import type { Task, Project, TimeEntry } from '@/types'
 import {
   getInitials, formatMinutes,
   STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS,
-  formatDateBR, formatDateTimeBR,
+  formatDateBR, formatDateTimeBR, ATIVIDADES_TEMPO,
 } from '@/types'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { cn } from '@/lib/utils'
@@ -29,6 +29,7 @@ import { Progress } from '@/components/ui/progress'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useToast } from '@/contexts/ToastContext'
@@ -427,12 +428,14 @@ function TempoTab({ task }: { task: Task }) {
   const [novoData, setNovoData] = useState(hojeStr)
   const [novoHoras, setNovoHoras] = useState('')
   const [novoComentario, setNovoComentario] = useState('')
+  const [novoAtividade, setNovoAtividade] = useState('')
   const [lancando, setLancando] = useState(false)
   // Edição inline de um lançamento existente
   const [editId, setEditId] = useState<string | null>(null)
   const [editData, setEditData] = useState('')
   const [editHoras, setEditHoras] = useState('')
   const [editComentario, setEditComentario] = useState('')
+  const [editAtividade, setEditAtividade] = useState('')
   const [salvandoEdit, setSalvandoEdit] = useState(false)
 
   // "1,5"/"1.5" → minutos (null se inválido ou fora de 1..1440)
@@ -498,7 +501,7 @@ function TempoTab({ task }: { task: Task }) {
     if (!novoData) { toast.error('Informe a data'); return }
     setLancando(true)
     try {
-      await addTimeEntry({ tarefa_id: task.id, duracao: min, tipo: 'manual', data: novoData, comentario: novoComentario.trim() })
+      await addTimeEntry({ tarefa_id: task.id, duracao: min, tipo: 'manual', data: novoData, comentario: novoComentario.trim(), atividade: novoAtividade })
       setNovoHoras(''); setNovoComentario('')
       toast.success('Horas lançadas')
     } catch (err: any) {
@@ -509,7 +512,7 @@ function TempoTab({ task }: { task: Task }) {
   }
 
   const iniciarEdicao = (e: TimeEntry) => {
-    setEditId(e.id); setEditData(e.data); setEditHoras(minutosParaHoras(e.duracao)); setEditComentario(e.comentario || '')
+    setEditId(e.id); setEditData(e.data); setEditHoras(minutosParaHoras(e.duracao)); setEditComentario(e.comentario || ''); setEditAtividade(e.atividade || '')
   }
 
   const handleSalvarEdicao = async () => {
@@ -519,7 +522,7 @@ function TempoTab({ task }: { task: Task }) {
     if (!editData) { toast.error('Informe a data'); return }
     setSalvandoEdit(true)
     try {
-      await updateTimeEntry(editId, { data: editData, duracao: min, comentario: editComentario.trim() })
+      await updateTimeEntry(editId, { data: editData, duracao: min, comentario: editComentario.trim(), atividade: editAtividade })
       setEditId(null)
       toast.success('Lançamento atualizado')
     } catch (err: any) {
@@ -562,6 +565,16 @@ function TempoTab({ task }: { task: Task }) {
           </div>
         </div>
         <div className="flex flex-col gap-1">
+          <label className="text-[0.7rem] text-[#71717A]">Atividade</label>
+          <Select value={novoAtividade || 'none'} onValueChange={v => setNovoAtividade(v === 'none' ? '' : v)}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Não informada</SelectItem>
+              {ATIVIDADES_TEMPO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
           <label className="text-[0.7rem] text-[#71717A]">Comentário (opcional)</label>
           <Input value={novoComentario} maxLength={255} placeholder="O que foi feito..." onChange={e => setNovoComentario(e.target.value)} className="h-9" />
         </div>
@@ -595,6 +608,13 @@ function TempoTab({ task }: { task: Task }) {
                         <Input type="date" value={editData} max={hojeStr} onChange={ev => setEditData(ev.target.value)} className="h-8 text-xs" />
                         <Input inputMode="decimal" value={editHoras} placeholder="1,5" onChange={ev => setEditHoras(ev.target.value)} className="h-8 text-xs" />
                       </div>
+                      <Select value={editAtividade || 'none'} onValueChange={v => setEditAtividade(v === 'none' ? '' : v)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Atividade..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Não informada</SelectItem>
+                          {ATIVIDADES_TEMPO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                       <Input value={editComentario} maxLength={255} placeholder="Comentário..." onChange={ev => setEditComentario(ev.target.value)} className="h-8 text-xs" />
                       <div className="flex gap-1.5">
                         <Button size="sm" onClick={handleSalvarEdicao} disabled={salvandoEdit} className="h-7 gap-1 text-xs">
@@ -609,7 +629,12 @@ function TempoTab({ task }: { task: Task }) {
                     /* Exibição */
                     <div className="flex items-start gap-2.5">
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium">{formatMinutes(e.duracao)}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium">{formatMinutes(e.duracao)}</span>
+                          {e.atividade && (
+                            <span className="text-[0.68rem] bg-[#EFF6FF] text-[#2563EB] px-1.5 py-0.5 rounded">{e.atividade}</span>
+                          )}
+                        </div>
                         <div className="text-xs text-[#71717A]">
                           {fmtDate(e.data)}
                           {e.hora_inicio && e.hora_fim && ` · ${e.hora_inicio} — ${e.hora_fim}`}

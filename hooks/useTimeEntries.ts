@@ -11,6 +11,7 @@ export interface NewTimeEntry {
   hora_fim?: string
   data?: string
   comentario?: string
+  atividade?: string
 }
 
 /** Campos editáveis de um lançamento já existente */
@@ -18,6 +19,7 @@ export interface TimeEntryPatch {
   data?: string
   duracao?: number
   comentario?: string
+  atividade?: string
 }
 
 export function useTimeEntries() {

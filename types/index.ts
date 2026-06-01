@@ -118,8 +118,22 @@ export interface TimeEntry {
   tipo: 'manual' | 'automatico'
   /** Descrição curta do que foi feito (estilo Redmine, ≤255 car.) */
   comentario?: string | null
+  /** Tipo de atividade (estilo Redmine): Análise, Desenvolvimento, etc. */
+  atividade?: string | null
   criado_em: string
 }
+
+/** Catálogo de atividades para lançamento de tempo (estilo Redmine).
+ *  Lista fixa, editável aqui — pode virar coleção configurável no futuro. */
+export const ATIVIDADES_TEMPO = [
+  'Análise',
+  'Desenvolvimento',
+  'Atendimento',
+  'Reunião',
+  'Documentação',
+  'Planejamento',
+  'Outro',
+] as const
 
 export type TaskFormData = Omit<Task, 'id' | 'criado_em' | 'atualizado_em' | 'responsavel'>
 

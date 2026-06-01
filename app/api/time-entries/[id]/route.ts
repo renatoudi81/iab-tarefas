@@ -55,6 +55,9 @@ export async function PATCH(req: Request, { params }: Params) {
   if (body.comentario !== undefined) {
     update.comentario = String(body.comentario || '').slice(0, 255)
   }
+  if (body.atividade !== undefined) {
+    update.atividade = String(body.atividade || '').slice(0, 60)
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'Nada para atualizar' }, { status: 400 })
