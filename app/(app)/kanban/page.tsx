@@ -373,13 +373,10 @@ export default function KanbanPage() {
                                 {...drag.draggableProps}
                                 {...drag.dragHandleProps}
                                 className={cn(
-                                  'bg-white border border-[#E8E8EC] rounded-lg',
-                                  // Altura FIXA — todos os cards ficam exatamente
-                                  // do mesmo tamanho visual, independentemente de
-                                  // ter ou não descrição/subtarefas. Conteúdo
-                                  // excedente é cortado (line-clamp já limita o
-                                  // tamanho do texto, então corte é raro).
-                                  'h-[260px] overflow-hidden',
+                                  // Altura natural: o card encolhe ao conteúdo,
+                                  // sem espaço vazio interno (line-clamp já limita
+                                  // título/descrição, então não cresce demais).
+                                  'bg-white border border-[#DADDE2] rounded-lg',
                                   !dragSnapshot.isDragging && 'card-lift',
                                   dragSnapshot.isDragging && 'opacity-95 rotate-[0.8deg]'
                                 )}
@@ -392,7 +389,7 @@ export default function KanbanPage() {
                                   borderLeftColor: statusColor,
                                   boxShadow: dragSnapshot.isDragging
                                     ? '0 8px 28px rgba(0,0,0,0.14)'
-                                    : '0 1px 2px rgba(0,0,0,0.04)',
+                                    : '0 1px 3px rgba(15,23,42,0.10), 0 1px 2px rgba(15,23,42,0.06)',
                                   ...drag.draggableProps.style,
                                 }}
                               >
