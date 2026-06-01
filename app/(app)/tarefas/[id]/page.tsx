@@ -4,13 +4,14 @@ import { motion } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
+import { useCategories } from '@/hooks/useCategories'
 import {
   SubtarefasTab, ComentariosTab, TempoTab, HistoricoTab,
 } from '@/components/TaskDrawer'
 import { TaskForm } from '@/components/TaskForm'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
-  ArrowLeft, FileText, ListChecks, MessageSquare, Clock, History as HistoryIcon,
+  ArrowLeft, FileText, ListChecks, MessageSquare, Clock, History as HistoryIcon, Loader2,
 } from 'lucide-react'
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '@/types'
 import { getCategoryColor } from '@/lib/category-color'
@@ -20,8 +21,12 @@ export default function TarefaPage() {
   const id = (params?.id as string) || ''
   const router = useRouter()
   const { tasks, isLoading, isInitialLoad } = useTasks()
-  const { users } = useUsers()
-  const { projects } = useProjects()
+  const { users, isLoading: usersLoading } = useUsers()
+  const { projects, isLoading: projLoading } = useProjects()
+  const { isLoading: catLoading } = useCategories()
+  // O formulário só monta quando projetos/categorias/usuários chegaram: o
+  // Radix Select não reflete o value se as opções aparecem depois do mount.
+  const formDataReady = !usersLoading && !projLoading && !catLoading
 
   const task = tasks.find((t) => t.id === id)
 
@@ -125,8 +130,15 @@ export default function TarefaPage() {
 
         <div className="bg-white border border-[#EDEEF1] rounded-2xl p-6 mt-4 shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]">
           <TabsContent value="detalhes" className="mt-0">
-            {/* Edição direta: os campos já vêm editáveis, com botão Salvar */}
-            <TaskForm task={task} variant="page" />
+            {/* Edição direta: os campos já vêm editáveis, com botão Salvar.
+                Aguarda os dados dos selects para o valor aparecer corretamente. */}
+            {formDataReady ? (
+              <TaskForm task={task} variant="page" />
+            ) : (
+              <div className="py-12 flex items-center justify-center text-[#71717A]">
+                <Loader2 size={20} className="animate-spin" />
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="subtarefas" className="mt-0">
             <SubtarefasTab taskId={task.id} />
