@@ -3,11 +3,12 @@ import { useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, ClipboardList, LayoutGrid,
   GanttChart, FileBarChart2, Settings,
-  Users, Tag, X, FolderKanban,
+  Users, Tag, X, FolderKanban, Sun, Moon,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -38,6 +39,7 @@ export default function Sidebar({ delayedCount, open = false, onClose }: Sidebar
   const pathname = usePathname()
   const router = useRouter()
   const { user } = useAuth()
+  const { theme, toggleTheme } = useTheme()
 
   const navItems = useMemo(() =>
     BASE_NAV.map(n =>
@@ -205,6 +207,21 @@ export default function Sidebar({ delayedCount, open = false, onClose }: Sidebar
           </>
         )}
       </nav>
+
+      {/* Toggle de tema (claro/escuro) */}
+      <div className="border-t border-[#E4E4E7] p-2.5 flex-shrink-0">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md border-0 cursor-pointer text-left transition-colors duration-100 bg-transparent text-[#71717A] hover:bg-[#F7F8FA] hover:text-[#111111]"
+        >
+          {theme === 'dark' ? <Sun size={17} strokeWidth={1.75} /> : <Moon size={17} strokeWidth={1.75} />}
+          <span className="text-[0.8125rem] font-medium">
+            {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          </span>
+        </button>
+      </div>
     </aside>
     </>
   )

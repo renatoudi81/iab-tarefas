@@ -167,10 +167,12 @@
   --card-shadow: none;
 }
 
-[data-theme="dark"] {
+.dark {
+  color-scheme: dark;
   --bg: #0A0A0A;
   --surface: #111111;
   --surface-subtle: #161616;
+  --border-hex: #2A2A2E;
 
   --sidebar-bg: #0A0A0A;
   --sidebar-border: #1A1A1A;
@@ -839,3 +841,45 @@ html { scroll-behavior: smooth; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Dark mode — retrofit das cores fixas ────────────────────────
+   As telas foram construídas com cores hex fixas (bg-white,
+   text-[#0F172A] etc). Em vez de migrar cada arquivo, remapeamos aqui
+   as utilities mais comuns quando o tema escuro (.dark) está ativo.
+   Cores semânticas (status, prioridade, categoria — aplicadas via
+   style inline) permanecem inalteradas, mantendo a identidade visual.
+*/
+
+/* Superfícies brancas → cartões escuros */
+.dark .bg-white { background-color: #18181B !important; }
+
+/* Fundos sutis (zebra, hovers, áreas internas) → tom mais profundo */
+.dark .bg-\[\#F7F8FA\],
+.dark .bg-\[\#F4F4F5\],
+.dark .bg-\[\#FAFAFA\] { background-color: #202024 !important; }
+
+/* Texto principal → quase branco */
+.dark .text-\[\#0F172A\],
+.dark .text-\[\#111111\],
+.dark .text-\[\#18181B\] { color: #F4F4F5 !important; }
+
+/* Texto secundário → cinza claro */
+.dark .text-\[\#3F3F46\],
+.dark .text-\[\#52525B\] { color: #C9C9CF !important; }
+
+/* Texto muted → cinza médio legível no escuro */
+.dark .text-\[\#71717A\] { color: #9CA3AF !important; }
+
+/* Bordas claras → borda escura sutil */
+.dark .border-\[\#E4E4E7\],
+.dark .border-\[\#EDEEF1\],
+.dark .border-\[\#E8E8EC\],
+.dark .border-\[\#DADDE2\],
+.dark .border-\[\#F4F4F5\] { border-color: #2C2C31 !important; }
+
+/* Hovers de superfície (mais comuns) → tom escuro */
+.dark .hover\:bg-\[\#F7F8FA\]:hover,
+.dark .hover\:bg-\[\#F4F4F5\]:hover,
+.dark .hover\:bg-\[\#FAFAFA\]:hover { background-color: #26262B !important; }
+.dark .hover\:text-\[\#111111\]:hover,
+.dark .hover\:text-\[\#0F172A\]:hover { color: #F4F4F5 !important; }

@@ -7,6 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { GrainOverlay } from '@/components/ui/GrainOverlay'
 import { ScrollProgress } from '@/components/ui/ScrollProgress'
 import { MotionProvider } from '@/components/MotionProvider'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import './globals.css'
 
 // Fontes premium recomendadas pela skill design-taste-frontend:
@@ -39,8 +40,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <body>
+        {/* Anti-flash: aplica o tema salvo antes do paint, evitando "piscar" claro→escuro */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+          }}
+        />
+        <ThemeProvider>
         <MotionProvider>
           <TooltipProvider delayDuration={400} skipDelayDuration={150}>
             <ToastProvider>
@@ -53,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ToastProvider>
           </TooltipProvider>
         </MotionProvider>
+        </ThemeProvider>
         <GrainOverlay />
       </body>
     </html>
