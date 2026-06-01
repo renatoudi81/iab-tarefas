@@ -14,7 +14,7 @@
  * O conteúdo da tela (gráficos Recharts etc.) é escondido em print
  * via `.print:hidden` no Tailwind v4.
  */
-import { formatDateBR } from '@/types'
+import { formatDateBR, formatMinutes, weekdayBR } from '@/types'
 import type { Status, Prioridade } from '@/types'
 
 interface UserLite {
@@ -34,6 +34,7 @@ interface PrintReportProps {
     byPriority: { name: Prioridade; value: number; color: string }[]
     byCategory: { name: string; total: number; horas: number }[]
     byProject: { name: string; total: number; done: number; horas: number }[]
+    byDay: { data: string; totalMin: number; items: { tarefa_id: string; titulo: string; projeto: string; minutos: number }[] }[]
     byChannel: { name: string; total: number }[]
     byPublico: { name: string; total: number }[]
     byUser: {
@@ -160,6 +161,35 @@ export function PrintReport({
                 </tr>
               ))}
             </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* Tarefas executadas por dia (timesheet) */}
+      {stats.byDay.length > 0 && (
+        <section className="pr-section">
+          <h2>Tarefas executadas por dia</h2>
+          <table className="pr-table">
+            <thead>
+              <tr><th>Projeto</th><th>Chamado</th><th className="num">Tempo</th></tr>
+            </thead>
+            {stats.byDay.map(dia => (
+              <tbody key={dia.data}>
+                <tr>
+                  <td colSpan={2} style={{ fontWeight: 700, background: '#F4F4F5' }}>
+                    {formatDateBR(dia.data)} · {weekdayBR(dia.data)}
+                  </td>
+                  <td className="num" style={{ fontWeight: 700, background: '#F4F4F5' }}>{formatMinutes(dia.totalMin)}</td>
+                </tr>
+                {dia.items.map(r => (
+                  <tr key={r.tarefa_id}>
+                    <td>{r.projeto}</td>
+                    <td>{r.titulo}</td>
+                    <td className="num">{formatMinutes(r.minutos)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
           </table>
         </section>
       )}

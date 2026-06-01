@@ -225,3 +225,17 @@ export function formatDateTimeBR(value: string | Date | null | undefined): strin
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
+
+/**
+ * Retorna o dia da semana por extenso (pt-BR) de uma data 'YYYY-MM-DD'.
+ * Faz parsing manual (T00:00:00) para evitar surpresas de timezone
+ * (datas 'YYYY-MM-DD' representam dias absolutos, não instantes).
+ */
+export function weekdayBR(value: string | Date | null | undefined): string {
+  if (!value) return ''
+  const d = value instanceof Date
+    ? value
+    : new Date(value.split('T')[0] + 'T00:00:00')
+  if (isNaN(d.getTime())) return ''
+  return ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][d.getDay()]
+}

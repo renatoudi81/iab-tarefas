@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR } from '@/types'
+import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, weekdayBR } from '@/types'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import { PrintReport } from '@/components/PrintReport'
@@ -21,7 +21,7 @@ import {
 import {
   Printer, AlertTriangle, Users, Tag, Clock,
   Download, PieChart as PieChartIcon, BarChart2,
-  ListChecks, TrendingUp, Activity, CheckCircle2, FolderKanban,
+  ListChecks, TrendingUp, Activity, CheckCircle2, FolderKanban, CalendarDays,
 } from 'lucide-react'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
@@ -429,8 +429,45 @@ export default function RelatoriosPage() {
       }))
     })()
 
+    // ──── Tarefas executadas por dia (timesheet) ────────────────────
+    // Baseado em lançamentos de tempo: cada um tem data + duração. Agrupa
+    // por dia → por tarefa (soma as durações da mesma tarefa no dia). Cruza
+    // com allTasks (fora do filtro de prazo) p/ obter projeto e título, e
+    // respeita o filtro de projeto manualmente. Usuário/período já vêm dos
+    // entries (filtrados pela data do lançamento).
+    type DayItem = { tarefa_id: string; titulo: string; projeto: string; minutos: number }
+    const taskById = new Map(allTasks.map((t) => [t.id, t]))
+    const projNameById = new Map(projects.map((p) => [p.id, p.nome]))
+    const dayGroups = new Map<string, Map<string, DayItem>>()
+    entries.forEach((e) => {
+      if (!e.data) return
+      const t = taskById.get(e.tarefa_id)
+      if (filterProject !== 'all' && t?.projeto_id !== filterProject) return
+      const dia = e.data.slice(0, 10)
+      if (!dayGroups.has(dia)) dayGroups.set(dia, new Map())
+      const rows = dayGroups.get(dia)!
+      const cur = rows.get(e.tarefa_id)
+      if (cur) {
+        cur.minutos += e.duracao
+      } else {
+        rows.set(e.tarefa_id, {
+          tarefa_id: e.tarefa_id,
+          titulo: t?.titulo || 'Tarefa removida',
+          projeto: t ? (projNameById.get(t.projeto_id) || '—') : '—',
+          minutos: e.duracao,
+        })
+      }
+    })
+    const byDay = Array.from(dayGroups.entries())
+      .map(([data, rows]) => {
+        const items = Array.from(rows.values()).sort((a, b) => b.minutos - a.minutos)
+        return { data, items, totalMin: items.reduce((s, r) => s + r.minutos, 0) }
+      })
+      .sort((a, b) => b.data.localeCompare(a.data)) // mais recente primeiro
+
     return {
       byStatus,
+      byDay,
       byUser,
       byCategory,
       byProject,
@@ -451,7 +488,7 @@ export default function RelatoriosPage() {
       pendentes,
       atrasadas,
     }
-  }, [tasks, entries, users, categories, projects, dateFrom, dateTo])
+  }, [tasks, allTasks, entries, users, categories, projects, filterProject, dateFrom, dateTo])
 
   const handleExportCSV = () => {
     const rows = [
@@ -808,6 +845,58 @@ export default function RelatoriosPage() {
             </Section>
           </motion.div>
         )}
+
+        {/* ──────────────── Tarefas executadas por dia (timesheet) ──────────────── */}
+        <motion.div variants={item}>
+          <Section
+            icon={CalendarDays}
+            iconColor="#2563EB"
+            iconBg="#EFF6FF"
+            title="Tarefas executadas por dia"
+            subtitle="Lançamentos de tempo agrupados por dia — projeto, chamado e duração, com total de horas diário"
+          >
+            {stats.byDay.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-[#71717A] gap-2">
+                <CalendarDays size={32} className="opacity-30" />
+                <p className="text-sm">Nenhum tempo registrado no período</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E4E4E7]">
+                      <th className="text-left font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-5 py-2.5 w-[28%]">Projeto</th>
+                      <th className="text-left font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-3 py-2.5">Chamado</th>
+                      <th className="text-right font-semibold text-[#71717A] text-[0.72rem] uppercase tracking-wider px-5 py-2.5">Tempo</th>
+                    </tr>
+                  </thead>
+                  {stats.byDay.map((dia) => (
+                    <tbody key={dia.data}>
+                      <tr className="bg-[#FAFAFA] border-y border-[#EDEEF1]">
+                        <th scope="colgroup" colSpan={2} className="text-left px-5 py-2 font-semibold text-[0.82rem] text-[#0F172A]">
+                          <span className="tabular-nums">{formatDateBR(dia.data)}</span>
+                          <span className="ml-2 font-normal text-[0.72rem] text-[#71717A]">{weekdayBR(dia.data)}</span>
+                        </th>
+                        <td className="px-5 py-2 text-right">
+                          <span className="inline-flex items-center gap-1 text-[0.78rem] font-bold text-[#2563EB] tabular-nums">
+                            <Clock size={12} /> {formatMinutes(dia.totalMin)}
+                          </span>
+                        </td>
+                      </tr>
+                      {dia.items.map((r) => (
+                        <tr key={r.tarefa_id} className="border-b border-[#F4F4F5] hover:bg-[#FAFAFA] transition-colors">
+                          <td className="px-5 py-2.5 align-top text-[0.82rem] text-[#71717A]">{r.projeto}</td>
+                          <td className="px-3 py-2.5 align-top font-medium text-[#0F172A]">{r.titulo}</td>
+                          <td className="px-5 py-2.5 align-top text-right tabular-nums text-[#3F3F46] whitespace-nowrap">{formatMinutes(r.minutos)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  ))}
+                </table>
+              </div>
+            )}
+          </Section>
+        </motion.div>
 
         {/* ──────────────── Origem dos chamados (canal + público) ──────────────── */}
         {(stats.byChannel.length > 0 || stats.byPublico.length > 0) && (
