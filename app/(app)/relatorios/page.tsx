@@ -430,34 +430,61 @@ export default function RelatoriosPage() {
     })()
 
     // ──── Tarefas executadas por dia (timesheet) ────────────────────
-    // Baseado em lançamentos de tempo: cada um tem data + duração. Agrupa
-    // por dia → por tarefa (soma as durações da mesma tarefa no dia). Cruza
-    // com allTasks (fora do filtro de prazo) p/ obter projeto e título, e
-    // respeita o filtro de projeto manualmente. Usuário/período já vêm dos
-    // entries (filtrados pela data do lançamento).
+    // Mostra, por dia, as tarefas trabalhadas e o tempo gasto, com total
+    // diário. Combina DUAS fontes (cobre quem cronometra e quem não):
+    //  1) Lançamentos de tempo (granular): TimeEntry.data + duracao.
+    //  2) Tarefas CONCLUÍDAS sem lançamento → entram no dia da
+    //     data_conclusao, com tempo_gasto_total. (data_conclusao é
+    //     preenchida automaticamente ao concluir — ver API PATCH.)
+    // Filtros de usuário/projeto/período valem para as duas fontes; o
+    // período da fonte 2 é avaliado pela data_conclusao (não pelo prazo).
     type DayItem = { tarefa_id: string; titulo: string; projeto: string; minutos: number }
     const taskById = new Map(allTasks.map((t) => [t.id, t]))
     const projNameById = new Map(projects.map((p) => [p.id, p.nome]))
     const dayGroups = new Map<string, Map<string, DayItem>>()
+    const addToDay = (
+      dia: string,
+      tarefa: { titulo: string; projeto_id: string } | undefined,
+      tarefaId: string,
+      minutos: number,
+    ) => {
+      if (!dayGroups.has(dia)) dayGroups.set(dia, new Map())
+      const rows = dayGroups.get(dia)!
+      const cur = rows.get(tarefaId)
+      if (cur) {
+        cur.minutos += minutos
+      } else {
+        rows.set(tarefaId, {
+          tarefa_id: tarefaId,
+          titulo: tarefa?.titulo || 'Tarefa removida',
+          projeto: tarefa ? (projNameById.get(tarefa.projeto_id) || '—') : '—',
+          minutos,
+        })
+      }
+    }
+
+    // Fonte 1: lançamentos de tempo (já filtrados por usuário + período via data)
+    const tarefasComLancamento = new Set<string>()
     entries.forEach((e) => {
       if (!e.data) return
       const t = taskById.get(e.tarefa_id)
       if (filterProject !== 'all' && t?.projeto_id !== filterProject) return
-      const dia = e.data.slice(0, 10)
-      if (!dayGroups.has(dia)) dayGroups.set(dia, new Map())
-      const rows = dayGroups.get(dia)!
-      const cur = rows.get(e.tarefa_id)
-      if (cur) {
-        cur.minutos += e.duracao
-      } else {
-        rows.set(e.tarefa_id, {
-          tarefa_id: e.tarefa_id,
-          titulo: t?.titulo || 'Tarefa removida',
-          projeto: t ? (projNameById.get(t.projeto_id) || '—') : '—',
-          minutos: e.duracao,
-        })
-      }
+      tarefasComLancamento.add(e.tarefa_id)
+      addToDay(e.data.slice(0, 10), t, e.tarefa_id, e.duracao)
     })
+
+    // Fonte 2: tarefas concluídas sem lançamento (data_conclusao + tempo_gasto_total)
+    allTasks.forEach((t) => {
+      if (t.status !== 'Concluída' || !t.data_conclusao) return
+      if (tarefasComLancamento.has(t.id)) return
+      if (effectiveUserId !== 'all' && t.responsavel_id !== effectiveUserId) return
+      if (filterProject !== 'all' && t.projeto_id !== filterProject) return
+      const dia = t.data_conclusao.slice(0, 10)
+      if (dateFrom && dia < dateFrom) return
+      if (dateTo && dia > dateTo) return
+      addToDay(dia, t, t.id, t.tempo_gasto_total || 0)
+    })
+
     const byDay = Array.from(dayGroups.entries())
       .map(([data, rows]) => {
         const items = Array.from(rows.values()).sort((a, b) => b.minutos - a.minutos)
@@ -488,7 +515,7 @@ export default function RelatoriosPage() {
       pendentes,
       atrasadas,
     }
-  }, [tasks, allTasks, entries, users, categories, projects, filterProject, dateFrom, dateTo])
+  }, [tasks, allTasks, entries, users, categories, projects, effectiveUserId, filterProject, dateFrom, dateTo])
 
   const handleExportCSV = () => {
     const rows = [
@@ -853,12 +880,12 @@ export default function RelatoriosPage() {
             iconColor="#2563EB"
             iconBg="#EFF6FF"
             title="Tarefas executadas por dia"
-            subtitle="Lançamentos de tempo agrupados por dia — projeto, chamado e duração, com total de horas diário"
+            subtitle="Tarefas concluídas e tempo lançado por dia — projeto, chamado e duração, com total diário"
           >
             {stats.byDay.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-[#71717A] gap-2">
                 <CalendarDays size={32} className="opacity-30" />
-                <p className="text-sm">Nenhum tempo registrado no período</p>
+                <p className="text-sm">Nenhuma tarefa concluída nem tempo lançado no período</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
