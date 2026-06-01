@@ -259,7 +259,7 @@ export default function TaskModal({ open, task, initialStatus, initialData, onCl
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Não informado</SelectItem>
-                    {['WhatsApp', 'Telefone', 'E-mail', 'Redes sociais'].map((c) => (
+                    {['WhatsApp', 'Telefone', 'E-mail', 'Redes sociais', 'Slack/Teams'].map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
