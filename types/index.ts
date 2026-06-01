@@ -116,6 +116,8 @@ export interface TimeEntry {
   hora_fim: string
   duracao: number
   tipo: 'manual' | 'automatico'
+  /** Descrição curta do que foi feito (estilo Redmine, ≤255 car.) */
+  comentario?: string | null
   criado_em: string
 }
 

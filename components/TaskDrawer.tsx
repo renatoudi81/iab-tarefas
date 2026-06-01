@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X, Edit2, CheckSquare, MessageSquare, Clock, History,
-  Play, Square, Plus, Trash2, ChevronRight, Loader2
+  Play, Square, Plus, Trash2, ChevronRight, Loader2, Check
 } from 'lucide-react'
 import { useComments } from '@/hooks/useComments'
 import { useSubtasks } from '@/hooks/useSubtasks'
@@ -11,7 +11,7 @@ import { useTimeEntries } from '@/hooks/useTimeEntries'
 import { useTaskHistory } from '@/hooks/useTaskHistory'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
-import type { Task, Project } from '@/types'
+import type { Task, Project, TimeEntry } from '@/types'
 import {
   getInitials, formatMinutes,
   STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS,
@@ -417,10 +417,34 @@ function ComentariosTab({ taskId }: { taskId: string }) {
 }
 
 function TempoTab({ task }: { task: Task }) {
-  const { entries, addTimeEntry, deleteTimeEntry, isLoading } = useTimeEntries()
+  const { entries, addTimeEntry, updateTimeEntry, deleteTimeEntry, isLoading } = useTimeEntries()
   const taskEntries = entries.filter(e => e.tarefa_id === task.id)
   const { toast } = useToast()
   const { confirm } = useConfirm()
+
+  // Lançamento manual (estilo Redmine: data + horas decimais + comentário)
+  const hojeStr = new Date().toISOString().split('T')[0]
+  const [novoData, setNovoData] = useState(hojeStr)
+  const [novoHoras, setNovoHoras] = useState('')
+  const [novoComentario, setNovoComentario] = useState('')
+  const [lancando, setLancando] = useState(false)
+  // Edição inline de um lançamento existente
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editData, setEditData] = useState('')
+  const [editHoras, setEditHoras] = useState('')
+  const [editComentario, setEditComentario] = useState('')
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
+
+  // "1,5"/"1.5" → minutos (null se inválido ou fora de 1..1440)
+  const horasParaMinutos = (input: string): number | null => {
+    const n = parseFloat(input.replace(',', '.').trim())
+    if (!Number.isFinite(n) || n <= 0) return null
+    const min = Math.round(n * 60)
+    return min >= 1 && min <= 1440 ? min : null
+  }
+  // minutos → "1,5" (preenche o campo na edição)
+  const minutosParaHoras = (min: number): string =>
+    String(Math.round((min / 60) * 100) / 100).replace('.', ',')
 
   const [running, setRunning] = useState(false)
   const [seconds, setSeconds] = useState(0)
@@ -468,6 +492,43 @@ function TempoTab({ task }: { task: Task }) {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
+  const handleLancar = async () => {
+    const min = horasParaMinutos(novoHoras)
+    if (!min) { toast.error('Informe as horas', 'Ex.: 1,5 para 1h30 (máx. 24h)'); return }
+    if (!novoData) { toast.error('Informe a data'); return }
+    setLancando(true)
+    try {
+      await addTimeEntry({ tarefa_id: task.id, duracao: min, tipo: 'manual', data: novoData, comentario: novoComentario.trim() })
+      setNovoHoras(''); setNovoComentario('')
+      toast.success('Horas lançadas')
+    } catch (err: any) {
+      toast.error('Erro ao lançar horas', err.message)
+    } finally {
+      setLancando(false)
+    }
+  }
+
+  const iniciarEdicao = (e: TimeEntry) => {
+    setEditId(e.id); setEditData(e.data); setEditHoras(minutosParaHoras(e.duracao)); setEditComentario(e.comentario || '')
+  }
+
+  const handleSalvarEdicao = async () => {
+    if (!editId) return
+    const min = horasParaMinutos(editHoras)
+    if (!min) { toast.error('Informe as horas', 'Ex.: 1,5 (máx. 24h)'); return }
+    if (!editData) { toast.error('Informe a data'); return }
+    setSalvandoEdit(true)
+    try {
+      await updateTimeEntry(editId, { data: editData, duracao: min, comentario: editComentario.trim() })
+      setEditId(null)
+      toast.success('Lançamento atualizado')
+    } catch (err: any) {
+      toast.error('Erro ao editar', err.message)
+    } finally {
+      setSalvandoEdit(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {/* Timer */}
@@ -487,6 +548,28 @@ function TempoTab({ task }: { task: Task }) {
         </Button>
       </div>
 
+      {/* Lançar horas manualmente (data + horas decimais + comentário) */}
+      <div className="flex flex-col gap-2.5 p-4 border border-[#EDEEF1] rounded-xl">
+        <SectionLabel>Lançar horas</SectionLabel>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1">
+            <label className="text-[0.7rem] text-[#71717A]">Data</label>
+            <Input type="date" value={novoData} max={hojeStr} onChange={e => setNovoData(e.target.value)} className="h-9" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[0.7rem] text-[#71717A]">Horas (ex.: 1,5)</label>
+            <Input inputMode="decimal" placeholder="1,5" value={novoHoras} onChange={e => setNovoHoras(e.target.value)} className="h-9" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[0.7rem] text-[#71717A]">Comentário (opcional)</label>
+          <Input value={novoComentario} maxLength={255} placeholder="O que foi feito..." onChange={e => setNovoComentario(e.target.value)} className="h-9" />
+        </div>
+        <Button onClick={handleLancar} disabled={lancando} className="gap-2 self-start">
+          {lancando ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Lançar
+        </Button>
+      </div>
+
       {/* Lançamentos */}
       <div>
         <SectionLabel>Lançamentos ({taskEntries.length})</SectionLabel>
@@ -503,37 +586,72 @@ function TempoTab({ task }: { task: Task }) {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 8 }}
-                  className="flex items-center gap-2.5 px-3 py-2 bg-[#F7F8FA] rounded-lg"
+                  className="px-3 py-2 bg-[#F7F8FA] rounded-lg"
                 >
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{formatMinutes(e.duracao)}</div>
-                    <div className="text-xs text-[#71717A]">
-                      {fmtDate(e.data)} · {e.hora_inicio} — {e.hora_fim}
-                      {e.tipo === 'automatico' && (
-                        <span className="ml-1.5 text-[0.68rem] bg-primary/10 text-primary px-1 py-0.5 rounded">
-                          timer
-                        </span>
-                      )}
+                  {editId === e.id ? (
+                    /* Edição inline */
+                    <div className="flex flex-col gap-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input type="date" value={editData} max={hojeStr} onChange={ev => setEditData(ev.target.value)} className="h-8 text-xs" />
+                        <Input inputMode="decimal" value={editHoras} placeholder="1,5" onChange={ev => setEditHoras(ev.target.value)} className="h-8 text-xs" />
+                      </div>
+                      <Input value={editComentario} maxLength={255} placeholder="Comentário..." onChange={ev => setEditComentario(ev.target.value)} className="h-8 text-xs" />
+                      <div className="flex gap-1.5">
+                        <Button size="sm" onClick={handleSalvarEdicao} disabled={salvandoEdit} className="h-7 gap-1 text-xs">
+                          {salvandoEdit ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Salvar
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditId(null)} className="h-7 gap-1 text-xs">
+                          <X size={12} /> Cancelar
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
-                    onClick={async () => {
-                      const ok = await confirm({
-                        title: 'Excluir lançamento de tempo?',
-                        confirmText: 'Excluir',
-                        variant: 'destructive',
-                      })
-                      if (!ok) return
-                      try { await deleteTimeEntry(e.id); toast.success('Lançamento excluído') }
-                      catch (err: any) { toast.error('Erro ao excluir lançamento', err.message) }
-                    }}
-                    title="Excluir"
-                  >
-                    <Trash2 size={12} />
-                  </Button>
+                  ) : (
+                    /* Exibição */
+                    <div className="flex items-start gap-2.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium">{formatMinutes(e.duracao)}</div>
+                        <div className="text-xs text-[#71717A]">
+                          {fmtDate(e.data)}
+                          {e.hora_inicio && e.hora_fim && ` · ${e.hora_inicio} — ${e.hora_fim}`}
+                          {e.tipo === 'automatico' && (
+                            <span className="ml-1.5 text-[0.68rem] bg-primary/10 text-primary px-1 py-0.5 rounded">timer</span>
+                          )}
+                        </div>
+                        {e.comentario && (
+                          <div className="text-xs text-[#3F3F46] mt-0.5 break-words">{e.comentario}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
+                          onClick={() => iniciarEdicao(e)}
+                          title="Editar"
+                        >
+                          <Edit2 size={12} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: 'Excluir lançamento de tempo?',
+                              confirmText: 'Excluir',
+                              variant: 'destructive',
+                            })
+                            if (!ok) return
+                            try { await deleteTimeEntry(e.id); toast.success('Lançamento excluído') }
+                            catch (err: any) { toast.error('Erro ao excluir lançamento', err.message) }
+                          }}
+                          title="Excluir"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>

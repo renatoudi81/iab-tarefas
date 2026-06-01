@@ -10,6 +10,14 @@ export interface NewTimeEntry {
   hora_inicio?: string
   hora_fim?: string
   data?: string
+  comentario?: string
+}
+
+/** Campos editáveis de um lançamento já existente */
+export interface TimeEntryPatch {
+  data?: string
+  duracao?: number
+  comentario?: string
 }
 
 export function useTimeEntries() {
@@ -34,6 +42,18 @@ export function useTimeEntries() {
     return json.entry
   }
 
+  const updateTimeEntry = async (id: string, patch: TimeEntryPatch): Promise<TimeEntry> => {
+    const res = await apiFetch(`/api/time-entries/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Erro ao editar lançamento')
+    await mutate()
+    return json.entry
+  }
+
   const deleteTimeEntry = async (id: string): Promise<void> => {
     const res = await apiFetch(`/api/time-entries/${id}`, { method: 'DELETE' })
     if (!res.ok) {
@@ -43,5 +63,5 @@ export function useTimeEntries() {
     await mutate()
   }
 
-  return { entries, isLoading, error, mutate, addTimeEntry, deleteTimeEntry }
+  return { entries, isLoading, error, mutate, addTimeEntry, updateTimeEntry, deleteTimeEntry }
 }
