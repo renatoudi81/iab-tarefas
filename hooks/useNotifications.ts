@@ -8,7 +8,7 @@ export function useNotifications() {
   const { data, isLoading, mutate } = useSWR<{ notifications: Notification[] }>(
     user ? '/api/notifications' : null,
     apiFetcher,
-    { refreshInterval: 30000 }
+    { refreshInterval: 300000, revalidateOnFocus: false }
   )
 
   const notifications = data?.notifications ?? []

@@ -21,7 +21,7 @@ export function useUsers() {
   const { data, error, isLoading, mutate } = useSWR<{ users: User[] }>(
     authUser ? '/api/users' : null,
     apiFetcher,
-    { refreshInterval: 60000 }
+    { refreshInterval: 600000, revalidateOnFocus: false }
   )
 
   const users = data?.users ?? []

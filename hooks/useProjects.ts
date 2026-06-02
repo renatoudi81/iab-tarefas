@@ -8,7 +8,7 @@ export function useProjects() {
   const { data, error, isLoading, mutate } = useSWR<{ projects: Project[] }>(
     user ? '/api/projects' : null,
     apiFetcher,
-    { refreshInterval: 60000 }
+    { refreshInterval: 600000, revalidateOnFocus: false }
   )
 
   const projects = (data?.projects ?? []).sort((a, b) =>

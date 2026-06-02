@@ -8,7 +8,7 @@ export function useCategories() {
   const { data, error, isLoading, mutate } = useSWR<{ categories: Category[] }>(
     user ? '/api/categories' : null,
     apiFetcher,
-    { refreshInterval: 60000 }
+    { refreshInterval: 600000, revalidateOnFocus: false }
   )
 
   const categories = (data?.categories ?? []).sort((a, b) =>

@@ -10,7 +10,7 @@ export function useTasks() {
   const { data, error, isLoading, mutate } = useSWR<{ tasks: Task[] }>(
     user ? '/api/tasks' : null,
     apiFetcher,
-    { refreshInterval: 30000, revalidateOnFocus: false }
+    { refreshInterval: 300000, revalidateOnFocus: false }
   )
 
   const tasks = data?.tasks ?? []
