@@ -488,33 +488,38 @@ export default function DashboardPage() {
   }, [tasks, entries, dateFrom, dateTo])
 
   const chartData = useMemo(() => {
-    // Agrupa o período em blocos de 7 dias (semanas) a partir da data inicial.
-    // Menos pontos no eixo X → leitura muito mais limpa em intervalos longos
-    // (ex.: o mês corrente vira ~5 pontos em vez de 30). O rótulo é o 1º dia
-    // de cada semana (DD/MM).
+    // Agrupa por SEMANA DE CALENDÁRIO (domingo → sábado), recortada ao período
+    // filtrado: a 1ª e a última semana podem ser parciais (contam só os dias
+    // dentro do intervalo). Rótulo = "DD/MM–DD/MM" (início–fim de cada semana).
     const end = new Date(dateTo + 'T00:00:00')
     const cur = new Date(dateFrom + 'T00:00:00')
     const pad = (n: number) => String(n).padStart(2, '0')
-    const buckets: { label: string; Concluídas: number; Criadas: number; minutos: number }[] = []
-    let dayIndex = 0
+    type Bucket = { start: Date; finish: Date; Concluídas: number; Criadas: number; minutos: number }
+    const buckets: Bucket[] = []
     let guard = 0
     while (cur <= end && guard < 400) {
-      if (dayIndex % 7 === 0) {
-        buckets.push({ label: `${pad(cur.getDate())}/${pad(cur.getMonth() + 1)}`, Concluídas: 0, Criadas: 0, minutos: 0 })
+      // Nova semana: no 1º dia do período OU sempre que cair num domingo
+      if (buckets.length === 0 || cur.getDay() === 0) {
+        buckets.push({ start: new Date(cur), finish: new Date(cur), Concluídas: 0, Criadas: 0, minutos: 0 })
       }
       const b = buckets[buckets.length - 1]
+      b.finish = new Date(cur)
       const ds = cur.toISOString().split('T')[0] // YYYY-MM-DD
       b.Criadas += tasks.filter(t => t.criado_em.startsWith(ds)).length
       b.Concluídas += tasks.filter(t => t.data_conclusao?.startsWith(ds)).length
       b.minutos += entries.filter(e => e.data === ds).reduce((s, e) => s + e.duracao, 0)
-      cur.setDate(cur.getDate() + 1); dayIndex++; guard++
+      cur.setDate(cur.getDate() + 1); guard++
     }
-    return buckets.map(b => ({
-      label: b.label,
-      Concluídas: b.Concluídas,
-      Criadas: b.Criadas,
-      Horas: Math.round((b.minutos / 60) * 10) / 10,
-    }))
+    return buckets.map(b => {
+      const ini = `${pad(b.start.getDate())}/${pad(b.start.getMonth() + 1)}`
+      const fim = `${pad(b.finish.getDate())}/${pad(b.finish.getMonth() + 1)}`
+      return {
+        label: ini === fim ? ini : `${ini}–${fim}`,
+        Concluídas: b.Concluídas,
+        Criadas: b.Criadas,
+        Horas: Math.round((b.minutos / 60) * 10) / 10,
+      }
+    })
   }, [tasks, entries, dateFrom, dateTo])
 
   // Usa a paleta canônica STATUS_COLORS (mesma de Lista/Kanban/Gantt/Relatórios)
@@ -667,7 +672,7 @@ export default function DashboardPage() {
           iconColor="#2563EB"
           iconBg="#EFF6FF"
           title="Produtividade no período"
-          subtitle="Tarefas criadas vs concluídas por semana"
+          subtitle="Tarefas criadas vs concluídas por semana (Dom–Sáb)"
           className="lg:col-span-3"
           action={
             <div className="flex items-center gap-3 text-[0.72rem] text-[#71717A]">
