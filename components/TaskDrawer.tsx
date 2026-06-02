@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useComments } from '@/hooks/useComments'
 import { useSubtasks } from '@/hooks/useSubtasks'
-import { useTimeEntries } from '@/hooks/useTimeEntries'
+import { useTaskTimeEntries } from '@/hooks/useTimeEntries'
 import { useTaskHistory } from '@/hooks/useTaskHistory'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
@@ -419,8 +419,7 @@ export function ComentariosTab({ taskId }: { taskId: string }) {
 }
 
 export function TempoTab({ task }: { task: Task }) {
-  const { entries, addTimeEntry, updateTimeEntry, deleteTimeEntry, isLoading } = useTimeEntries()
-  const taskEntries = entries.filter(e => e.tarefa_id === task.id)
+  const { entries: taskEntries, addTimeEntry, updateTimeEntry, deleteTimeEntry, isLoading } = useTaskTimeEntries(task.id)
   const { toast } = useToast()
   const { confirm } = useConfirm()
 

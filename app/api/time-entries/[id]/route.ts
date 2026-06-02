@@ -15,9 +15,26 @@ async function recomputeTaskTotal(tarefaId: string) {
   })
 }
 
-// Localiza o lançamento (subcoleção) e valida permissão: admin OU dono.
-// time_entries são subcoleções — collectionGroup acha o doc sem saber o task pai.
-async function findEntry(id: string, userId: string, perfil: string) {
+/**
+ * Localiza o lançamento e valida permissão (admin OU dono).
+ * Se `tarefaId` for conhecido (passado pelo cliente), acessa o documento
+ * DIRETO em tasks/{tarefaId}/time_entries/{id} — 1 leitura. Sem ele, cai
+ * no fallback collectionGroup (varre todos os lançamentos), mantido só por
+ * compatibilidade.
+ */
+async function findEntry(id: string, tarefaId: string | null, userId: string, perfil: string) {
+  if (tarefaId) {
+    const ref = adminDb.collection('tasks').doc(tarefaId).collection('time_entries').doc(id)
+    const snap = await ref.get()
+    if (!snap.exists) return { ok: false as const, error: 'Lançamento não encontrado', status: 404 }
+    const entry = snap.data() as { usuario_id?: string; tarefa_id: string }
+    if (perfil !== 'Administrador' && entry.usuario_id !== userId) {
+      return { ok: false as const, error: 'Sem permissão', status: 403 }
+    }
+    return { ok: true as const, ref, entry: { ...entry, tarefa_id: entry.tarefa_id || tarefaId } }
+  }
+
+  // Fallback: time_entries são subcoleções — collectionGroup acha o doc sem o pai
   const snap = await adminDb.collectionGroup('time_entries').get()
   const doc = snap.docs.find(d => d.id === id)
   if (!doc) return { ok: false as const, error: 'Lançamento não encontrado', status: 404 }
@@ -25,7 +42,7 @@ async function findEntry(id: string, userId: string, perfil: string) {
   if (perfil !== 'Administrador' && entry.usuario_id !== userId) {
     return { ok: false as const, error: 'Sem permissão', status: 403 }
   }
-  return { ok: true as const, doc, entry }
+  return { ok: true as const, ref: doc.ref, entry }
 }
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -33,7 +50,8 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!authUser) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { id } = await params
-  const found = await findEntry(id, authUser.uid, authUser.perfil)
+  const tarefaId = new URL(req.url).searchParams.get('tarefaId')
+  const found = await findEntry(id, tarefaId, authUser.uid, authUser.perfil)
   if (!found.ok) return NextResponse.json({ error: found.error }, { status: found.status })
 
   const body = await req.json().catch(() => ({}))
@@ -63,13 +81,13 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Nada para atualizar' }, { status: 400 })
   }
 
-  await found.doc.ref.update(update)
+  await found.ref.update(update)
   // Só recomputa o total da tarefa quando a duração muda
   if (update.duracao !== undefined) {
     await recomputeTaskTotal(found.entry.tarefa_id)
   }
 
-  const fresh = await found.doc.ref.get()
+  const fresh = await found.ref.get()
   return NextResponse.json({ entry: { id: fresh.id, ...fresh.data() } })
 }
 
@@ -78,12 +96,13 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!authUser) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { id } = await params
-  const found = await findEntry(id, authUser.uid, authUser.perfil)
+  const tarefaId = new URL(req.url).searchParams.get('tarefaId')
+  const found = await findEntry(id, tarefaId, authUser.uid, authUser.perfil)
   if (!found.ok) return NextResponse.json({ error: found.error }, { status: found.status })
 
-  const tarefaId = found.entry.tarefa_id
-  await found.doc.ref.delete()
-  await recomputeTaskTotal(tarefaId)
+  const taskId = found.entry.tarefa_id
+  await found.ref.delete()
+  await recomputeTaskTotal(taskId)
 
   return NextResponse.json({ ok: true })
 }
