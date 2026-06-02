@@ -488,23 +488,33 @@ export default function DashboardPage() {
   }, [tasks, entries, dateFrom, dateTo])
 
   const chartData = useMemo(() => {
-    const data: { label: string; Concluídas: number; Criadas: number; Horas: number }[] = []
-    const cur = new Date(dateFrom + 'T00:00:00')
+    // Agrupa o período em blocos de 7 dias (semanas) a partir da data inicial.
+    // Menos pontos no eixo X → leitura muito mais limpa em intervalos longos
+    // (ex.: o mês corrente vira ~5 pontos em vez de 30). O rótulo é o 1º dia
+    // de cada semana (DD/MM).
     const end = new Date(dateTo + 'T00:00:00')
-    let days = 0
-    while (cur <= end && days < 31) {
+    const cur = new Date(dateFrom + 'T00:00:00')
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const buckets: { label: string; Concluídas: number; Criadas: number; minutos: number }[] = []
+    let dayIndex = 0
+    let guard = 0
+    while (cur <= end && guard < 400) {
+      if (dayIndex % 7 === 0) {
+        buckets.push({ label: `${pad(cur.getDate())}/${pad(cur.getMonth() + 1)}`, Concluídas: 0, Criadas: 0, minutos: 0 })
+      }
+      const b = buckets[buckets.length - 1]
       const ds = cur.toISOString().split('T')[0] // YYYY-MM-DD
-      // Label para o eixo X em DD/MM (padrão brasileiro)
-      const [, mm, dd] = ds.split('-')
-      data.push({
-        label: `${dd}/${mm}`,
-        Concluídas: tasks.filter(t => t.data_conclusao?.startsWith(ds)).length,
-        Criadas: tasks.filter(t => t.criado_em.startsWith(ds)).length,
-        Horas: Math.round((entries.filter(e => e.data === ds).reduce((s, e) => s + e.duracao, 0) / 60) * 10) / 10,
-      })
-      cur.setDate(cur.getDate() + 1); days++
+      b.Criadas += tasks.filter(t => t.criado_em.startsWith(ds)).length
+      b.Concluídas += tasks.filter(t => t.data_conclusao?.startsWith(ds)).length
+      b.minutos += entries.filter(e => e.data === ds).reduce((s, e) => s + e.duracao, 0)
+      cur.setDate(cur.getDate() + 1); dayIndex++; guard++
     }
-    return data
+    return buckets.map(b => ({
+      label: b.label,
+      Concluídas: b.Concluídas,
+      Criadas: b.Criadas,
+      Horas: Math.round((b.minutos / 60) * 10) / 10,
+    }))
   }, [tasks, entries, dateFrom, dateTo])
 
   // Usa a paleta canônica STATUS_COLORS (mesma de Lista/Kanban/Gantt/Relatórios)
@@ -657,7 +667,7 @@ export default function DashboardPage() {
           iconColor="#2563EB"
           iconBg="#EFF6FF"
           title="Produtividade no período"
-          subtitle="Tarefas criadas vs concluídas por dia"
+          subtitle="Tarefas criadas vs concluídas por semana"
           className="lg:col-span-3"
           action={
             <div className="flex items-center gap-3 text-[0.72rem] text-[#71717A]">
@@ -694,7 +704,7 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
             <ChartDataTable
-              caption="Tarefas criadas e concluídas por dia no período"
+              caption="Tarefas criadas e concluídas por semana no período"
               headers={['Data', 'Criadas', 'Concluídas']}
               rows={chartData.map(d => [d.label, String(d.Criadas ?? 0), String(d.Concluídas ?? 0)])}
             />
@@ -720,7 +730,7 @@ export default function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
             <ChartDataTable
-              caption="Horas trabalhadas por dia no período"
+              caption="Horas trabalhadas por semana no período"
               headers={['Data', 'Horas']}
               rows={chartData.map(d => [d.label, String(d.Horas ?? 0)])}
             />
