@@ -29,6 +29,44 @@ const EMPTY_FORM: TaskFormData = {
   aguardando_quem: null, data_retorno_esperada: null,
 }
 
+// Monta o estado do form a partir da tarefa (edição) ou dos defaults (nova).
+function buildForm(
+  task: Task | null | undefined,
+  initialStatus?: Status,
+  initialData?: Partial<TaskFormData>,
+): TaskFormData {
+  if (task) {
+    return {
+      titulo: task.titulo,
+      descricao: task.descricao || '',
+      observacoes: task.observacoes || '',
+      projeto_id: task.projeto_id || '',
+      categoria: task.categoria,
+      tipo_publico: task.tipo_publico ?? null,
+      canal: task.canal ?? null,
+      responsavel_id: task.responsavel_id,
+      equipe: task.equipe || [],
+      prioridade: task.prioridade,
+      status: task.status,
+      tempo_estimado: task.tempo_estimado || 0,
+      tempo_gasto_total: task.tempo_gasto_total || 0,
+      data_inicio: task.data_inicio || '',
+      data_prazo: task.data_prazo || '',
+      data_conclusao: task.data_conclusao || null,
+      tags: task.tags || [],
+      anexos: task.anexos || [],
+      aguardando_quem: task.aguardando_quem || null,
+      data_retorno_esperada: task.data_retorno_esperada || null,
+    }
+  }
+  return {
+    ...EMPTY_FORM,
+    data_inicio: todayStr(),
+    status: initialStatus || 'Pendente',
+    ...(initialData || {}),
+  }
+}
+
 export interface TaskFormProps {
   /** Tarefa existente (modo edição); null/undefined = nova */
   task?: Task | null
@@ -56,7 +94,9 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
   const { projects } = useProjects()
   const { toast } = useToast()
 
-  const [form, setForm] = useState<TaskFormData>({ ...EMPTY_FORM, data_inicio: todayStr() })
+  // Lazy init: o form já nasce com os valores da tarefa, então os Selects
+  // recebem o value correto no PRIMEIRO render (com as opções presentes).
+  const [form, setForm] = useState<TaskFormData>(() => buildForm(task, initialStatus, initialData))
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -68,38 +108,9 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
   // Popula o form ao montar / trocar de tarefa. Depende de task?.id (não do
   // objeto) — a revalidação do SWR recria objetos Task e reexecutaria este
   // effect, sobrescrevendo o que o usuário está digitando.
+  // Repopula ao trocar de tarefa (ex.: reabrir o modal com outra task).
   useEffect(() => {
-    if (task) {
-      setForm({
-        titulo: task.titulo,
-        descricao: task.descricao || '',
-        observacoes: task.observacoes || '',
-        projeto_id: task.projeto_id || '',
-        categoria: task.categoria,
-        tipo_publico: task.tipo_publico ?? null,
-        canal: task.canal ?? null,
-        responsavel_id: task.responsavel_id,
-        equipe: task.equipe || [],
-        prioridade: task.prioridade,
-        status: task.status,
-        tempo_estimado: task.tempo_estimado || 0,
-        tempo_gasto_total: task.tempo_gasto_total || 0,
-        data_inicio: task.data_inicio || '',
-        data_prazo: task.data_prazo || '',
-        data_conclusao: task.data_conclusao || null,
-        tags: task.tags || [],
-        anexos: task.anexos || [],
-        aguardando_quem: task.aguardando_quem || null,
-        data_retorno_esperada: task.data_retorno_esperada || null,
-      })
-    } else {
-      setForm({
-        ...EMPTY_FORM,
-        data_inicio: todayStr(),
-        status: initialStatus || 'Pendente',
-        ...(initialData || {}),
-      })
-    }
+    setForm(buildForm(task, initialStatus, initialData))
     setSaveError('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, initialStatus, initialData])

@@ -37,7 +37,6 @@ export default function TarefaPage() {
         <div className="h-4 w-20 rounded bg-[#F4F4F5] mb-6" />
         <div className="h-7 w-2/3 rounded-md bg-[#F4F4F5] mb-3" />
         <div className="h-4 w-40 rounded bg-[#F4F4F5] mb-8" />
-        <div className="h-9 w-full rounded-lg bg-[#F4F4F5] mb-4" />
         <div className="h-64 w-full rounded-2xl bg-[#F4F4F5]" />
       </div>
     )
@@ -67,6 +66,7 @@ export default function TarefaPage() {
 
   const tabTriggerCls =
     'gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm text-[0.82rem]'
+  const cardCls = 'bg-white border border-[#EDEEF1] rounded-2xl p-6 shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]'
 
   return (
     <motion.div
@@ -118,28 +118,31 @@ export default function TarefaPage() {
         </p>
       </div>
 
-      {/* Abas — Detalhes é o formulário editável; as demais reusam o painel */}
-      <Tabs defaultValue="detalhes">
+      {/* Formulário de edição — sempre visível (fora das abas) */}
+      <div className={`${cardCls} mb-6`}>
+        <div className="flex items-center gap-2 mb-4">
+          <FileText size={15} className="text-[#2563EB]" />
+          <h2 className="text-[0.95rem] font-semibold text-[#0F172A]">Detalhes da tarefa</h2>
+        </div>
+        {formDataReady ? (
+          <TaskForm key={task.id} task={task} variant="page" />
+        ) : (
+          <div className="py-12 flex items-center justify-center text-[#71717A]">
+            <Loader2 size={20} className="animate-spin" />
+          </div>
+        )}
+      </div>
+
+      {/* Abas — itens relacionados à tarefa */}
+      <Tabs defaultValue="subtarefas">
         <TabsList className="bg-[#F4F4F5] flex-wrap h-auto">
-          <TabsTrigger value="detalhes" className={tabTriggerCls}><FileText size={14} /> Detalhes</TabsTrigger>
           <TabsTrigger value="subtarefas" className={tabTriggerCls}><ListChecks size={14} /> Subtarefas</TabsTrigger>
           <TabsTrigger value="comentarios" className={tabTriggerCls}><MessageSquare size={14} /> Comentários</TabsTrigger>
           <TabsTrigger value="tempo" className={tabTriggerCls}><Clock size={14} /> Tempo</TabsTrigger>
           <TabsTrigger value="historico" className={tabTriggerCls}><HistoryIcon size={14} /> Histórico</TabsTrigger>
         </TabsList>
 
-        <div className="bg-white border border-[#EDEEF1] rounded-2xl p-6 mt-4 shadow-[0_8px_30px_-12px_rgba(37,99,235,0.08)]">
-          <TabsContent value="detalhes" className="mt-0">
-            {/* Edição direta: os campos já vêm editáveis, com botão Salvar.
-                Aguarda os dados dos selects para o valor aparecer corretamente. */}
-            {formDataReady ? (
-              <TaskForm task={task} variant="page" />
-            ) : (
-              <div className="py-12 flex items-center justify-center text-[#71717A]">
-                <Loader2 size={20} className="animate-spin" />
-              </div>
-            )}
-          </TabsContent>
+        <div className={`${cardCls} mt-4`}>
           <TabsContent value="subtarefas" className="mt-0">
             <SubtarefasTab taskId={task.id} />
           </TabsContent>
