@@ -416,56 +416,62 @@ export function TempoTab({ task }: { task: Task }) {
   const { toast } = useToast()
   const { confirm } = useConfirm()
 
-  // Lançamento manual (estilo Redmine: data + horas decimais + comentário)
+  // Lançamento manual (data + duração em minutos + atividade + comentário)
   const hojeStr = new Date().toISOString().split('T')[0]
   const [novoData, setNovoData] = useState(hojeStr)
-  const [novoHoras, setNovoHoras] = useState('')
+  const [novoMinutos, setNovoMinutos] = useState('')
   const [novoComentario, setNovoComentario] = useState('')
   const [novoAtividade, setNovoAtividade] = useState('')
   const [lancando, setLancando] = useState(false)
   // Edição inline de um lançamento existente
   const [editId, setEditId] = useState<string | null>(null)
   const [editData, setEditData] = useState('')
-  const [editHoras, setEditHoras] = useState('')
+  const [editMinutos, setEditMinutos] = useState('')
   const [editComentario, setEditComentario] = useState('')
   const [editAtividade, setEditAtividade] = useState('')
   const [salvandoEdit, setSalvandoEdit] = useState(false)
 
-  // "1,5"/"1.5" → minutos (null se inválido ou fora de 1..1440)
-  const horasParaMinutos = (input: string): number | null => {
-    const n = parseFloat(input.replace(',', '.').trim())
-    if (!Number.isFinite(n) || n <= 0) return null
-    const min = Math.round(n * 60)
-    return min >= 1 && min <= 1440 ? min : null
+  // valida o campo de minutos (1..1440 = 1min..24h)
+  const parseMinutos = (input: string): number | null => {
+    const n = parseInt(input.trim(), 10)
+    if (!Number.isFinite(n) || n < 1 || n > 1440) return null
+    return n
   }
-  // minutos → "1,5" (preenche o campo na edição)
-  const minutosParaHoras = (min: number): string =>
-    String(Math.round((min / 60) * 100) / 100).replace('.', ',')
+
+  // Total acumulado e agrupamento por data (do mais recente pro mais antigo)
+  const totalMinutos = taskEntries.reduce((sum, e) => sum + (e.duracao || 0), 0)
+  const entriesPorData = taskEntries.reduce<Record<string, typeof taskEntries>>((acc, e) => {
+    const k = e.data || 'sem-data'
+    if (!acc[k]) acc[k] = []
+    acc[k].push(e)
+    return acc
+  }, {})
+  const datasOrdenadas = Object.keys(entriesPorData).sort((a, b) => (a < b ? 1 : -1))
 
   const handleLancar = async () => {
-    const min = horasParaMinutos(novoHoras)
-    if (!min) { toast.error('Informe as horas', 'Ex.: 1,5 para 1h30 (máx. 24h)'); return }
+    const min = parseMinutos(novoMinutos)
+    if (!min) { toast.error('Informe os minutos', 'Ex.: 90 (entre 1 e 1440)'); return }
     if (!novoData) { toast.error('Informe a data'); return }
     setLancando(true)
     try {
       await addTimeEntry({ tarefa_id: task.id, duracao: min, tipo: 'manual', data: novoData, comentario: novoComentario.trim(), atividade: novoAtividade })
-      setNovoHoras(''); setNovoComentario('')
-      toast.success('Horas lançadas')
+      setNovoMinutos(''); setNovoComentario('')
+      toast.success('Tempo lançado')
     } catch (err: any) {
-      toast.error('Erro ao lançar horas', err.message)
+      toast.error('Erro ao lançar tempo', err.message)
     } finally {
       setLancando(false)
     }
   }
 
   const iniciarEdicao = (e: TimeEntry) => {
-    setEditId(e.id); setEditData(e.data); setEditHoras(minutosParaHoras(e.duracao)); setEditComentario(e.comentario || ''); setEditAtividade(e.atividade || '')
+    setEditId(e.id); setEditData(e.data); setEditMinutos(String(e.duracao)); setEditComentario(e.comentario || ''); setEditAtividade(e.atividade || '')
   }
 
   const handleSalvarEdicao = async () => {
     if (!editId) return
-    const min = horasParaMinutos(editHoras)
-    if (!min) { toast.error('Informe as horas', 'Ex.: 1,5 (máx. 24h)'); return }
+    const min = parseMinutos(editMinutos)
+    if (!min) { toast.error('Informe os minutos', 'Ex.: 90 (entre 1 e 1440)'); return }
     if (!editData) { toast.error('Informe a data'); return }
     setSalvandoEdit(true)
     try {
@@ -481,17 +487,17 @@ export function TempoTab({ task }: { task: Task }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Lançar horas manualmente (data + horas decimais + comentário) */}
+      {/* Lançar tempo manualmente (data + minutos + atividade + comentário) */}
       <div className="flex flex-col gap-2.5 p-4 border border-[#EDEEF1] rounded-xl">
-        <SectionLabel>Lançar horas</SectionLabel>
+        <SectionLabel>Lançar tempo</SectionLabel>
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
             <label className="text-[0.7rem] text-[#71717A]">Data</label>
             <Input type="date" value={novoData} max={hojeStr} onChange={e => setNovoData(e.target.value)} className="h-9" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[0.7rem] text-[#71717A]">Horas (ex.: 1,5)</label>
-            <Input inputMode="decimal" placeholder="1,5" value={novoHoras} onChange={e => setNovoHoras(e.target.value)} className="h-9" />
+            <label className="text-[0.7rem] text-[#71717A]">Minutos (ex.: 90)</label>
+            <Input type="number" min={1} max={1440} step={1} placeholder="90" value={novoMinutos} onChange={e => setNovoMinutos(e.target.value)} className="h-9" />
           </div>
         </div>
         <div className="flex flex-col gap-1">
@@ -515,101 +521,122 @@ export function TempoTab({ task }: { task: Task }) {
 
       {/* Lançamentos */}
       <div>
-        <SectionLabel>Lançamentos ({taskEntries.length})</SectionLabel>
+        <div className="flex items-baseline justify-between mb-2">
+          <SectionLabel>Lançamentos ({taskEntries.length})</SectionLabel>
+          {taskEntries.length > 0 && (
+            <div className="text-[0.78rem] text-[#71717A]">
+              Total: <span className="font-semibold text-foreground">{formatMinutes(totalMinutos)}</span>
+            </div>
+          )}
+        </div>
         {isLoading ? (
           <div className="text-[#71717A] text-sm">Carregando...</div>
         ) : taskEntries.length === 0 ? (
           <div className="text-[#71717A] text-sm">Nenhum lançamento registrado.</div>
         ) : (
-          <div className="flex flex-col gap-1.5">
-            <AnimatePresence>
-              {taskEntries.map(e => (
-                <motion.div
-                  key={e.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 8 }}
-                  className="px-3 py-2 bg-[#F7F8FA] rounded-lg"
-                >
-                  {editId === e.id ? (
-                    /* Edição inline */
-                    <div className="flex flex-col gap-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input type="date" value={editData} max={hojeStr} onChange={ev => setEditData(ev.target.value)} className="h-8 text-xs" />
-                        <Input inputMode="decimal" value={editHoras} placeholder="1,5" onChange={ev => setEditHoras(ev.target.value)} className="h-8 text-xs" />
-                      </div>
-                      <Select value={editAtividade || 'none'} onValueChange={v => setEditAtividade(v === 'none' ? '' : v)}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Atividade..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Não informada</SelectItem>
-                          {ATIVIDADES_TEMPO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Input value={editComentario} maxLength={255} placeholder="Comentário..." onChange={ev => setEditComentario(ev.target.value)} className="h-8 text-xs" />
-                      <div className="flex gap-1.5">
-                        <Button size="sm" onClick={handleSalvarEdicao} disabled={salvandoEdit} className="h-7 gap-1 text-xs">
-                          {salvandoEdit ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Salvar
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditId(null)} className="h-7 gap-1 text-xs">
-                          <X size={12} /> Cancelar
-                        </Button>
-                      </div>
+          <div className="flex flex-col gap-3">
+            {datasOrdenadas.map(dataKey => {
+              const itens = entriesPorData[dataKey]
+              const subtotal = itens.reduce((s, e) => s + (e.duracao || 0), 0)
+              return (
+                <div key={dataKey} className="flex flex-col gap-1.5">
+                  {/* Cabeçalho da data com subtotal */}
+                  <div className="flex items-center justify-between px-1">
+                    <div className="text-[0.78rem] font-semibold text-foreground">
+                      {dataKey === 'sem-data' ? 'Sem data' : fmtDate(dataKey)}
                     </div>
-                  ) : (
-                    /* Exibição */
-                    <div className="flex items-start gap-2.5">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium">{formatMinutes(e.duracao)}</span>
-                          {e.atividade && (
-                            <span className="text-[0.68rem] bg-[#EFF6FF] text-[#2563EB] px-1.5 py-0.5 rounded">{e.atividade}</span>
-                          )}
-                        </div>
-                        <div className="text-xs text-[#71717A]">
-                          {fmtDate(e.data)}
-                          {e.hora_inicio && e.hora_fim && ` · ${e.hora_inicio} — ${e.hora_fim}`}
-                          {e.tipo === 'automatico' && (
-                            <span className="ml-1.5 text-[0.68rem] bg-primary/10 text-primary px-1 py-0.5 rounded">timer</span>
-                          )}
-                        </div>
-                        {e.comentario && (
-                          <div className="text-xs text-[#3F3F46] mt-0.5 break-words">{e.comentario}</div>
+                    <div className="text-[0.72rem] text-[#71717A] tabular-nums">
+                      {formatMinutes(subtotal)}
+                    </div>
+                  </div>
+                  {/* Lançamentos do dia */}
+                  <AnimatePresence>
+                    {itens.map(e => (
+                      <motion.div
+                        key={e.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 8 }}
+                        className="px-3 py-2 bg-[#F7F8FA] rounded-lg"
+                      >
+                        {editId === e.id ? (
+                          /* Edição inline */
+                          <div className="flex flex-col gap-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input type="date" value={editData} max={hojeStr} onChange={ev => setEditData(ev.target.value)} className="h-8 text-xs" />
+                              <Input type="number" min={1} max={1440} step={1} value={editMinutos} placeholder="90" onChange={ev => setEditMinutos(ev.target.value)} className="h-8 text-xs" />
+                            </div>
+                            <Select value={editAtividade || 'none'} onValueChange={v => setEditAtividade(v === 'none' ? '' : v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Atividade..." /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Não informada</SelectItem>
+                                {ATIVIDADES_TEMPO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <Input value={editComentario} maxLength={255} placeholder="Comentário..." onChange={ev => setEditComentario(ev.target.value)} className="h-8 text-xs" />
+                            <div className="flex gap-1.5">
+                              <Button size="sm" onClick={handleSalvarEdicao} disabled={salvandoEdit} className="h-7 gap-1 text-xs">
+                                {salvandoEdit ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Salvar
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => setEditId(null)} className="h-7 gap-1 text-xs">
+                                <X size={12} /> Cancelar
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Exibição */
+                          <div className="flex items-start gap-2.5">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium">{formatMinutes(e.duracao)}</span>
+                                {e.atividade && (
+                                  <span className="text-[0.68rem] bg-[#EFF6FF] text-[#2563EB] px-1.5 py-0.5 rounded">{e.atividade}</span>
+                                )}
+                                {e.tipo === 'automatico' && (
+                                  <span className="text-[0.68rem] bg-primary/10 text-primary px-1 py-0.5 rounded">timer</span>
+                                )}
+                              </div>
+                              {e.comentario && (
+                                <div className="text-xs text-[#3F3F46] mt-0.5 break-words">{e.comentario}</div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
+                                onClick={() => iniciarEdicao(e)}
+                                title="Editar"
+                              >
+                                <Edit2 size={12} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
+                                onClick={async () => {
+                                  const ok = await confirm({
+                                    title: 'Excluir lançamento de tempo?',
+                                    confirmText: 'Excluir',
+                                    variant: 'destructive',
+                                  })
+                                  if (!ok) return
+                                  try { await deleteTimeEntry(e.id); toast.success('Lançamento excluído') }
+                                  catch (err: any) { toast.error('Erro ao excluir lançamento', err.message) }
+                                }}
+                                title="Excluir"
+                              >
+                                <Trash2 size={12} />
+                              </Button>
+                            </div>
+                          </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-0.5 flex-shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
-                          onClick={() => iniciarEdicao(e)}
-                          title="Editar"
-                        >
-                          <Edit2 size={12} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
-                          onClick={async () => {
-                            const ok = await confirm({
-                              title: 'Excluir lançamento de tempo?',
-                              confirmText: 'Excluir',
-                              variant: 'destructive',
-                            })
-                            if (!ok) return
-                            try { await deleteTimeEntry(e.id); toast.success('Lançamento excluído') }
-                            catch (err: any) { toast.error('Erro ao excluir lançamento', err.message) }
-                          }}
-                          title="Excluir"
-                        >
-                          <Trash2 size={12} />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
