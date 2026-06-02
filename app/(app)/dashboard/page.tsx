@@ -164,7 +164,7 @@ function Kpi({
       </div>
       <div
         className="font-mono text-[2rem] font-bold leading-none tabular-nums tracking-[-0.02em]"
-        style={{ color: isDanger ? '#DC2626' : '#0F172A' }}
+        style={{ color: isDanger ? '#DC2626' : 'var(--text)' }}
       >
         {animated && !isNaN(numeric) ? (
           <AnimatedCounter
@@ -496,6 +496,8 @@ export default function DashboardPage() {
     const pad = (n: number) => String(n).padStart(2, '0')
     type Bucket = { start: Date; finish: Date; Concluídas: number; Criadas: number; minutos: number }
     const buckets: Bucket[] = []
+    // Tarefas que já têm lançamento de tempo — evita somar em dobro no híbrido
+    const tarefasComLancamento = new Set(entries.map(e => e.tarefa_id))
     let guard = 0
     while (cur <= end && guard < 400) {
       // Nova semana: no 1º dia do período OU sempre que cair num domingo
@@ -507,7 +509,12 @@ export default function DashboardPage() {
       const ds = cur.toISOString().split('T')[0] // YYYY-MM-DD
       b.Criadas += tasks.filter(t => t.criado_em.startsWith(ds)).length
       b.Concluídas += tasks.filter(t => t.data_conclusao?.startsWith(ds)).length
+      // Horas (híbrido): lançamentos de tempo do dia + tempo das tarefas
+      // concluídas no dia que não têm lançamento (tempo gravado no campo).
       b.minutos += entries.filter(e => e.data === ds).reduce((s, e) => s + e.duracao, 0)
+      b.minutos += tasks
+        .filter(t => t.status === 'Concluída' && (t.data_conclusao || '').slice(0, 10) === ds && !tarefasComLancamento.has(t.id))
+        .reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
       cur.setDate(cur.getDate() + 1); guard++
     }
     return buckets.map(b => {

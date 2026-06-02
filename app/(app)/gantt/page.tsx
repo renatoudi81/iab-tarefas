@@ -215,7 +215,7 @@ function StatCard({
           </div>
         </div>
       </div>
-      <div className="text-[1.4rem] font-mono font-bold leading-none tabular-nums tracking-[-0.02em]" style={{ color: pulse ? color : '#0F172A' }}>
+      <div className="text-[1.4rem] font-mono font-bold leading-none tabular-nums tracking-[-0.02em]" style={{ color: pulse ? color : 'var(--text)' }}>
         {value}
       </div>
       <div className="text-[0.68rem] text-[#71717A] mt-1">{hint}</div>
