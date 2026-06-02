@@ -6,12 +6,12 @@ import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
 import { useCategories } from '@/hooks/useCategories'
 import {
-  SubtarefasTab, ComentariosTab, TempoTab, HistoricoTab,
+  ComentariosTab, TempoTab, HistoricoTab,
 } from '@/components/TaskDrawer'
 import { TaskForm } from '@/components/TaskForm'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
-  ArrowLeft, FileText, ListChecks, MessageSquare, Clock, History as HistoryIcon, Loader2,
+  ArrowLeft, FileText, MessageSquare, Clock, History as HistoryIcon, Loader2,
 } from 'lucide-react'
 import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '@/types'
 import { getCategoryColor } from '@/lib/category-color'
@@ -134,18 +134,14 @@ export default function TarefaPage() {
       </div>
 
       {/* Abas — itens relacionados à tarefa */}
-      <Tabs defaultValue="subtarefas">
+      <Tabs defaultValue="comentarios">
         <TabsList className="bg-[#F4F4F5] flex-wrap h-auto">
-          <TabsTrigger value="subtarefas" className={tabTriggerCls}><ListChecks size={14} /> Subtarefas</TabsTrigger>
           <TabsTrigger value="comentarios" className={tabTriggerCls}><MessageSquare size={14} /> Comentários</TabsTrigger>
           <TabsTrigger value="tempo" className={tabTriggerCls}><Clock size={14} /> Tempo</TabsTrigger>
           <TabsTrigger value="historico" className={tabTriggerCls}><HistoryIcon size={14} /> Histórico</TabsTrigger>
         </TabsList>
 
         <div className={`${cardCls} mt-4`}>
-          <TabsContent value="subtarefas" className="mt-0">
-            <SubtarefasTab taskId={task.id} />
-          </TabsContent>
           <TabsContent value="comentarios" className="mt-0">
             <ComentariosTab taskId={task.id} />
           </TabsContent>

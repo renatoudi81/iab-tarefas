@@ -1,10 +1,10 @@
 ﻿'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import {
   X, Edit2, CheckSquare, MessageSquare, Clock, History,
-  Play, Square, Plus, Trash2, ChevronRight, Loader2, Check, Maximize2
+  Plus, Trash2, ChevronRight, Loader2, Check, Maximize2
 } from 'lucide-react'
 import { useComments } from '@/hooks/useComments'
 import { useSubtasks } from '@/hooks/useSubtasks'
@@ -38,7 +38,7 @@ import { useConfirm } from '@/contexts/ConfirmContext'
 import { stripHtml } from '@/components/ui/RichTextEditor'
 import { getCategoryColor } from '@/lib/category-color'
 
-type DrawerTab = 'detalhes' | 'subtarefas' | 'comentarios' | 'tempo' | 'historico'
+type DrawerTab = 'detalhes' | 'comentarios' | 'tempo' | 'historico'
 
 interface TaskDrawerProps {
   task: Task | null
@@ -58,13 +58,6 @@ function fmtDateTime(iso: string | null | undefined): string {
   return formatDateTimeBR(iso) || '—'
 }
 
-function fmtSeconds(secs: number): string {
-  const h = Math.floor(secs / 3600)
-  const m = Math.floor((secs % 3600) / 60)
-  const s = secs % 60
-  if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
 
 /* ─── Sub-components ─── */
 
@@ -449,52 +442,6 @@ export function TempoTab({ task }: { task: Task }) {
   const minutosParaHoras = (min: number): string =>
     String(Math.round((min / 60) * 100) / 100).replace('.', ',')
 
-  const [running, setRunning] = useState(false)
-  const [seconds, setSeconds] = useState(0)
-  const startTimeRef = useRef<Date | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const handleStart = () => {
-    if (running) return // evita iniciar dois intervals
-    startTimeRef.current = new Date()
-    setSeconds(0)
-    setRunning(true)
-    // O interval só atualiza a EXIBIÇÃO. A duração real é calculada por
-    // timestamp no stop — imune ao throttle de timers em aba de fundo.
-    intervalRef.current = setInterval(() => {
-      if (startTimeRef.current) {
-        setSeconds(Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000))
-      }
-    }, 1000)
-  }
-
-  const handleStop = async () => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    setRunning(false)
-    const now = new Date()
-    // Duração real pelo tempo decorrido (não pela contagem do interval)
-    const elapsedMs = startTimeRef.current ? now.getTime() - startTimeRef.current.getTime() : 0
-    const duracao = Math.max(1, Math.round(elapsedMs / 60000))
-    const horaFim = now.toTimeString().slice(0, 5)
-    const horaInicio = startTimeRef.current ? startTimeRef.current.toTimeString().slice(0, 5) : horaFim
-    const data = now.toISOString().split('T')[0]
-    setSeconds(0)
-    try {
-      await addTimeEntry({
-        tarefa_id: task.id,
-        duracao,
-        tipo: 'automatico',
-        hora_inicio: horaInicio,
-        hora_fim: horaFim,
-        data,
-      })
-    } catch { /* silencioso */ }
-  }
-
-  useEffect(() => {
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [])
-
   const handleLancar = async () => {
     const min = horasParaMinutos(novoHoras)
     if (!min) { toast.error('Informe as horas', 'Ex.: 1,5 para 1h30 (máx. 24h)'); return }
@@ -534,23 +481,6 @@ export function TempoTab({ task }: { task: Task }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Timer */}
-      <div className="flex flex-col items-center gap-3 p-5 bg-[#F7F8FA] rounded-xl">
-        <div className={cn(
-          'text-[2.25rem] font-bold tabular-nums tracking-tight',
-          running ? 'text-primary' : 'text-foreground'
-        )}>
-          {fmtSeconds(seconds)}
-        </div>
-        <Button
-          variant={running ? 'destructive' : 'default'}
-          onClick={running ? handleStop : handleStart}
-          className="gap-2 min-w-[130px]"
-        >
-          {running ? <><Square size={14} /> Parar</> : <><Play size={14} /> Iniciar</>}
-        </Button>
-      </div>
-
       {/* Lançar horas manualmente (data + horas decimais + comentário) */}
       <div className="flex flex-col gap-2.5 p-4 border border-[#EDEEF1] rounded-xl">
         <SectionLabel>Lançar horas</SectionLabel>
@@ -828,7 +758,6 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
               <TabsList className="bg-transparent border-b rounded-none w-full justify-start h-10 px-6 shrink-0 gap-0">
                 {([
                   { id: 'detalhes', label: 'Detalhes' },
-                  { id: 'subtarefas', label: 'Subtarefas' },
                   { id: 'comentarios', label: 'Comentários' },
                   { id: 'tempo', label: 'Tempo' },
                   { id: 'historico', label: 'Histórico' },
@@ -855,9 +784,6 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
                     >
                       <TabsContent value="detalhes" forceMount className={activeTab !== 'detalhes' ? 'hidden' : ''}>
                         <DetalhesTab task={task} users={users} projects={projects} />
-                      </TabsContent>
-                      <TabsContent value="subtarefas" forceMount className={activeTab !== 'subtarefas' ? 'hidden' : ''}>
-                        <SubtarefasTab taskId={task.id} />
                       </TabsContent>
                       <TabsContent value="comentarios" forceMount className={activeTab !== 'comentarios' ? 'hidden' : ''}>
                         <ComentariosTab taskId={task.id} />
