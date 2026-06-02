@@ -111,7 +111,7 @@ export function CommandPalette() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-[0.875rem] text-[#3F3F46] aria-selected:bg-[#F4F4F5] aria-selected:text-[#0F172A]"
                   >
                     <span className="text-[0.65rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0 tabular-nums tracking-tight">
-                      #{t.id.slice(-5).toUpperCase()}
+                      #{t.numero ?? t.id.slice(-5).toUpperCase()}
                     </span>
                     <span className="truncate flex-1">{t.titulo}</span>
                   </Command.Item>

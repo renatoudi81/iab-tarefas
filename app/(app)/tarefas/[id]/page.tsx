@@ -110,6 +110,9 @@ export default function TarefaPage() {
           )}
         </div>
         <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.15] break-words">
+          <span className="text-[#71717A] font-semibold tabular-nums mr-2">
+            #{task.numero ?? task.id.slice(-5).toUpperCase()}
+          </span>
           {task.titulo}
         </h1>
         <p className="text-[#71717A] text-sm mt-1.5">

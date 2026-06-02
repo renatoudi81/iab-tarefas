@@ -125,7 +125,7 @@ export async function POST(req: Request) {
   }
 
   const now = new Date().toISOString()
-  const taskData = {
+  const baseTaskData = {
     titulo: titulo.trim(),
     descricao: descricao || null,
     observacoes: observacoes || null,
@@ -150,7 +150,20 @@ export async function POST(req: Request) {
     atualizado_em: now,
   }
 
-  const ref = await adminDb.collection('tasks').add(taskData)
+  // Numero sequencial atomico: doc `counters/tasks` guarda o ultimo numero.
+  // A transacao garante que dois POSTs simultaneos NUNCA recebam o mesmo numero.
+  const counterRef = adminDb.collection('counters').doc('tasks')
+  const newTaskRef = adminDb.collection('tasks').doc()
+  const numero = await adminDb.runTransaction(async (tx) => {
+    const counterSnap = await tx.get(counterRef)
+    const last = counterSnap.exists ? Number((counterSnap.data() as any).last || 0) : 0
+    const next = last + 1
+    tx.set(counterRef, { last: next, atualizado_em: now }, { merge: true })
+    tx.set(newTaskRef, { ...baseTaskData, numero: next })
+    return next
+  })
+  const taskData = { ...baseTaskData, numero }
+  const ref = newTaskRef
 
   // Popula responsavel para a resposta
   let responsavel = null

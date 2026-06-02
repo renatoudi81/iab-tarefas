@@ -796,7 +796,7 @@ function TaskRow({
 
   const prioColor = PRIORITY_COLORS[task.prioridade as keyof typeof PRIORITY_COLORS]
   const catColor = task.categoria ? getCategoryColor(task.categoria) : null
-  const shortId = task.id.slice(-5).toUpperCase()
+  const shortId = task.numero != null ? String(task.numero) : task.id.slice(-5).toUpperCase()
 
   /* ─── Drag / Resize ─────────────────────────────────────────── */
   const trackRef = useRef<HTMLDivElement | null>(null)

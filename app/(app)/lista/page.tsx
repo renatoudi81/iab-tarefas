@@ -414,7 +414,7 @@ export default function ListaPage() {
                     <TableCell className="py-3 max-w-[300px]">
                       <div className="flex items-center gap-1.5 mb-1 min-w-0">
                         <span className="text-[0.63rem] font-mono font-semibold bg-[#EFF6FF] text-[#2563EB] px-1.5 py-[2px] rounded flex-shrink-0 tabular-nums tracking-tight">
-                          #{task.id.slice(-5).toUpperCase()}
+                          #{task.numero ?? task.id.slice(-5).toUpperCase()}
                         </span>
                         {task.categoria && (() => {
                           const catColor = getCategoryColor(task.categoria)

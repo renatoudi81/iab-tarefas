@@ -35,6 +35,8 @@ export interface Anexo {
 
 export interface Task {
   id: string
+  /** Numero sequencial humano (#1, #2, ...). Atribuido na criacao via contador atomico. */
+  numero?: number
   titulo: string
   descricao: string | null
   observacoes: string | null
