@@ -1,4 +1,4 @@
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import type { TimeEntry } from '@/types'
 import { apiFetch, apiFetcher } from '@/lib/api-fetch'
 import { useAuth } from '@/contexts/AuthContext'
@@ -76,12 +76,17 @@ export function useTimeEntries() {
  */
 export function useTaskTimeEntries(taskId: string) {
   const { user } = useAuth()
+  const { mutate: globalMutate } = useSWRConfig()
   const { data, isLoading, error, mutate } = useSWR<{ entries: TimeEntry[] }>(
     user && taskId ? `/api/tasks/${taskId}/time-entries` : null,
     apiFetcher,
     { revalidateOnFocus: false },
   )
   const entries = data?.entries ?? []
+
+  // Invalida lista de tarefas — o servidor recomputa tempo_gasto_total
+  // ao mexer em time_entries, entao a tarefa precisa ser relida.
+  const invalidateTasks = () => globalMutate('/api/tasks')
 
   const addTimeEntry = async (entryData: NewTimeEntry): Promise<TimeEntry> => {
     const res = await apiFetch('/api/time-entries', {
@@ -91,7 +96,7 @@ export function useTaskTimeEntries(taskId: string) {
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Erro ao registrar tempo')
-    await mutate()
+    await Promise.all([mutate(), invalidateTasks()])
     return json.entry
   }
 
@@ -103,7 +108,7 @@ export function useTaskTimeEntries(taskId: string) {
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Erro ao editar lançamento')
-    await mutate()
+    await Promise.all([mutate(), invalidateTasks()])
     return json.entry
   }
 
@@ -113,7 +118,7 @@ export function useTaskTimeEntries(taskId: string) {
       const json = await res.json()
       throw new Error(json.error || 'Erro ao excluir lançamento')
     }
-    await mutate()
+    await Promise.all([mutate(), invalidateTasks()])
   }
 
   return { entries, isLoading, error, mutate, addTimeEntry, updateTimeEntry, deleteTimeEntry }

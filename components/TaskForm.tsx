@@ -322,7 +322,9 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
                 <Label>Tempo Gasto</Label>
                 <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
                   {(() => {
-                    const min = form.tempo_gasto_total || 0
+                    // Le direto do task (ao vivo via SWR), nao do form estatico.
+                    // Assim refresca sozinho apos cada lancamento.
+                    const min = task?.tempo_gasto_total ?? 0
                     const h = Math.floor(min / 60)
                     const m = min % 60
                     return min === 0 ? '0min' : `${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}min` : ''}`.trim()
