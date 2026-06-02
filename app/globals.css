@@ -883,3 +883,17 @@ html { scroll-behavior: smooth; }
 .dark .hover\:bg-\[\#FAFAFA\]:hover { background-color: #26262B !important; }
 .dark .hover\:text-\[\#111111\]:hover,
 .dark .hover\:text-\[\#0F172A\]:hover { color: #F4F4F5 !important; }
+
+/* Texto rico (TipTap / .prose-rich): as cores fixas escuras (negrito,
+   títulos, código) ficavam invisíveis no fundo escuro. Clareia no dark. */
+.dark .prose-rich,
+.dark .prose-rich p,
+.dark .prose-rich li { color: #D4D4D8; }
+.dark .prose-rich h2,
+.dark .prose-rich h3,
+.dark .prose-rich strong { color: #F4F4F5; }
+.dark .prose-rich blockquote { color: #A1A1AA; border-left-color: #60A5FA; }
+.dark .prose-rich s { color: #9CA3AF; }
+.dark .prose-rich a { color: #60A5FA; }
+.dark .prose-rich code { background: #2A2A2E; color: #FCA5A5; }
+.dark .prose-rich p.is-editor-empty:first-child::before { color: #6B7280; }
