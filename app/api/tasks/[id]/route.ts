@@ -9,7 +9,9 @@ const TRACKED_FIELDS = ['titulo', 'status', 'prioridade', 'responsavel_id', 'dat
 const ALLOWED_UPDATE_FIELDS = [
   'titulo', 'descricao', 'observacoes', 'projeto_id', 'categoria', 'tipo_publico', 'canal', 'prioridade', 'status',
   'responsavel_id', 'equipe', 'data_inicio', 'data_prazo', 'data_conclusao',
-  'tempo_estimado', 'tempo_gasto_total', 'tags', 'anexos',
+  // tempo_gasto_total NÃO é editável aqui: é calculado pela soma dos
+  // lançamentos de tempo (subcoleção time_entries). Única fonte de verdade.
+  'tempo_estimado', 'tags', 'anexos',
   'aguardando_quem', 'data_retorno_esperada',
 ] as const
 
@@ -69,10 +71,6 @@ export async function PATCH(req: Request, { params }: Params) {
   if (body.tempo_estimado !== undefined) {
     const n = Number(body.tempo_estimado)
     data.tempo_estimado = Number.isFinite(n) && n >= 0 ? n : (existing.tempo_estimado ?? 60)
-  }
-  if (body.tempo_gasto_total !== undefined) {
-    const n = Number(body.tempo_gasto_total)
-    data.tempo_gasto_total = Number.isFinite(n) && n >= 0 ? n : (existing.tempo_gasto_total ?? 0)
   }
 
   data.atualizado_em = new Date().toISOString()

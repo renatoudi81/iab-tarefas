@@ -319,14 +319,18 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
             </div>
             {isEditing && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tempo_gasto">Tempo Gasto (min)</Label>
-                <Input
-                  id="tempo_gasto"
-                  type="number"
-                  min="0"
-                  value={form.tempo_gasto_total}
-                  onChange={(e) => setForm((p) => ({ ...p, tempo_gasto_total: Number(e.target.value) }))}
-                />
+                <Label>Tempo Gasto</Label>
+                <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+                  {(() => {
+                    const min = form.tempo_gasto_total || 0
+                    const h = Math.floor(min / 60)
+                    const m = min % 60
+                    return min === 0 ? '0min' : `${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}min` : ''}`.trim()
+                  })()}
+                </div>
+                <p className="text-[0.7rem] text-muted-foreground">
+                  Calculado pelos lançamentos — registre na aba Tempo.
+                </p>
               </div>
             )}
           </div>
