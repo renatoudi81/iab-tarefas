@@ -25,7 +25,7 @@ import { getCategoryColor } from '@/lib/category-color'
 import { useAuth } from '@/contexts/AuthContext'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
