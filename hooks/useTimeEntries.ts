@@ -27,7 +27,7 @@ export function useTimeEntries() {
   const { data, error, isLoading, mutate } = useSWR<{ entries: TimeEntry[] }>(
     user ? '/api/time-entries' : null,
     apiFetcher,
-    { refreshInterval: 30000 }
+    { refreshInterval: 30000, revalidateOnFocus: false }
   )
 
   const entries = data?.entries ?? []

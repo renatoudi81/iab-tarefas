@@ -372,7 +372,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { tasks: allTasks, isLoading: loadingTasks } = useTasks()
+  const { tasks: allTasks, isInitialLoad } = useTasks()
   const { entries: allEntries } = useTimeEntries()
   const { users } = useUsers()
   const { projects } = useProjects()
@@ -531,7 +531,9 @@ export default function DashboardPage() {
     { label: 'Concluída',    color: STATUS_COLORS['Concluída'],    key: STATUSES.DONE },
   ]
 
-  if (loadingTasks && tasks.length === 0) {
+  // Skeleton só na carga inicial (estável). Antes usava isLoading, que pode
+  // oscilar em revalidações do SWR e fazia a tela "piscar" o skeleton sozinha.
+  if (isInitialLoad) {
     return <DashboardSkeleton />
   }
 
@@ -704,8 +706,8 @@ export default function DashboardPage() {
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#E4E4E7' }} />
-                <Area type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#grad-concluidas)" dot={false} activeDot={{ r: 4, fill: '#16A34A', strokeWidth: 0 }} />
-                <Area type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={false} activeDot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} />
+                <Area isAnimationActive={false} type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#grad-concluidas)" dot={false} activeDot={{ r: 4, fill: '#16A34A', strokeWidth: 0 }} />
+                <Area isAnimationActive={false} type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={false} activeDot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
             <ChartDataTable
@@ -731,7 +733,7 @@ export default function DashboardPage() {
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F7F8FA' }} />
-                <Bar dataKey="Horas" fill="#7C3AED" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar isAnimationActive={false} dataKey="Horas" fill="#7C3AED" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
             <ChartDataTable
