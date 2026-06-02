@@ -7,7 +7,7 @@ import { STATUSES, STATUS_COLORS, currentMonthRange } from '@/types'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
+  ResponsiveContainer, LabelList,
 } from 'recharts'
 import {
   TrendingUp, Clock, AlertTriangle, CheckCircle2,
@@ -730,17 +730,29 @@ export default function DashboardPage() {
           iconColor="#7C3AED"
           iconBg="#F5F3FF"
           title="Horas trabalhadas"
-          subtitle="Por dia no período"
+          subtitle="Por semana (Dom–Sáb)"
           className="lg:col-span-2"
         >
           <div className="p-5">
             <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+              <BarChart data={chartData} margin={{ top: 22, right: 4, bottom: 0, left: -24 }}>
                 <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#EDEEF1" />
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F7F8FA' }} />
-                <Bar isAnimationActive={false} dataKey="Horas" fill="#7C3AED" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar isAnimationActive={false} dataKey="Horas" fill="#7C3AED" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28}>
+                  <LabelList
+                    dataKey="Horas"
+                    position="top"
+                    formatter={(value) => {
+                      const n = Number(value)
+                      return n > 0 ? `${String(n).replace('.', ',')}h` : ''
+                    }}
+                    fill="var(--text)"
+                    fontSize={11}
+                    fontWeight={600}
+                  />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
             <ChartDataTable
