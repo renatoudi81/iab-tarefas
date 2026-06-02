@@ -134,6 +134,7 @@ function HeaderStats({ tasks }: HeaderStatsProps) {
     const pctOverdue = total > 0 ? Math.round((overdue / total) * 100) : 0
     const avgProgress = total > 0
       ? Math.round(tasks.reduce((s, t) => {
+          if (t.status === 'Concluída') return s + 100
           if (!t.tempo_estimado) return s
           const p = Math.min(100, (t.tempo_gasto_total / t.tempo_estimado) * 100)
           return s + p
@@ -775,9 +776,13 @@ function TaskRow({
   task, idx, users, today, ticks, todayPct, offset, width, totalDays, color, onClick, onUpdateDates,
 }: TaskRowProps) {
   const resp = users.find(u => u.id === task.responsavel_id)
-  const pct = task.tempo_estimado > 0
-    ? Math.min(100, (task.tempo_gasto_total / task.tempo_estimado) * 100)
-    : 0
+  // Tarefa Concluída = 100% (estar na coluna Concluída significa concluída,
+  // independente do tempo gasto). Caso contrário, progresso por tempo.
+  const pct = task.status === 'Concluída'
+    ? 100
+    : task.tempo_estimado > 0
+      ? Math.min(100, (task.tempo_gasto_total / task.tempo_estimado) * 100)
+      : 0
   const isOver = task.tempo_gasto_total > task.tempo_estimado && task.tempo_estimado > 0
   const overdue = task.status === 'Atrasada' || (task.data_prazo && task.data_prazo < today && task.status !== 'Concluída')
 
