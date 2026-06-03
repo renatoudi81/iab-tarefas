@@ -404,17 +404,21 @@ export default function DashboardPage() {
   const [dateTo, setDateTo] = useState(() => currentMonthRange().to)
 
   const metrics = useMemo(() => {
+    // inPeriod = tarefas criadas no intervalo. TODAS as metricas do periodo
+    // (atrasadas, concluidas, produtividade, distribuicao por status) usam
+    // este recorte. Velocidade, Proximos vencimentos e Atencao urgente
+    // permanecem "agora" (nao usam o filtro) — sao metricas de tendencia.
     const inPeriod = tasks.filter(t =>
       t.criado_em.slice(0, 10) >= dateFrom && t.criado_em.slice(0, 10) <= dateTo,
     )
     const periodEntries = entries.filter(e => e.data >= dateFrom && e.data <= dateTo)
-    const delayed = tasks.filter(t => t.status === STATUSES.DELAYED).length
-    const done = tasks.filter(t => t.status === STATUSES.DONE).length
-    const total = tasks.length
+    const delayed = inPeriod.filter(t => t.status === STATUSES.DELAYED).length
+    const done = inPeriod.filter(t => t.status === STATUSES.DONE).length
+    const total = inPeriod.length
     const productivity = total > 0 ? Math.round((done / total) * 100) : 0
-    const minutesFromEntries = periodEntries.reduce((s, e) => s + e.duracao, 0)
-    const minutesFromTasks = tasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
-    const minutes = minutesFromEntries > 0 ? minutesFromEntries : minutesFromTasks
+    // Horas no periodo = SO os lancamentos do periodo. Sem fallback para
+    // tempo_gasto_total global (mostrava o total geral mesmo com 0 entries).
+    const minutes = periodEntries.reduce((s, e) => s + e.duracao, 0)
     const hours = Math.round((minutes / 60) * 10) / 10
 
     // ──── Comparação com período anterior (mesma duração)
@@ -471,14 +475,24 @@ export default function DashboardPage() {
       .sort((a, b) => b.diasAtraso - a.diasAtraso)
       .slice(0, 5)
 
+    // Distribuicao por status do PERIODO (so as tarefas criadas no intervalo)
+    const statusCount = {
+      'Atrasada': inPeriod.filter(t => t.status === 'Atrasada').length,
+      'Em andamento': inPeriod.filter(t => t.status === 'Em andamento').length,
+      'Aguardando': inPeriod.filter(t => t.status === 'Aguardando').length,
+      'Pendente': inPeriod.filter(t => t.status === 'Pendente').length,
+      'Concluída': done,
+    }
+
     return {
       tasksInPeriod: inPeriod.length,
       hoursInPeriod: `${hours}h`,
+      periodEntriesCount: periodEntries.length,
       delayedTasks: delayed,
       productivity: `${productivity}%`,
       donePct: productivity,
       doneCount: done,
-      hoursSource: minutesFromEntries > 0 ? 'entries' : 'tasks',
+      statusCount,
       tasksDelta,
       hoursDelta,
       velocity,
@@ -635,11 +649,7 @@ export default function DashboardPage() {
           hint={
             <DeltaHint
               delta={metrics.hoursDelta}
-              fallback={
-                metrics.hoursSource === 'entries'
-                  ? `${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`
-                  : `tempo total`
-              }
+              fallback={`${metrics.periodEntriesCount} lançamento${metrics.periodEntriesCount !== 1 ? 's' : ''}`}
             />
           }
         />
@@ -670,7 +680,7 @@ export default function DashboardPage() {
           icon={CheckCircle2}
           accentColor="#16A34A"
           accentBg="#F0FDF4"
-          hint={`${metrics.doneCount} de ${tasks.length} concluídas`}
+          hint={`${metrics.doneCount} de ${metrics.tasksInPeriod} concluídas`}
         />
       </div>
 
@@ -770,9 +780,9 @@ export default function DashboardPage() {
         iconColor="#475569"
         iconBg="#F1F5F9"
         title="Distribuição por status"
-        subtitle={`${tasks.length} tarefa${tasks.length !== 1 ? 's' : ''} categorizadas`}
+        subtitle={`${metrics.tasksInPeriod} tarefa${metrics.tasksInPeriod !== 1 ? 's' : ''} no período`}
         action={
-          tasks.length > 0 && (
+          metrics.tasksInPeriod > 0 && (
             <span className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-[#15803D]">
               <ArrowUpRight size={12} strokeWidth={2.5} />
               {metrics.donePct}% concluído
@@ -782,8 +792,8 @@ export default function DashboardPage() {
       >
         <div className="grid grid-cols-2 sm:grid-cols-5 sm:divide-x divide-y sm:divide-y-0 divide-[#F4F4F5]">
           {STATUS_DIST.map(s => {
-            const count = tasks.filter(t => t.status === s.key).length
-            const pct = tasks.length > 0 ? Math.round((count / tasks.length) * 100) : 0
+            const count = metrics.statusCount[s.key as keyof typeof metrics.statusCount] ?? 0
+            const pct = metrics.tasksInPeriod > 0 ? Math.round((count / metrics.tasksInPeriod) * 100) : 0
             return (
               <motion.div
                 key={s.key}

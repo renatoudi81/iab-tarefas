@@ -208,12 +208,18 @@ export default function RelatoriosPage() {
       })
     }
     return arr
-  }, [allTasks, effectiveUserId, dateFrom, dateTo])
+  }, [allTasks, effectiveUserId, filterProject, dateFrom, dateTo])
 
   const entries = useMemo(() => {
     let arr = allEntries
     if (effectiveUserId !== 'all') {
       arr = arr.filter(e => e.usuario_id === effectiveUserId)
+    }
+    // Quando ha filtro de projeto, so consideramos lancamentos das tarefas
+    // do projeto (que ja estao em `tasks` ao chegar aqui pela cadeia de deps)
+    if (filterProject !== 'all') {
+      const taskIds = new Set(tasks.map(t => t.id))
+      arr = arr.filter(e => taskIds.has(e.tarefa_id))
     }
     if (dateFrom || dateTo) {
       arr = arr.filter(e => {
@@ -224,7 +230,7 @@ export default function RelatoriosPage() {
       })
     }
     return arr
-  }, [allEntries, effectiveUserId, dateFrom, dateTo])
+  }, [allEntries, effectiveUserId, filterProject, tasks, dateFrom, dateTo])
 
   const stats = useMemo(() => {
     const byStatus = Object.values(STATUSES)
