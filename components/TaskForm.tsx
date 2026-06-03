@@ -448,14 +448,16 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
         (isDirty || !isEditing) && (
           <div
             role="region"
-            aria-label="Alteracoes pendentes"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/85 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.25)]"
+            aria-label="Alterações pendentes"
+            // left-0 no mobile, left-[220px] no desktop (largura da sidebar fixa).
+            // Assim o footer respeita a sidebar e fica alinhado ao conteudo.
+            className="fixed left-0 md:left-[220px] right-0 bottom-0 z-40 border-t border-border bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/85 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.25)]"
           >
-            <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+            <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-sm">
                 <span className="inline-flex w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                 <span className="text-[var(--text)] font-medium">
-                  {isEditing ? 'Alteracoes nao salvas' : 'Nova tarefa'}
+                  {isEditing ? 'Alterações não salvas' : 'Nova tarefa'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -477,7 +479,7 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
                 <Button type="submit" disabled={saving} className="gap-1.5">
                   {saving
                     ? <><Loader2 size={14} className="animate-spin" /> Salvando...</>
-                    : isEditing ? 'Salvar alteracoes' : 'Criar Tarefa'}
+                    : isEditing ? 'Salvar alterações' : 'Criar Tarefa'}
                 </Button>
               </div>
             </div>
