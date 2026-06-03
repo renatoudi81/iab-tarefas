@@ -73,7 +73,7 @@ export default function TarefaPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="pb-10 max-w-5xl"
+      className="pb-28 max-w-5xl"
     >
       {/* Voltar */}
       <button

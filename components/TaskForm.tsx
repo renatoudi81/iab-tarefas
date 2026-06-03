@@ -97,6 +97,7 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
   // Lazy init: o form já nasce com os valores da tarefa, então os Selects
   // recebem o value correto no PRIMEIRO render (com as opções presentes).
   const [form, setForm] = useState<TaskFormData>(() => buildForm(task, initialStatus, initialData))
+  const [initialForm, setInitialForm] = useState<TaskFormData>(form)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -104,13 +105,17 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
   const isAguardando = form.status === 'Aguardando'
   const isConcluida = form.status === 'Concluída'
   const isModal = variant === 'modal'
+  // Comparacao por JSON e suficiente: TaskFormData so tem primitivos+arrays.
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm)
 
   // Popula o form ao montar / trocar de tarefa. Depende de task?.id (não do
   // objeto) — a revalidação do SWR recria objetos Task e reexecutaria este
   // effect, sobrescrevendo o que o usuário está digitando.
   // Repopula ao trocar de tarefa (ex.: reabrir o modal com outra task).
   useEffect(() => {
-    setForm(buildForm(task, initialStatus, initialData))
+    const next = buildForm(task, initialStatus, initialData)
+    setForm(next)
+    setInitialForm(next)
     setSaveError('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, initialStatus, initialData])
@@ -124,6 +129,7 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
       if (task) {
         const updated = await updateTask(task.id, form)
         toast.success('Tarefa atualizada')
+        setInitialForm(form) // baseline atualizado: sticky footer some
         onSaved?.(updated)
       } else {
         const created = await addTask(form)
@@ -135,6 +141,11 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleDiscard = () => {
+    setForm(initialForm)
+    setSaveError('')
   }
 
   return (
@@ -417,25 +428,62 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
         <FormError message={saveError} className="mt-4" />
       </div>
 
-      {/* Footer com botões */}
-      <div
-        className={
-          isModal
-            ? 'border-t border-border px-6 py-3 flex-shrink-0 bg-white flex justify-end gap-2'
-            : 'border-t border-border pt-4 mt-5 flex justify-end gap-2'
-        }
-      >
-        {onCancel && (
-          <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
-            Cancelar
+      {/* Footer — modal: inline | page: sticky bar so quando dirty */}
+      {isModal ? (
+        <div className="border-t border-border px-6 py-3 flex-shrink-0 bg-white flex justify-end gap-2">
+          {onCancel && (
+            <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
+              Cancelar
+            </Button>
+          )}
+          <Button type="submit" disabled={saving} className="gap-1.5">
+            {saving
+              ? <><Loader2 size={14} className="animate-spin" /> Salvando...</>
+              : isEditing ? 'Salvar alterações' : 'Criar Tarefa'}
           </Button>
-        )}
-        <Button type="submit" disabled={saving} className="gap-1.5">
-          {saving
-            ? <><Loader2 size={14} className="animate-spin" /> Salvando...</>
-            : isEditing ? 'Salvar alterações' : 'Criar Tarefa'}
-        </Button>
-      </div>
+        </div>
+      ) : (
+        // page: barra fixa no rodape da viewport, so aparece com alteracoes pendentes
+        // (ou quando esta criando — !isEditing). Animacao slide-up via Tailwind.
+        (isDirty || !isEditing) && (
+          <div
+            role="region"
+            aria-label="Alteracoes pendentes"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-[var(--surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/85 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.25)]"
+          >
+            <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="inline-flex w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-[var(--text)] font-medium">
+                  {isEditing ? 'Alteracoes nao salvas' : 'Nova tarefa'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleDiscard}
+                    disabled={saving}
+                  >
+                    Descartar
+                  </Button>
+                )}
+                {onCancel && !isEditing && (
+                  <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
+                    Cancelar
+                  </Button>
+                )}
+                <Button type="submit" disabled={saving} className="gap-1.5">
+                  {saving
+                    ? <><Loader2 size={14} className="animate-spin" /> Salvando...</>
+                    : isEditing ? 'Salvar alteracoes' : 'Criar Tarefa'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      )}
     </form>
   )
 }
