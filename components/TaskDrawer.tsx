@@ -38,7 +38,7 @@ import { useConfirm } from '@/contexts/ConfirmContext'
 import { stripHtml } from '@/components/ui/RichTextEditor'
 import { getCategoryColor } from '@/lib/category-color'
 
-type DrawerTab = 'detalhes' | 'comentarios' | 'tempo' | 'historico'
+type DrawerTab = 'detalhes' | 'tempo' | 'historico'
 
 interface TaskDrawerProps {
   task: Task | null
@@ -785,7 +785,6 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
               <TabsList className="bg-transparent border-b rounded-none w-full justify-start h-10 px-6 shrink-0 gap-0">
                 {([
                   { id: 'detalhes', label: 'Detalhes' },
-                  { id: 'comentarios', label: 'Comentários' },
                   { id: 'tempo', label: 'Tempo' },
                   { id: 'historico', label: 'Histórico' },
                 ] as { id: DrawerTab; label: string }[]).map(tab => (
@@ -811,9 +810,6 @@ export default function TaskDrawer({ task, onClose, onEdit }: TaskDrawerProps) {
                     >
                       <TabsContent value="detalhes" forceMount className={activeTab !== 'detalhes' ? 'hidden' : ''}>
                         <DetalhesTab task={task} users={users} projects={projects} />
-                      </TabsContent>
-                      <TabsContent value="comentarios" forceMount className={activeTab !== 'comentarios' ? 'hidden' : ''}>
-                        <ComentariosTab taskId={task.id} />
                       </TabsContent>
                       <TabsContent value="tempo" forceMount className={activeTab !== 'tempo' ? 'hidden' : ''}>
                         <TempoTab task={task} />
