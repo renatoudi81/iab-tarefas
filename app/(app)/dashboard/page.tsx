@@ -441,16 +441,23 @@ export default function DashboardPage() {
       ? Math.round(((hours - prevHours) / prevHours) * 100)
       : (hours > 0 ? 100 : 0)
 
-    // ──── Velocidade — tarefas concluídas/semana (últimas 4 semanas)
-    const fourWeeksAgo = new Date()
-    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
-    const fourWeeksAgoStr = fourWeeksAgo.toISOString().split('T')[0]
-    const recentDone = tasks.filter(t =>
+    // Velocidade = tarefas concluidas no periodo / numero de semanas do periodo.
+    // Respeita o filtro de datas (regra: tudo respeita o filtro). Quando o
+    // intervalo tem menos de 7 dias, divide por 1 para nao explodir o numero.
+    const doneInPeriod = tasks.filter(t =>
       t.status === STATUSES.DONE &&
       t.data_conclusao &&
-      t.data_conclusao >= fourWeeksAgoStr
+      t.data_conclusao >= dateFrom &&
+      t.data_conclusao <= dateTo
     ).length
-    const velocity = Math.round((recentDone / 4) * 10) / 10
+    const periodDaysForVel = Math.max(
+      1,
+      Math.round(
+        ((new Date(dateTo).getTime() - new Date(dateFrom).getTime()) / 86400000) + 1,
+      ),
+    )
+    const weeksInPeriod = Math.max(1, periodDaysForVel / 7)
+    const velocity = Math.round((doneInPeriod / weeksInPeriod) * 10) / 10
 
     // ──── Próximos vencimentos / Top atrasadas
     const todayDate = new Date(new Date().toISOString().split('T')[0])
@@ -635,7 +642,7 @@ export default function DashboardPage() {
           accentColor="#2563EB"
           accentBg="#EFF6FF"
           hint={
-            <DeltaHint delta={metrics.tasksDelta} fallback={`de ${tasks.length} no total`} />
+            <DeltaHint delta={metrics.tasksDelta} fallback="no período" />
           }
         />
         <Kpi
@@ -660,7 +667,7 @@ export default function DashboardPage() {
           icon={Activity}
           accentColor="#F59E0B"
           accentBg="#FFFBEB"
-          hint="média das últimas 4 semanas"
+          hint="concluídas por semana no período"
         />
         <Kpi
           label="Tarefas atrasadas"
