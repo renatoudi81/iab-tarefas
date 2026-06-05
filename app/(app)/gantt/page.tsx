@@ -328,10 +328,18 @@ export default function GanttPage() {
         return t.data_conclusao >= sevenDaysAgoStr
       })
       .sort((a, b) => {
-        // Atrasadas primeiro, depois por data_inicio
-        const aOver = a.status === 'Atrasada' ? 0 : 1
-        const bOver = b.status === 'Atrasada' ? 0 : 1
-        if (aOver !== bOver) return aOver - bOver
+        // Hierarquia de status: Atrasada -> Em andamento -> Aguardando ->
+        // Pendente -> Concluida (sempre por ultimo). Dentro de cada grupo,
+        // ordena por data_inicio crescente.
+        const STATUS_ORDER: Record<string, number> = {
+          'Atrasada': 0,
+          'Em andamento': 1,
+          'Aguardando': 2,
+          'Pendente': 3,
+          'Concluída': 4,
+        }
+        const sDiff = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+        if (sDiff !== 0) return sDiff
         return (a.data_inicio || '') < (b.data_inicio || '') ? -1 : 1
       })
   }, [tasks, filterProject, filterStatus, filterUserId, hideOldDone, dateFrom, dateTo])
