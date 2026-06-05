@@ -8,7 +8,8 @@ import { useProjects } from '@/hooks/useProjects'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange } from '@/types'
 import type { Status, Task } from '@/types'
-import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react'
+import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Search, Trash2, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -67,8 +68,18 @@ export default function KanbanPage() {
   const [dateTo, setDateTo] = useState(mesAtual.to)
   const [filterUserId, setFilterUserId] = useState<string>('all')
   const [filterProject, setFilterProject] = useState<string>('all')
-  const hasFilter = dateFrom !== mesAtual.from || dateTo !== mesAtual.to || filterUserId !== 'all' || filterProject !== 'all'
-  const clearFilters = () => { setDateFrom(mesAtual.from); setDateTo(mesAtual.to); setFilterUserId('all'); setFilterProject('all') }
+  // Busca por titulo OU descricao (mesma logica da Lista de Tarefas)
+  const [search, setSearch] = useState('')
+  // Coluna Concluida mostra so as 10 mais recentes por default; clique
+  // em "Ver todas" expande para o historico completo.
+  const [showAllDone, setShowAllDone] = useState(false)
+  const DONE_LIMIT = 10
+  const hasFilter = dateFrom !== mesAtual.from || dateTo !== mesAtual.to || filterUserId !== 'all' || filterProject !== 'all' || search.trim() !== ''
+  const clearFilters = () => {
+    setDateFrom(mesAtual.from); setDateTo(mesAtual.to)
+    setFilterUserId('all'); setFilterProject('all')
+    setSearch('')
+  }
 
   // Modal de criar/editar tarefa
   const [modal, setModal] = useState<{
@@ -125,6 +136,7 @@ export default function KanbanPage() {
   // Kanban só mostra o subconjunto filtrado e os contadores refletem o
   // que de fato está visível.
   const filteredTasks = useMemo(() => {
+    const s = search.trim().toLowerCase()
     return localTasks.filter(t => {
       if (filterProject !== 'all' && t.projeto_id !== filterProject) return false
       // Filtro por responsável (admin escolhe; não-admin sempre vê só
@@ -135,20 +147,42 @@ export default function KanbanPage() {
       if ((dateFrom || dateTo) && !t.data_prazo) return false
       if (dateFrom && t.data_prazo && t.data_prazo < dateFrom) return false
       if (dateTo && t.data_prazo && t.data_prazo > dateTo) return false
+      // Busca por titulo OU descricao (mesma logica da Lista)
+      if (s && !t.titulo.toLowerCase().includes(s) && !stripHtml(t.descricao).toLowerCase().includes(s)) return false
       return true
     })
-  }, [localTasks, filterProject, filterUserId, dateFrom, dateTo])
+  }, [localTasks, filterProject, filterUserId, dateFrom, dateTo, search])
 
+  // Concluida: ordena por data_conclusao DESC (mais recente primeiro) — assim
+  // "10 ultimas" sao as mais recentemente fechadas. Demais colunas: ordem padrao.
   const columns = useMemo(() =>
     COLUMNS.map(status => {
-      const col = sortTasks(filteredTasks.filter(t => t.status === status))
+      const all = filteredTasks.filter(t => t.status === status)
+      if (status === 'Concluída') {
+        const sorted = [...all].sort((a, b) => {
+          const aD = a.data_conclusao || a.atualizado_em || ''
+          const bD = b.data_conclusao || b.atualizado_em || ''
+          return aD < bD ? 1 : aD > bD ? -1 : 0
+        })
+        const visible = showAllDone ? sorted : sorted.slice(0, DONE_LIMIT)
+        return {
+          status,
+          tasks: visible,
+          totalCount: sorted.length,
+          hiddenCount: Math.max(0, sorted.length - visible.length),
+          totalMin: visible.reduce((s, t) => s + (t.tempo_estimado || 0), 0),
+        }
+      }
+      const col = sortTasks(all)
       return {
         status,
         tasks: col,
+        totalCount: col.length,
+        hiddenCount: 0,
         totalMin: col.reduce((s, t) => s + (t.tempo_estimado || 0), 0),
       }
     }),
-    [filteredTasks]
+    [filteredTasks, showAllDone]
   )
 
   const onDragEnd = (result: DropResult) => {
@@ -235,6 +269,18 @@ export default function KanbanPage() {
         (não-admin já vê apenas as próprias tarefas via filtro server-side).
       */}
       <div className="mb-5 flex items-center gap-2 flex-wrap">
+        {/* Busca por titulo ou descricao */}
+        <div className="relative min-w-[220px] max-w-xs flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] pointer-events-none" />
+          <Input
+            type="text"
+            className="pl-9 h-9 text-sm border-[#E4E4E7] bg-white"
+            placeholder="Buscar por título ou descrição..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
         {/* Projeto */}
         {projects.length > 0 && (
           <Select value={filterProject} onValueChange={setFilterProject}>
@@ -296,7 +342,7 @@ export default function KanbanPage() {
           className="flex gap-3 overflow-x-auto pb-6 items-start flex-1"
           style={{ minHeight: 0 }}
         >
-          {columns.map(({ status, tasks: col, totalMin }) => {
+          {columns.map(({ status, tasks: col, totalMin, hiddenCount }) => {
             const color = STATUS_COLORS[status]
             return (
               <div
@@ -316,7 +362,7 @@ export default function KanbanPage() {
                         className="text-[0.65rem] text-white font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 min-w-[20px] text-center tabular-nums"
                         style={{ background: color }}
                       >
-                        {col.length}
+                        {col.length + hiddenCount}
                       </span>
                       <button
                         type="button"
@@ -328,7 +374,7 @@ export default function KanbanPage() {
                       </button>
                     </div>
                     <p className="text-[0.7rem] text-[#71717A] mt-1 tabular-nums">
-                      {col.length} tarefa{col.length !== 1 ? 's' : ''}&nbsp;·&nbsp;
+                      {col.length + hiddenCount} tarefa{(col.length + hiddenCount) !== 1 ? 's' : ''}&nbsp;·&nbsp;
                       {totalMin > 0 ? formatMinutes(totalMin) : '—'}
                     </p>
                   </div>
@@ -556,6 +602,20 @@ export default function KanbanPage() {
                       })}
 
                       {provided.placeholder}
+
+                      {/* Concluida: link para expandir / recolher quando ha mais
+                          de DONE_LIMIT tarefas (so aparece nessa coluna). */}
+                      {status === 'Concluída' && (hiddenCount > 0 || showAllDone) && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllDone((v) => !v)}
+                          className="mt-1 mx-1 px-3 py-2 rounded-lg text-[0.75rem] font-medium text-[#52525B] bg-white border border-dashed border-[#D4D4D8] hover:bg-[#FAFAFA] hover:border-[#A1A1AA] transition-colors cursor-pointer text-center"
+                        >
+                          {showAllDone
+                            ? 'Mostrar só as 10 últimas'
+                            : `+ ${hiddenCount} ocultas — Ver todas`}
+                        </button>
+                      )}
                     </div>
                   )}
                 </Droppable>
