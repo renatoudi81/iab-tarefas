@@ -1,11 +1,12 @@
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Loader2, Mail, MessageSquare, Phone, FileText, Mic, AlertCircle, ArrowRight, RotateCcw } from 'lucide-react'
+import { Sparkles, Loader2, Mail, MessageSquare, Phone, FileText, Mic, MicOff, AlertCircle, ArrowRight, RotateCcw } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { auth } from '@/lib/firebase-client'
 import type { TaskFormData } from '@/types'
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -84,6 +85,28 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
   const [error, setError] = useState('')
   const [preview, setPreview] = useState<ParsedResponse | null>(null)
 
+  // Reconhecimento de voz: cada chunk final e CONCATENADO ao textarea atual.
+  // Assim o usuario pode editar o texto entre falas sem perder o que digitou.
+  const speech = useSpeechRecognition({
+    onFinalChunk: (chunk) => {
+      setMessage((prev) => (prev ? prev + ' ' : '') + chunk)
+    },
+  })
+
+  const toggleVoice = () => {
+    if (speech.listening) {
+      speech.stop()
+      return
+    }
+    if (!speech.isSupported) {
+      toast.error('Voz indisponivel', 'Use Chrome ou Edge atualizado para gravar por voz.')
+      return
+    }
+    // Se nao for canal de voz, troca pra deixar consistente com a origem
+    if (channel !== 'voice') setChannel('voice')
+    speech.start()
+  }
+
   // Defense in depth: só admin tem acesso ao modal (UI gate)
   if (!user || user.perfil !== 'Administrador') return null
 
@@ -92,6 +115,8 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
     setPreview(null)
     setError('')
     setChannel('email')
+    if (speech.listening) speech.stop()
+    speech.reset()
   }
 
   const handleClose = () => {
@@ -221,21 +246,62 @@ export function AITaskCreator({ open, onClose, onReady }: AITaskCreatorProps) {
               </div>
             </div>
 
-            {/* Textarea */}
+            {/* Textarea com botao de microfone (Web Speech API, pt-BR) */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ai-message">Mensagem original *</Label>
-              <Textarea
-                id="ai-message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Cole aqui o e-mail, mensagem ou anotação recebida..."
-                rows={7}
-                maxLength={5000}
-                className="font-mono text-[0.82rem] leading-relaxed resize-none"
-              />
-              <div className="text-[0.7rem] text-[#A1A1AA] text-right tabular-nums">
-                {message.length} / 5000 caracteres
+              <div className="flex items-center justify-between">
+                <Label htmlFor="ai-message">Mensagem original *</Label>
+                {speech.isSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleVoice}
+                    className={
+                      'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[0.72rem] font-medium border transition-colors cursor-pointer ' +
+                      (speech.listening
+                        ? 'bg-[#FEE2E2] border-[#FCA5A5] text-[#B91C1C] animate-pulse'
+                        : 'bg-white border-[#E4E4E7] text-[#52525B] hover:border-[#A78BFA] hover:text-[#6D28D9]')
+                    }
+                    title={speech.listening ? 'Parar gravacao' : 'Falar (pt-BR)'}
+                  >
+                    {speech.listening ? <><MicOff size={11} /> Parar</> : <><Mic size={11} /> Falar</>}
+                  </button>
+                )}
               </div>
+              <div className="relative">
+                <Textarea
+                  id="ai-message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={speech.isSupported
+                    ? 'Cole, digite ou clique em Falar para ditar a descrição da tarefa...'
+                    : 'Cole aqui o e-mail, mensagem ou anotação recebida...'}
+                  rows={7}
+                  maxLength={5000}
+                  className="font-mono text-[0.82rem] leading-relaxed resize-none"
+                />
+                {/* Texto interino (em andamento) — fica sobreposto no rodape */}
+                {speech.listening && speech.interim && (
+                  <div className="absolute left-3 right-3 bottom-2 px-2 py-1 rounded bg-[#F5F3FF]/95 border border-[#DDD6FE] text-[0.78rem] text-[#6D28D9] italic pointer-events-none truncate">
+                    {speech.interim}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between text-[0.7rem] text-[#A1A1AA]">
+                <span>
+                  {speech.listening && (
+                    <span className="inline-flex items-center gap-1 text-[#B91C1C] font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse" />
+                      Gravando... fale agora
+                    </span>
+                  )}
+                  {!speech.listening && !speech.isSupported && (
+                    <span>Voz indisponivel neste navegador. Use Chrome ou Edge.</span>
+                  )}
+                </span>
+                <span className="tabular-nums">{message.length} / 5000 caracteres</span>
+              </div>
+              {speech.error && (
+                <div className="text-[0.72rem] text-[#B91C1C]">{speech.error}</div>
+              )}
             </div>
 
             {/* Exemplos */}
