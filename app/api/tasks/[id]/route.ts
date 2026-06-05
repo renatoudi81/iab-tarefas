@@ -50,6 +50,22 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Status inválido' }, { status: 400 })
   }
 
+  // Responsável é obrigatório — não pode ser removido em uma edição.
+  // (Se o campo estiver no body e vier vazio/null, rejeita.)
+  if (body.responsavel_id !== undefined) {
+    const novoResp = body.responsavel_id
+    if (!novoResp || typeof novoResp !== 'string' || !novoResp.trim()) {
+      return NextResponse.json({ error: 'Responsável obrigatório' }, { status: 400 })
+    }
+    // Confere que o novo responsável existe (se mudou)
+    if (novoResp !== existing.responsavel_id) {
+      const respSnap = await adminDb.collection('users').doc(novoResp).get()
+      if (!respSnap.exists) {
+        return NextResponse.json({ error: 'Responsável não cadastrado' }, { status: 400 })
+      }
+    }
+  }
+
   // Campos sensíveis (reatribuir tarefa / mudar equipe / projeto) só podem
   // ser alterados por admin ou pelo responsável atual — não por membro de
   // equipe (que poderia se promover ou sequestrar a tarefa).
@@ -64,8 +80,18 @@ export async function PATCH(req: Request, { params }: Params) {
     data[field] = body[field]
   }
 
-  if (body.status === 'Concluída' && !existing.data_conclusao) {
-    data.data_conclusao = new Date().toISOString().split('T')[0]
+  // Regra de negocio: status Concluida exige data_conclusao.
+  // Considera 3 fontes: body.data_conclusao novo, data_conclusao ja gravada,
+  // ou nada — neste ultimo caso, recusa o save.
+  if (body.status === 'Concluída') {
+    const newConclusao =
+      body.data_conclusao !== undefined ? body.data_conclusao : existing.data_conclusao
+    if (!newConclusao) {
+      return NextResponse.json(
+        { error: 'Data de conclusão é obrigatória quando o status é Concluída' },
+        { status: 400 },
+      )
+    }
   }
   // tempo_* com fallback + validação (evita gravar NaN/negativo)
   if (body.tempo_estimado !== undefined) {

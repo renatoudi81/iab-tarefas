@@ -104,6 +104,9 @@ export async function POST(req: Request) {
   if (!titulo?.trim()) return NextResponse.json({ error: 'Título obrigatório' }, { status: 400 })
   if (!projeto_id?.trim()) return NextResponse.json({ error: 'Projeto obrigatório' }, { status: 400 })
   if (!categoria?.trim()) return NextResponse.json({ error: 'Categoria obrigatória' }, { status: 400 })
+  if (!responsavel_id || typeof responsavel_id !== 'string' || !responsavel_id.trim()) {
+    return NextResponse.json({ error: 'Responsável obrigatório' }, { status: 400 })
+  }
 
   if (prioridade && !VALID_PRIORIDADES.includes(prioridade)) {
     return NextResponse.json({ error: `Prioridade inválida. Use: ${VALID_PRIORIDADES.join(', ')}` }, { status: 400 })
@@ -120,8 +123,22 @@ export async function POST(req: Request) {
   const catDup = await adminDb.collection('categories').where('nome', '==', categoria).limit(1).get()
   if (catDup.empty) return NextResponse.json({ error: 'Categoria não cadastrada' }, { status: 400 })
 
+  // Responsável precisa existir na coleção de usuários
+  const respSnap = await adminDb.collection('users').doc(responsavel_id).get()
+  if (!respSnap.exists) {
+    return NextResponse.json({ error: 'Responsável não cadastrado' }, { status: 400 })
+  }
+
   if (data_inicio && data_prazo && data_inicio > data_prazo) {
     return NextResponse.json({ error: 'Data de início não pode ser posterior ao prazo' }, { status: 400 })
+  }
+
+  // Status Concluída exige data_conclusao (regra de negócio)
+  if (status === 'Concluída' && !data_conclusao) {
+    return NextResponse.json(
+      { error: 'Data de conclusão é obrigatória quando o status é Concluída' },
+      { status: 400 },
+    )
   }
 
   const now = new Date().toISOString()

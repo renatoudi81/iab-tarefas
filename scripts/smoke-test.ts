@@ -140,15 +140,18 @@ async function main() {
   // POST: cria tarefa de teste
   const catRef2 = await adminDb.collection('categories').limit(1).get()
   const categoriaExistente = catRef2.empty ? null : (catRef2.docs[0].data() as any).nome
+  // Responsável agora é obrigatório — pega o primeiro usuário disponível.
+  const userRef = await adminDb.collection('users').limit(1).get()
+  const responsavelTeste = userRef.empty ? null : userRef.docs[0].id
 
-  if (categoriaExistente) {
+  if (categoriaExistente && responsavelTeste) {
     const now = new Date().toISOString()
     const taskData = {
       titulo: `${TEST_PREFIX}task-${Date.now()}`,
       categoria: categoriaExistente,
       prioridade: 'Média',
       status: 'Pendente',
-      responsavel_id: null,
+      responsavel_id: responsavelTeste,
       equipe: [],
       tempo_estimado: 60,
       tempo_gasto_total: 0,

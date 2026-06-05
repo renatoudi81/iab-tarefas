@@ -123,8 +123,26 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (saving) return
-    setSaving(true)
     setSaveError('')
+
+    // Validação: responsável é obrigatório (Radix Select não dispara HTML5
+    // required, então a checagem precisa ser explícita).
+    if (!form.responsavel_id) {
+      const msg = 'Selecione um responsável para a tarefa.'
+      setSaveError(msg)
+      toast.error(msg)
+      return
+    }
+
+    // Validação: status Concluída exige data de conclusão.
+    if (form.status === 'Concluída' && !form.data_conclusao) {
+      const msg = 'Informe a data de conclusão para tarefas concluídas.'
+      setSaveError(msg)
+      toast.error('Data de conclusão obrigatória', msg)
+      return
+    }
+
+    setSaving(true)
     try {
       if (task) {
         const updated = await updateTask(task.id, form)
@@ -410,13 +428,19 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-dashed border-border pt-3">
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="data_conclusao">Data de Conclusão</Label>
+                    <Label htmlFor="data_conclusao">Data de Conclusão *</Label>
                     <Input
                       id="data_conclusao"
                       type="date"
+                      required
                       value={form.data_conclusao || ''}
                       onChange={(e) => setForm((p) => ({ ...p, data_conclusao: e.target.value || null }))}
                     />
+                    {!form.data_conclusao && (
+                      <p className="text-[0.7rem] text-[#DC2626]">
+                        Obrigatória para tarefas concluídas.
+                      </p>
+                    )}
                   </div>
                   <div />
                 </div>
