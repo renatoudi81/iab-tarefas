@@ -37,7 +37,12 @@ export function AnimatedCounter({
   const motionValue = useMotionValue(0)
   const rounded = useTransform(motionValue, (latest) => {
     if (formatter) return formatter(latest)
-    return prefix + latest.toFixed(decimals) + suffix
+    // Formato pt-BR: virgula decimal e ponto de milhar
+    const formatted = latest.toLocaleString('pt-BR', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    })
+    return prefix + formatted + suffix
   })
   const previousValue = useRef(0)
 

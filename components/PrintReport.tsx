@@ -14,7 +14,7 @@
  * O conteúdo da tela (gráficos Recharts etc.) é escondido em print
  * via `.print:hidden` no Tailwind v4.
  */
-import { formatDateBR, formatMinutes, weekdayBR } from '@/types'
+import { formatDateBR, formatMinutes, formatNumberBR, weekdayBR } from '@/types'
 import type { Status, Prioridade } from '@/types'
 
 interface UserLite {
@@ -110,7 +110,7 @@ export function PrintReport({
             </td>
             <td>
               <div className="pr-kpi-label">Horas registradas</div>
-              <div className="pr-kpi-value">{stats.totalHoras}h</div>
+              <div className="pr-kpi-value">{formatNumberBR(stats.totalHoras)}h</div>
               <div className="pr-kpi-hint">Tempo investido</div>
             </td>
             <td>
@@ -157,7 +157,7 @@ export function PrintReport({
                   <td>{p.name}</td>
                   <td className="num">{p.total}</td>
                   <td className="num">{p.done}</td>
-                  <td className="num">{p.horas}h</td>
+                  <td className="num">{formatNumberBR(p.horas)}h</td>
                 </tr>
               ))}
             </tbody>
@@ -227,7 +227,7 @@ export function PrintReport({
                 <tr key={c.name}>
                   <td>{c.name}</td>
                   <td className="num">{c.total}</td>
-                  <td className="num">{c.horas}h</td>
+                  <td className="num">{formatNumberBR(c.horas)}h</td>
                 </tr>
               ))}
             </tbody>
@@ -256,7 +256,7 @@ export function PrintReport({
                   <td className="num">{u.total}</td>
                   <td className="num">{u.done}</td>
                   <td className="num">{u.pct}%</td>
-                  <td className="num">{u.hours}h</td>
+                  <td className="num">{formatNumberBR(u.hours)}h</td>
                 </tr>
               ))}
             </tbody>
@@ -283,10 +283,10 @@ export function PrintReport({
                 return (
                   <tr key={p.name}>
                     <td>{p.name}</td>
-                    <td className="num">{p.Estimado}h</td>
-                    <td className="num">{p.Gasto}h</td>
+                    <td className="num">{formatNumberBR(p.Estimado)}h</td>
+                    <td className="num">{formatNumberBR(p.Gasto)}h</td>
                     <td className="num" style={{ color: diff > 0 ? '#B91C1C' : '#15803D' }}>
-                      {diff > 0 ? '+' : ''}{diff.toFixed(1)}h
+                      {diff > 0 ? '+' : ''}{formatNumberBR(diff)}h
                     </td>
                   </tr>
                 )

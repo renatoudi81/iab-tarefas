@@ -190,6 +190,23 @@ export function formatMinutes(min: number): string {
   return h > 0 ? `${h}h ${m}min` : `${m}min`
 }
 
+/**
+ * Formata numero com virgula decimal (pt-BR).
+ * - formatNumberBR(32.9) => "32,9"
+ * - formatNumberBR(32.9, 1) => "32,9"
+ * - formatNumberBR(32, 1) => "32" (omite zero decimal quando inteiro)
+ * - formatNumberBR(1234.5) => "1.234,5"
+ */
+export function formatNumberBR(n: number, decimals = 1): string {
+  if (!Number.isFinite(n)) return '0'
+  // toLocaleString do pt-BR ja faz a conversao (ponto -> virgula, milhar com ponto)
+  const isInteger = n % 1 === 0
+  return n.toLocaleString('pt-BR', {
+    minimumFractionDigits: isInteger ? 0 : decimals,
+    maximumFractionDigits: decimals,
+  })
+}
+
 export function todayStr(): string {
   return new Date().toISOString().split('T')[0]
 }

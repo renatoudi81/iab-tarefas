@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, weekdayBR, currentMonthRange } from '@/types'
+import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, formatNumberBR, weekdayBR, currentMonthRange } from '@/types'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import { PrintReport } from '@/components/PrintReport'
@@ -713,7 +713,7 @@ export default function RelatoriosPage() {
           <Kpi
             icon={Clock}
             label="Horas registradas"
-            value={`${stats.totalHoras}h`}
+            value={`${formatNumberBR(stats.totalHoras)}h`}
             numericValue={stats.totalHoras}
             suffix="h"
             hint={`${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`}
@@ -880,7 +880,7 @@ export default function RelatoriosPage() {
                       <td className="px-5 py-3 font-medium text-[#0F172A]">{p.name}</td>
                       <td className="px-3 py-3 text-right tabular-nums text-[#3F3F46]">{p.total}</td>
                       <td className="px-3 py-3 text-right tabular-nums text-[#15803D] font-semibold">{p.done}</td>
-                      <td className="px-5 py-3 text-right tabular-nums text-[#3F3F46]">{p.horas}h</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-[#3F3F46]">{formatNumberBR(p.horas)}h</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1081,7 +1081,7 @@ export default function RelatoriosPage() {
                             <span className="text-[#D4D4D8]">·</span>
                             <span className="inline-flex items-center gap-1 tabular-nums">
                               <Clock size={11} className="text-[#71717A]" />
-                              {hours}h
+                              {formatNumberBR(hours)}h
                             </span>
                           </div>
                           <Progress
