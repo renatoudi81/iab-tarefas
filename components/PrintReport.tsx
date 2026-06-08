@@ -193,12 +193,12 @@ export function PrintReport({
                   .join(' · ')
                 return (
                   <tr key={dia.data}>
-                    <td style={{ fontWeight: 600 }}>
+                    <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {formatDateBR(dia.data)} · {weekdayBR(dia.data)}
                     </td>
                     <td>{projetos}</td>
-                    <td className="num">{dia.items.length}</td>
-                    <td className="num" style={{ fontWeight: 700 }}>{formatMinutes(dia.totalMin)}</td>
+                    <td className="num" style={{ whiteSpace: 'nowrap' }}>{dia.items.length}</td>
+                    <td className="num" style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatMinutes(dia.totalMin)}</td>
                   </tr>
                 )
               })}
