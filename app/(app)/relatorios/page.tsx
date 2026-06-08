@@ -368,18 +368,6 @@ export default function RelatoriosPage() {
       .sort((a, b) => b.diasAtraso - a.diasAtraso)
       .slice(0, 5)
 
-    // Tempo médio de conclusão (dias entre data_inicio e data_conclusao)
-    const concluidasComDatas = tasks.filter(
-      (t) => t.status === 'Concluída' && t.data_inicio && t.data_conclusao
-    )
-    const leadTimes = concluidasComDatas.map((t) => {
-      const ms = new Date(t.data_conclusao!).getTime() - new Date(t.data_inicio!).getTime()
-      return Math.max(0, ms / 86400000)
-    })
-    const leadTimeMedio = leadTimes.length > 0
-      ? Math.round(leadTimes.reduce((s, x) => s + x, 0) / leadTimes.length * 10) / 10
-      : 0
-
     // Aderência ao estimado (% de tarefas concluídas dentro do tempo previsto)
     const concluidasComEstimativa = tasks.filter(
       (t) => t.status === 'Concluída' && t.tempo_estimado > 0
@@ -519,7 +507,6 @@ export default function RelatoriosPage() {
       byPriority,
       plannedVsActual,
       topAtrasadas,
-      leadTimeMedio,
       pctAderencia,
       exceeded,
       orphan,
@@ -1225,33 +1212,6 @@ export default function RelatoriosPage() {
             </Section>
           )}
 
-          {/* Tempo médio de conclusão */}
-          <Section
-            icon={Clock}
-            iconColor="#2563EB"
-            iconBg="#EFF6FF"
-            title="Tempo médio de conclusão"
-            subtitle="Dias entre data de início e conclusão das tarefas finalizadas"
-          >
-            <div className="p-5 flex flex-col items-center justify-center text-center">
-              <div className="text-[3rem] font-mono font-bold leading-none tabular-nums text-[#0F172A]">
-                {stats.leadTimeMedio}
-              </div>
-              <div className="text-[0.85rem] text-[#71717A] mt-2 mb-4">
-                {stats.leadTimeMedio === 1 ? 'dia em média' : 'dias em média'}
-              </div>
-              <div className="grid grid-cols-2 gap-3 w-full text-left">
-                <div className="bg-[#F7F8FA] rounded-lg p-3">
-                  <div className="text-[0.65rem] uppercase tracking-wider font-medium text-[#71717A] mb-1">Concluídas</div>
-                  <div className="text-[1.4rem] font-mono font-bold tabular-nums text-[#16A34A]">{stats.concluidas}</div>
-                </div>
-                <div className="bg-[#F7F8FA] rounded-lg p-3">
-                  <div className="text-[0.65rem] uppercase tracking-wider font-medium text-[#71717A] mb-1">Aderência</div>
-                  <div className="text-[1.4rem] font-mono font-bold tabular-nums text-[#2563EB]">{stats.pctAderencia}%</div>
-                </div>
-              </div>
-            </div>
-          </Section>
         </motion.div>
 
         {/* ──────────────── Burndown ──────────────── */}

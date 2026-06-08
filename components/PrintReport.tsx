@@ -46,7 +46,6 @@ interface PrintReportProps {
     }[]
     topAtrasadas: { task: { titulo: string; data_prazo?: string | null; responsavel_id?: string | null }; diasAtraso: number }[]
     orphan: { id: string; titulo: string; categoria: string; status: string; data_prazo?: string | null }[]
-    leadTimeMedio: number
     pctAderencia: number
     totalHoras: number
     concluidas: number
@@ -117,11 +116,6 @@ export function PrintReport({
               <div className="pr-kpi-label">Aderência</div>
               <div className="pr-kpi-value">{stats.pctAderencia}%</div>
               <div className="pr-kpi-hint">Dentro do estimado</div>
-            </td>
-            <td>
-              <div className="pr-kpi-label">Lead time médio</div>
-              <div className="pr-kpi-value">{stats.leadTimeMedio}</div>
-              <div className="pr-kpi-hint">dias por tarefa</div>
             </td>
           </tr>
         </tbody>
