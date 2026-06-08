@@ -165,31 +165,44 @@ export function PrintReport({
         </section>
       )}
 
-      {/* Tarefas executadas por dia (timesheet) */}
+      {/* Tarefas executadas por dia — resumo (sem listar atividades).
+          Uma linha por dia: Data | Tempo por projeto | Qtd tarefas | Total. */}
       {stats.byDay.length > 0 && (
         <section className="pr-section">
           <h2>Tarefas executadas por dia</h2>
           <table className="pr-table">
             <thead>
-              <tr><th>Projeto</th><th>Chamado</th><th className="num">Tempo</th></tr>
+              <tr>
+                <th>Data</th>
+                <th>Tempo por projeto</th>
+                <th className="num">Qtd tarefas</th>
+                <th className="num">Total do dia</th>
+              </tr>
             </thead>
-            {stats.byDay.map(dia => (
-              <tbody key={dia.data}>
-                <tr>
-                  <td colSpan={2} style={{ fontWeight: 700, background: '#F4F4F5' }}>
-                    {formatDateBR(dia.data)} · {weekdayBR(dia.data)}
-                  </td>
-                  <td className="num" style={{ fontWeight: 700, background: '#F4F4F5' }}>{formatMinutes(dia.totalMin)}</td>
-                </tr>
-                {dia.items.map(r => (
-                  <tr key={r.tarefa_id}>
-                    <td>{r.projeto}</td>
-                    <td>{r.titulo}</td>
-                    <td className="num">{formatMinutes(r.minutos)}</td>
+            <tbody>
+              {stats.byDay.map(dia => {
+                // Agrupa minutos por projeto dentro do dia
+                const projMap = new Map<string, number>()
+                for (const item of dia.items) {
+                  const key = item.projeto || 'Sem projeto'
+                  projMap.set(key, (projMap.get(key) || 0) + item.minutos)
+                }
+                const projetos = Array.from(projMap.entries())
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([nome, min]) => `${nome}: ${formatMinutes(min)}`)
+                  .join(' · ')
+                return (
+                  <tr key={dia.data}>
+                    <td style={{ fontWeight: 600 }}>
+                      {formatDateBR(dia.data)} · {weekdayBR(dia.data)}
+                    </td>
+                    <td>{projetos}</td>
+                    <td className="num">{dia.items.length}</td>
+                    <td className="num" style={{ fontWeight: 700 }}>{formatMinutes(dia.totalMin)}</td>
                   </tr>
-                ))}
-              </tbody>
-            ))}
+                )
+              })}
+            </tbody>
           </table>
         </section>
       )}
