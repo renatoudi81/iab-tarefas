@@ -737,7 +737,7 @@ export default function DashboardPage() {
         >
           <div className="p-5">
             <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+              <AreaChart data={chartData} margin={{ top: 22, right: 8, bottom: 0, left: -24 }}>
                 <defs>
                   <linearGradient id="grad-concluidas" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#16A34A" stopOpacity={0.18} />
@@ -752,8 +752,12 @@ export default function DashboardPage() {
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#A1A1AA' }} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#E4E4E7' }} />
-                <Area isAnimationActive={false} type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#grad-concluidas)" dot={false} activeDot={{ r: 4, fill: '#16A34A', strokeWidth: 0 }} />
-                <Area isAnimationActive={false} type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={false} activeDot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} />
+                <Area isAnimationActive={false} type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#grad-concluidas)" dot={{ r: 3, fill: '#16A34A', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#16A34A', strokeWidth: 0 }}>
+                  <LabelList dataKey="Concluídas" position="top" fill="#15803D" fontSize={11} fontWeight={700} formatter={(v) => Number(v) > 0 ? String(v) : ''} />
+                </Area>
+                <Area isAnimationActive={false} type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={{ r: 3, fill: '#2563EB', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#2563EB', strokeWidth: 0 }}>
+                  <LabelList dataKey="Criadas" position="bottom" fill="#1D4ED8" fontSize={11} fontWeight={700} formatter={(v) => Number(v) > 0 ? String(v) : ''} />
+                </Area>
               </AreaChart>
             </ResponsiveContainer>
             <ChartDataTable

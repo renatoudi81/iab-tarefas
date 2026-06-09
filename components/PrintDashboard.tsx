@@ -145,7 +145,7 @@ export function PrintDashboard({
           <h2>Produtividade no período</h2>
           <p className="pr-section-sub">Tarefas criadas vs concluídas por semana (Dom–Sáb)</p>
           <div className="pr-chart">
-            <AreaChart width={CHART_WIDTH} height={CHART_HEIGHT} data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+            <AreaChart width={CHART_WIDTH} height={CHART_HEIGHT} data={chartData} margin={{ top: 22, right: 12, bottom: 0, left: -16 }}>
               <defs>
                 <linearGradient id="pr-grad-concluidas" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#16A34A" stopOpacity={0.18} />
@@ -159,8 +159,12 @@ export function PrintDashboard({
               <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#EDEEF1" />
               <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#52525B' }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#52525B' }} tickLine={false} axisLine={false} allowDecimals={false} />
-              <Area isAnimationActive={false} type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#pr-grad-concluidas)" dot={{ r: 2, fill: '#16A34A', strokeWidth: 0 }} />
-              <Area isAnimationActive={false} type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#pr-grad-criadas)" dot={{ r: 2, fill: '#2563EB', strokeWidth: 0 }} />
+              <Area isAnimationActive={false} type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#pr-grad-concluidas)" dot={{ r: 2, fill: '#16A34A', strokeWidth: 0 }}>
+                <LabelList dataKey="Concluídas" position="top" fill="#15803D" fontSize={10} fontWeight={700} formatter={(v) => Number(v) > 0 ? String(v) : ''} />
+              </Area>
+              <Area isAnimationActive={false} type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#pr-grad-criadas)" dot={{ r: 2, fill: '#2563EB', strokeWidth: 0 }}>
+                <LabelList dataKey="Criadas" position="bottom" fill="#1D4ED8" fontSize={10} fontWeight={700} formatter={(v) => Number(v) > 0 ? String(v) : ''} />
+              </Area>
             </AreaChart>
             <div className="pr-chart-legend">
               <span><span className="pr-dot" style={{ background: '#16A34A' }} /> Concluídas</span>
