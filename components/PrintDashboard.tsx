@@ -1,16 +1,26 @@
 /**
  * PrintDashboard — versão para PDF/papel do Dashboard.
  *
- * Mesma abordagem do PrintReport: layout LINEAR, sem Recharts, sem
- * framer-motion. Usa apenas HTML + barras CSS para visualizar proporções.
+ * Mostra os MESMOS graficos da tela (Recharts: AreaChart de criadas/concluidas
+ * e BarChart de horas), com dimensoes fixas em pixels — assim renderiza
+ * mesmo dentro de um container `display:none` (que vira `display:block`
+ * via @media print). Sem ResponsiveContainer (que precisa medir o DOM e
+ * falha em containers ocultos).
+ *
  * Compartilha o CSS `.print-report` (globals.css) — basta usar a mesma
  * classe; o @media print esconde a tela e mostra esse componente.
- *
- * Uso (Dashboard):
- *   <PrintDashboard metrics={metrics} chartData={chartData} ... />
  */
+import {
+  AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, LabelList,
+} from 'recharts'
 import { formatDateBR, formatNumberBR } from '@/types'
 import type { Task, User } from '@/types'
+
+// Largura fixa pra renderizar em A4 retrato (190mm de conteudo util com
+// margens 10mm). 720px @ 96dpi = ~190mm. Altura segue o padrao da tela.
+const CHART_WIDTH = 720
+const CHART_HEIGHT = 220
 
 interface UserLite { id: string; nome: string }
 
@@ -129,51 +139,62 @@ export function PrintDashboard({
         </section>
       )}
 
-      {/* Produtividade no periodo - tabela semanal */}
+      {/* Produtividade no periodo — MESMO grafico da tela (AreaChart) */}
       {chartData.length > 0 && (
         <section className="pr-section">
           <h2>Produtividade no período</h2>
           <p className="pr-section-sub">Tarefas criadas vs concluídas por semana (Dom–Sáb)</p>
-          <table className="pr-table">
-            <thead>
-              <tr>
-                <th>Semana</th>
-                <th className="num">Criadas</th>
-                <th className="num">Concluídas</th>
-                <th className="num">Saldo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chartData.map((b) => (
-                <tr key={b.label}>
-                  <td style={{ whiteSpace: 'nowrap' }}>{b.label}</td>
-                  <td className="num">{b.Criadas}</td>
-                  <td className="num">{b.Concluídas}</td>
-                  <td className="num" style={{ color: b.Concluídas - b.Criadas >= 0 ? '#15803D' : '#B91C1C', fontWeight: 600 }}>
-                    {b.Concluídas - b.Criadas > 0 ? '+' : ''}{b.Concluídas - b.Criadas}
-                  </td>
-                </tr>
-              ))}
-              <tr style={{ background: '#F4F4F5', fontWeight: 700 }}>
-                <td>Total</td>
-                <td className="num">{chartData.reduce((s, b) => s + b.Criadas, 0)}</td>
-                <td className="num">{chartData.reduce((s, b) => s + b.Concluídas, 0)}</td>
-                <td className="num">—</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="pr-chart">
+            <AreaChart width={CHART_WIDTH} height={CHART_HEIGHT} data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+              <defs>
+                <linearGradient id="pr-grad-concluidas" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#16A34A" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="#16A34A" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="pr-grad-criadas" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563EB" stopOpacity={0.14} />
+                  <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#EDEEF1" />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#52525B' }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#52525B' }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <Area isAnimationActive={false} type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#pr-grad-concluidas)" dot={{ r: 2, fill: '#16A34A', strokeWidth: 0 }} />
+              <Area isAnimationActive={false} type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#pr-grad-criadas)" dot={{ r: 2, fill: '#2563EB', strokeWidth: 0 }} />
+            </AreaChart>
+            <div className="pr-chart-legend">
+              <span><span className="pr-dot" style={{ background: '#16A34A' }} /> Concluídas</span>
+              <span><span className="pr-dot" style={{ background: '#2563EB' }} /> Criadas</span>
+            </div>
+          </div>
         </section>
       )}
 
-      {/* Horas trabalhadas por semana */}
+      {/* Horas trabalhadas — MESMO grafico da tela (BarChart) */}
       {chartData.some((b) => b.Horas > 0) && (
         <section className="pr-section">
           <h2>Horas trabalhadas</h2>
-          <p className="pr-section-sub">Tempo lançado por semana (Dom–Sáb)</p>
-          <BarsHorizontais
-            items={chartData.map((b) => ({ label: b.label, value: b.Horas }))}
-            unit="h"
-          />
+          <p className="pr-section-sub">Por semana (Dom–Sáb)</p>
+          <div className="pr-chart">
+            <BarChart width={CHART_WIDTH} height={CHART_HEIGHT} data={chartData} margin={{ top: 22, right: 12, bottom: 0, left: -16 }}>
+              <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#EDEEF1" />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#52525B' }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#52525B' }} tickLine={false} axisLine={false} />
+              <Bar isAnimationActive={false} dataKey="Horas" fill="#7C3AED" fillOpacity={0.9} radius={[4, 4, 0, 0]} maxBarSize={28}>
+                <LabelList
+                  dataKey="Horas"
+                  position="top"
+                  formatter={(value) => {
+                    const n = Number(value)
+                    return n > 0 ? `${formatNumberBR(n)}h` : ''
+                  }}
+                  fill="#0F172A"
+                  fontSize={10}
+                  fontWeight={600}
+                />
+              </Bar>
+            </BarChart>
+          </div>
         </section>
       )}
 
@@ -277,40 +298,3 @@ function DistroBars({ items, total }: { items: { label: string; value: number; c
   )
 }
 
-/** Barras horizontais simples (label + valor + barra preenchida) */
-function BarsHorizontais({ items, unit }: { items: { label: string; value: number }[]; unit?: string }) {
-  const max = Math.max(0.1, ...items.map((i) => i.value))
-  return (
-    <table className="pr-table">
-      <thead>
-        <tr>
-          <th>Semana</th>
-          <th>Distribuição</th>
-          <th className="num">{unit ? `Total (${unit})` : 'Total'}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((it) => {
-          const pct = (it.value / max) * 100
-          return (
-            <tr key={it.label}>
-              <td style={{ whiteSpace: 'nowrap' }}>{it.label}</td>
-              <td>
-                <div style={{
-                  height: 8, background: '#F4F4F5', borderRadius: 4, overflow: 'hidden',
-                }}>
-                  <div style={{
-                    width: `${pct}%`, height: '100%', background: '#7C3AED',
-                  }} />
-                </div>
-              </td>
-              <td className="num" style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>
-                {formatNumberBR(it.value)}{unit || ''}
-              </td>
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
-  )
-}
