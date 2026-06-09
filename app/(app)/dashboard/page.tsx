@@ -12,9 +12,10 @@ import {
 import {
   TrendingUp, Clock, AlertTriangle, CheckCircle2,
   BarChart3, Activity, Sparkles, ArrowUpRight,
-  Calendar as CalendarIcon, Flame,
+  Calendar as CalendarIcon, Flame, Printer,
 } from 'lucide-react'
 import { formatDateBR } from '@/types'
+import { PrintDashboard } from '@/components/PrintDashboard'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
@@ -572,22 +573,43 @@ export default function DashboardPage() {
       animate="show"
       className="flex flex-col gap-6 pb-10"
     >
+      {/* PrintDashboard — versao otimizada do dashboard para PDF/papel.
+          Fica oculto na tela (.print-report tem display:none) e SUBSTITUI o
+          conteudo quando o usuario imprime. Reaproveita o CSS @media print. */}
+      <PrintDashboard
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        filterLabel={effectiveUserId === 'all' ? 'Todos os usuários' : (users.find((u) => u.id === effectiveUserId)?.nome || 'Usuário')}
+        projectLabel={filterProject === 'all' ? 'Todos os projetos' : (projects.find((p) => p.id === filterProject)?.nome || 'Projeto')}
+        metrics={metrics}
+        chartData={chartData}
+        users={users}
+      />
+
       {/* ──────────────── Header ──────────────── */}
       {/* Header — só pílula+h1+subtítulo (padrão Kanban/Lista/Gantt).
           Filtros vão em toolbar separada abaixo. */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
-            <Sparkles size={11} strokeWidth={2.5} />
-            Visão geral
-          </span>
+      <motion.div variants={itemVariants} className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              <Sparkles size={11} strokeWidth={2.5} />
+              Visão geral
+            </span>
+          </div>
+          <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
+            Dashboard
+          </h1>
+          <p className="text-sm text-[#71717A] mt-1.5">
+            Acompanhe a produtividade da equipe e os indicadores do período selecionado.
+          </p>
         </div>
-        <h1 className="text-[1.875rem] font-bold text-[#0F172A] tracking-[-0.025em] leading-[1.1]">
-          Dashboard
-        </h1>
-        <p className="text-sm text-[#71717A] mt-1.5">
-          Acompanhe a produtividade da equipe e os indicadores do período selecionado.
-        </p>
+        <button
+          onClick={() => window.print()}
+          className="h-9 flex items-center gap-1.5 border border-[#E4E4E7] bg-white hover:bg-[#F7F8FA] active:scale-[0.98] text-[#3F3F46] text-sm font-medium px-3.5 rounded-lg transition-all cursor-pointer flex-shrink-0"
+        >
+          <Printer size={13} /> Imprimir
+        </button>
       </motion.div>
 
       {/* Toolbar de filtros — linha separada (padrão Kanban/Lista/Gantt) */}
