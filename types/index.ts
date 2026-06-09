@@ -207,6 +207,40 @@ export function formatNumberBR(n: number, decimals = 1): string {
   })
 }
 
+/**
+ * Regra HIBRIDA de filtro por periodo (Dashboard, Relatorios, Kanban, Lista).
+ *
+ * Uma tarefa entra no periodo se QUALQUER uma destas datas cair no intervalo:
+ *   - criado_em   (foi aberta)
+ *   - data_conclusao (foi finalizada)
+ *   - data_prazo  (tem prazo dentro do periodo)
+ *
+ * Assim o usuario nao perde tarefas que foram abertas fora do periodo mas
+ * concluidas dentro, nem tarefas com prazo no periodo mas abertas antes.
+ *
+ * Quando NAO ha filtro (from e to vazios), retorna true para todas.
+ */
+export interface TaskDateFields {
+  criado_em?: string | null
+  data_conclusao?: string | null
+  data_prazo?: string | null
+}
+export function taskInPeriod(
+  task: TaskDateFields,
+  from: string | null | undefined,
+  to: string | null | undefined,
+): boolean {
+  if (!from && !to) return true
+  const inRange = (d: string | null | undefined): boolean => {
+    if (!d) return false
+    const day = d.slice(0, 10) // normaliza YYYY-MM-DD (ignora hora)
+    if (from && day < from) return false
+    if (to && day > to) return false
+    return true
+  }
+  return inRange(task.criado_em) || inRange(task.data_conclusao) || inRange(task.data_prazo)
+}
+
 export function todayStr(): string {
   return new Date().toISOString().split('T')[0]
 }

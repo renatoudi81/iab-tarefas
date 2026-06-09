@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useCategories } from '@/hooks/useCategories'
 import { useProjects } from '@/hooks/useProjects'
-import { STATUSES, PRIORITIES, STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR, currentMonthRange } from '@/types'
+import { STATUSES, PRIORITIES, STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, formatMinutes, todayStr, formatDateBR, currentMonthRange, taskInPeriod } from '@/types'
 import type { Task } from '@/types'
 import { Plus, Search, Pencil, Trash2, X, Filter, MoreHorizontal } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -110,10 +110,9 @@ export default function ListaPage() {
         if (filterStatus && t.status !== filterStatus) return false
         if (filterPriority && t.prioridade !== filterPriority) return false
         if (filterUser && t.responsavel_id !== filterUser) return false
-        // Date range — filtra por data_prazo (campo principal pra urgência)
-        if ((dateFrom || dateTo) && !t.data_prazo) return false
-        if (dateFrom && t.data_prazo && t.data_prazo < dateFrom) return false
-        if (dateTo && t.data_prazo && t.data_prazo > dateTo) return false
+        // Regra hibrida: entra se criado_em, data_conclusao OU data_prazo
+        // cair no intervalo (consistente com Dashboard/Relatorios/Kanban).
+        if (!taskInPeriod(t, dateFrom, dateTo)) return false
         if (s && !t.titulo.toLowerCase().includes(s) && !stripHtml(t.descricao).toLowerCase().includes(s)) return false
         return true
       })

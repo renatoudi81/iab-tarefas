@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
-import { STATUSES, STATUS_COLORS, currentMonthRange } from '@/types'
+import { STATUSES, STATUS_COLORS, currentMonthRange, taskInPeriod } from '@/types'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -405,13 +405,10 @@ export default function DashboardPage() {
   const [dateTo, setDateTo] = useState(() => currentMonthRange().to)
 
   const metrics = useMemo(() => {
-    // inPeriod = tarefas criadas no intervalo. TODAS as metricas do periodo
-    // (atrasadas, concluidas, produtividade, distribuicao por status) usam
-    // este recorte. Velocidade, Proximos vencimentos e Atencao urgente
-    // permanecem "agora" (nao usam o filtro) — sao metricas de tendencia.
-    const inPeriod = tasks.filter(t =>
-      t.criado_em.slice(0, 10) >= dateFrom && t.criado_em.slice(0, 10) <= dateTo,
-    )
+    // inPeriod = tarefas que TOCARAM o intervalo (regra hibrida): foram
+    // criadas, concluidas OU tem prazo no periodo. Cobertura ampla pra
+    // responder "o que aconteceu nesse periodo?" — ver taskInPeriod.
+    const inPeriod = tasks.filter(t => taskInPeriod(t, dateFrom, dateTo))
     const periodEntries = entries.filter(e => e.data >= dateFrom && e.data <= dateTo)
     const delayed = inPeriod.filter(t => t.status === STATUSES.DELAYED).length
     const done = inPeriod.filter(t => t.status === STATUSES.DONE).length
@@ -428,9 +425,7 @@ export default function DashboardPage() {
     const prevFrom = new Date(new Date(dateFrom).getTime() - periodDays * 86400000)
       .toISOString().split('T')[0]
     const prevTo = new Date(new Date(dateFrom).getTime() - 86400000).toISOString().split('T')[0]
-    const prevInPeriod = tasks.filter(t =>
-      t.criado_em.slice(0, 10) >= prevFrom && t.criado_em.slice(0, 10) <= prevTo,
-    ).length
+    const prevInPeriod = tasks.filter(t => taskInPeriod(t, prevFrom, prevTo)).length
     const prevEntries = entries.filter(e => e.data >= prevFrom && e.data <= prevTo)
     const prevMinutes = prevEntries.reduce((s, e) => s + e.duracao, 0)
     const prevHours = Math.round((prevMinutes / 60) * 10) / 10

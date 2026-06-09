@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange } from '@/types'
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange, taskInPeriod } from '@/types'
 import type { Status, Task } from '@/types'
 import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Search, Trash2, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -142,11 +142,9 @@ export default function KanbanPage() {
       // Filtro por responsável (admin escolhe; não-admin sempre vê só
       // o que a API retorna — que já é o próprio)
       if (filterUserId !== 'all' && t.responsavel_id !== filterUserId) return false
-      // Filtro por data: usamos data_prazo como a referência principal.
-      // Tarefas sem prazo são incluídas só quando NÃO há range definido.
-      if ((dateFrom || dateTo) && !t.data_prazo) return false
-      if (dateFrom && t.data_prazo && t.data_prazo < dateFrom) return false
-      if (dateTo && t.data_prazo && t.data_prazo > dateTo) return false
+      // Regra hibrida de periodo: entra se criado_em, data_conclusao OU
+      // data_prazo cair no intervalo (consistente com Dashboard/Relatorios).
+      if (!taskInPeriod(t, dateFrom, dateTo)) return false
       // Busca por titulo OU descricao (mesma logica da Lista)
       if (s && !t.titulo.toLowerCase().includes(s) && !stripHtml(t.descricao).toLowerCase().includes(s)) return false
       return true
