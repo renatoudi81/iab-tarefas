@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, formatNumberBR, weekdayBR, currentMonthRange } from '@/types'
+import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, formatNumberBR, weekdayBR, currentMonthRange, taskInPeriod } from '@/types'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import { PrintReport } from '@/components/PrintReport'
@@ -198,14 +198,9 @@ export default function RelatoriosPage() {
       arr = arr.filter(t => t.projeto_id === filterProject)
     }
     if (dateFrom || dateTo) {
-      arr = arr.filter(t => {
-        // Usa data_prazo como referência principal; tarefas sem prazo
-        // só entram se NÃO há range definido
-        if (!t.data_prazo) return false
-        if (dateFrom && t.data_prazo < dateFrom) return false
-        if (dateTo && t.data_prazo > dateTo) return false
-        return true
-      })
+      // Regra hibrida: a tarefa entra se criado_em, data_conclusao OU
+      // data_prazo cair no periodo (ver taskInPeriod em types/index.ts).
+      arr = arr.filter(t => taskInPeriod(t, dateFrom, dateTo))
     }
     return arr
   }, [allTasks, effectiveUserId, filterProject, dateFrom, dateTo])
