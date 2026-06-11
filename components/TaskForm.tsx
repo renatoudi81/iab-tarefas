@@ -80,6 +80,10 @@ export interface TaskFormProps {
   onCancel?: () => void
   /** 'modal' = scroll interno + footer fixo; 'page' = flui na página */
   variant?: 'modal' | 'page'
+  /** Em EDIÇÃO: valores aplicados por cima do form ao montar, SEM alterar a
+   *  baseline — assim isDirty fica true e a barra Salvar aparece. Usado pelo
+   *  fluxo "finalizar" do Kanban (pré-seleciona Concluída + data de hoje). */
+  initialOverride?: Partial<TaskFormData>
 }
 
 /**
@@ -87,7 +91,7 @@ export interface TaskFormProps {
  * reutilizável tanto no modal (Dialog) quanto na página /tarefas/[id]
  * (edição direta, sem duplicação).
  */
-export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, variant = 'modal' }: TaskFormProps) {
+export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, variant = 'modal', initialOverride }: TaskFormProps) {
   const { addTask, updateTask } = useTasks()
   const { users } = useUsers()
   const { categories } = useCategories()
@@ -96,8 +100,12 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
 
   // Lazy init: o form já nasce com os valores da tarefa, então os Selects
   // recebem o value correto no PRIMEIRO render (com as opções presentes).
-  const [form, setForm] = useState<TaskFormData>(() => buildForm(task, initialStatus, initialData))
-  const [initialForm, setInitialForm] = useState<TaskFormData>(form)
+  // baseline = estado original (sem override) p/ comparar isDirty.
+  const [initialForm, setInitialForm] = useState<TaskFormData>(() => buildForm(task, initialStatus, initialData))
+  const [form, setForm] = useState<TaskFormData>(() => ({
+    ...buildForm(task, initialStatus, initialData),
+    ...(task && initialOverride ? initialOverride : {}),
+  }))
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -114,8 +122,8 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
   // Repopula ao trocar de tarefa (ex.: reabrir o modal com outra task).
   useEffect(() => {
     const next = buildForm(task, initialStatus, initialData)
-    setForm(next)
-    setInitialForm(next)
+    setInitialForm(next) // baseline = original (sem override)
+    setForm(task && initialOverride ? { ...next, ...initialOverride } : next)
     setSaveError('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, initialStatus, initialData])

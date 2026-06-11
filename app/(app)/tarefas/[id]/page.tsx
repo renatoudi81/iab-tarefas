@@ -1,5 +1,5 @@
 'use client'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
@@ -13,13 +13,17 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   ArrowLeft, FileText, Clock, History as HistoryIcon, Loader2,
 } from 'lucide-react'
-import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS } from '@/types'
+import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, todayStr, type Task } from '@/types'
 import { getCategoryColor } from '@/lib/category-color'
 
 export default function TarefaPage() {
   const params = useParams<{ id: string }>()
   const id = (params?.id as string) || ''
   const router = useRouter()
+  const searchParams = useSearchParams()
+  // Fluxo "finalizar" vindo do Kanban (?finalizar=1): pré-seleciona Concluída
+  // + data de hoje e, ao salvar, volta para o Kanban.
+  const finalizar = searchParams?.get('finalizar') === '1'
   const { tasks, isLoading, isInitialLoad } = useTasks()
   const { users, isLoading: usersLoading } = useUsers()
   const { projects, isLoading: projLoading } = useProjects()
@@ -128,7 +132,17 @@ export default function TarefaPage() {
           <h2 className="text-[0.95rem] font-semibold text-[#0F172A]">Detalhes da tarefa</h2>
         </div>
         {formDataReady ? (
-          <TaskForm key={task.id} task={task} variant="page" />
+          <TaskForm
+            key={task.id}
+            task={task}
+            variant="page"
+            initialOverride={finalizar ? { status: 'Concluída', data_conclusao: task.data_conclusao || todayStr() } : undefined}
+            onSaved={(saved: Task) => {
+              // Ao concluir (seja pelo fluxo finalizar ou edicao manual que
+              // marca Concluida), volta para o Kanban.
+              if (saved.status === 'Concluída') router.push('/kanban')
+            }}
+          />
         ) : (
           <div className="py-12 flex items-center justify-center text-[#71717A]">
             <Loader2 size={20} className="animate-spin" />
