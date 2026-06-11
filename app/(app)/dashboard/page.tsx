@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
 import { useTimeEntries } from '@/hooks/useTimeEntries'
-import { STATUSES, STATUS_COLORS, currentMonthRange, taskInPeriod } from '@/types'
+import { STATUSES, STATUS_COLORS, currentMonthRange, taskInPeriod, todayStr } from '@/types'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -456,10 +456,13 @@ export default function DashboardPage() {
     const velocity = Math.round((doneInPeriod / weeksInPeriod) * 10) / 10
 
     // ──── Próximos vencimentos / Top atrasadas
-    const todayDate = new Date(new Date().toISOString().split('T')[0])
+    // "Hoje" no fuso de negócio. todayDate ancorado em UTC-meia-noite
+    // (new Date('YYYY-MM-DD')) — mesmo anchor de new Date(data_prazo),
+    // então as diferenças em dias saem exatas.
+    const todayStrLocal = todayStr()
+    const todayDate = new Date(todayStrLocal)
     const inSevenDays = new Date(todayDate)
-    inSevenDays.setDate(inSevenDays.getDate() + 7)
-    const todayStrLocal = todayDate.toISOString().split('T')[0]
+    inSevenDays.setUTCDate(inSevenDays.getUTCDate() + 7)
     const sevenStr = inSevenDays.toISOString().split('T')[0]
     const upcoming = tasks
       .filter(t => t.status !== 'Concluída' && t.status !== 'Atrasada' && t.data_prazo)
@@ -872,7 +875,7 @@ export default function DashboardPage() {
               {metrics.upcoming.map((task) => {
                 const resp = users.find((u) => u.id === task.responsavel_id)
                 const days = Math.floor(
-                  (new Date(task.data_prazo!).getTime() - new Date(new Date().toISOString().split('T')[0]).getTime()) / 86400000
+                  (new Date(task.data_prazo!).getTime() - new Date(todayStr()).getTime()) / 86400000
                 )
                 const statusColor = STATUS_COLORS[task.status as keyof typeof STATUS_COLORS]
                 return (

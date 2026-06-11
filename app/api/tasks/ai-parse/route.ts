@@ -29,6 +29,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { todayStr } from '@/types'
 
 interface ParsedTask {
   titulo: string
@@ -135,7 +136,7 @@ export async function POST(req: Request) {
     }))
 
     // 5. Monta prompt
-    const todayISO = new Date().toISOString().split('T')[0]
+    const todayISO = todayStr()
     const usuariosList = usuarios
       .map(u => `  - id="${u.id}" nome="${u.nome}" perfil="${u.perfil}"`)
       .join('\n')

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
 import { loadTaskAndCheck } from '@/lib/task-access'
+import { todayStr } from '@/types'
 
 // Recomputa tempo_gasto_total da tarefa somando todos os time_entries
 async function recomputeTaskTotal(tarefaId: string) {
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
   const entryData = {
     tarefa_id,
     usuario_id: userId,
-    data: data || new Date().toISOString().split('T')[0],
+    data: data || todayStr(),
     hora_inicio: hora_inicio || '',
     hora_fim: hora_fim || '',
     duracao: dur,

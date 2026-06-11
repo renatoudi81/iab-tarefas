@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { todayStr } from '@/types'
 
 const VALID_PRIORIDADES = ['Baixa', 'Média', 'Alta', 'Crítica'] as const
 const VALID_STATUSES = ['Pendente', 'Em andamento', 'Concluída', 'Atrasada', 'Aguardando'] as const
@@ -33,9 +34,9 @@ export async function GET(req: Request) {
   // 2) Mapa de usuários (paralelo)
   const userMap = await loadUserMap()
 
-  // "Hoje" no formato YYYY-MM-DD para comparar com data_prazo (que também
-  // é YYYY-MM-DD). Comparação lexicográfica funciona pra esse formato.
-  const today = new Date().toISOString().split('T')[0]
+  // "Hoje" no fuso America/Sao_Paulo (todayStr) — o servidor roda em UTC e
+  // toISOString() viraria o dia 3h mais cedo, marcando Atrasada às 21h locais.
+  const today = todayStr()
 
   // 3) Para cada task, buscar subtasks e contagem de comments em paralelo
   const tasksRaw = await Promise.all(tasksSnap.docs.map(async (doc) => {
@@ -194,7 +195,7 @@ export async function POST(req: Request) {
 
   // Mesma derivação do GET — task criada já com data_prazo vencida vira
   // 'Atrasada' direto na resposta (consistência entre POST/PATCH/GET)
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
   const isOverdue =
     taskData.data_prazo &&
     taskData.data_prazo < today &&
