@@ -8,7 +8,7 @@ import { useProjects } from '@/hooks/useProjects'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange, taskInPeriod, todayStr } from '@/types'
 import type { Status, Task } from '@/types'
-import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Search, Trash2, X } from 'lucide-react'
+import { Calendar, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Search, Trash2, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
@@ -413,9 +413,6 @@ export default function KanbanPage() {
                           ? users.find(u => u.id === task.responsavel_id)
                           : (task.responsavel ?? null)
                         const overdue = task.data_prazo && task.data_prazo < today && status !== 'Concluída'
-                        const totalSubtasks = task._count?.subtasks ?? task.subtasks?.length ?? 0
-                        const doneSubtasks = task.subtasks?.filter(s => s.concluida).length ?? 0
-                        const allDone = totalSubtasks > 0 && doneSubtasks === totalSubtasks
                         const prioColor = PRIORITY_COLORS[task.prioridade]
                         // Cor do status (Pendente, Em andamento, Aguardando,
                         // Atrasada, Concluída) — usada no border esquerdo do
@@ -545,29 +542,6 @@ export default function KanbanPage() {
                                       </p>
                                     )}
 
-                                    {/* Subtarefas progress */}
-                                    {totalSubtasks > 0 && (
-                                      <div className="mt-1">
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="text-[0.65rem] text-[#71717A] flex items-center gap-1 font-medium">
-                                            <CheckSquare size={10} className={allDone ? 'text-[#15803D]' : 'text-[#71717A]'} />
-                                            Subtarefas
-                                          </span>
-                                          <span className={cn('text-[0.65rem] font-bold tabular-nums', allDone ? 'text-[#15803D]' : 'text-[#52525B]')}>
-                                            {doneSubtasks}/{totalSubtasks}
-                                          </span>
-                                        </div>
-                                        <div className="h-1 w-full rounded-full bg-[#F0F0F2] overflow-hidden">
-                                          <div
-                                            className="h-full rounded-full transition-all"
-                                            style={{
-                                              width: `${Math.round((doneSubtasks / totalSubtasks) * 100)}%`,
-                                              background: allDone ? '#16A34A' : color,
-                                            }}
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
 
                                   {/* FOOTER — bg sutil pra separar visualmente.

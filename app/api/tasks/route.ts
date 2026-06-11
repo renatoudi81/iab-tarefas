@@ -38,17 +38,13 @@ export async function GET(req: Request) {
   // toISOString() viraria o dia 3h mais cedo, marcando Atrasada às 21h locais.
   const today = todayStr()
 
-  // 3) Para cada task, buscar subtasks e contagem de comments em paralelo
-  const tasksRaw = await Promise.all(tasksSnap.docs.map(async (doc) => {
+  // 3) Monta a resposta SEM tocar nas subcoleções. Antes, cada task gerava
+  //    2 leituras extras (subtasks + count de comments) = N+1 que consumia
+  //    ~3x a quota do Spark a cada GET. Subtarefas e comentários foram
+  //    REMOVIDOS da UI — quem precisar deles no futuro deve buscar pela
+  //    rota da tarefa específica, nunca na listagem.
+  const tasksRaw = tasksSnap.docs.map((doc) => {
     const data = doc.data() as any
-    const taskRef = doc.ref
-
-    const [subtasksSnap, commentsCountSnap] = await Promise.all([
-      taskRef.collection('subtasks').orderBy('ordem', 'asc').get(),
-      taskRef.collection('comments').count().get(),
-    ])
-
-    const subtasks = subtasksSnap.docs.map(s => ({ concluida: (s.data() as any).concluida }))
     const responsavel = data.responsavel_id ? userMap.get(data.responsavel_id) ?? null : null
 
     // Status derivado: se data_prazo < hoje e a tarefa NÃO está Concluída,
@@ -67,13 +63,8 @@ export async function GET(req: Request) {
       ...data,
       status: effectiveStatus,
       responsavel,
-      subtasks,
-      _count: {
-        subtasks: subtasks.length,
-        comments: commentsCountSnap.data().count,
-      },
     }
-  }))
+  })
 
   // 4) Permissões: admin vê tudo. Outros perfis veem apenas tarefas onde:
   //    - são o responsável (responsavel_id === user.id), ou

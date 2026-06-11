@@ -110,10 +110,12 @@ export async function POST(req: Request) {
   // 4. Carrega vocabulário do banco (projetos + categorias + usuários) pra IA
   //    escolher valores reais. Mantém a resposta amarrada ao schema da empresa.
   try {
+    // limit() em tudo: cada análise de IA custa reads — sem teto, o custo
+    // cresce junto com as coleções. 200 cobre folgado o vocabulário atual.
     const [categoriesSnap, usersSnap, projectsSnap, feedbackSnap] = await Promise.all([
-      adminDb.collection('categories').get(),
-      adminDb.collection('users').get(),
-      adminDb.collection('projects').get(),
+      adminDb.collection('categories').limit(200).get(),
+      adminDb.collection('users').limit(200).get(),
+      adminDb.collection('projects').limit(200).get(),
       // Últimas 10 correções humanas — aprendizado por contexto (few-shot)
       adminDb.collection('ai_feedback').orderBy('criado_em', 'desc').limit(10).get()
         .catch(() => ({ docs: [] as never[] })),
