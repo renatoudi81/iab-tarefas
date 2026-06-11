@@ -188,6 +188,18 @@ export default function KanbanPage() {
     if (!destination || destination.droppableId === source.droppableId) return
     const newStatus = destination.droppableId as Status
 
+    // Mover para Concluída exige data de conclusão (regra de negócio). Em vez
+    // de persistir e a API rejeitar (fazendo o card "voltar"), abrimos a tela
+    // de edição com ?finalizar=1 — lá o usuário informa a data e salva.
+    // Se a tarefa JÁ tem data_conclusao, conclui direto (fluxo normal abaixo).
+    if (newStatus === 'Concluída') {
+      const task = localTasks.find(t => t.id === draggableId)
+      if (!task?.data_conclusao) {
+        router.push(`/tarefas/${draggableId}?finalizar=1`)
+        return
+      }
+    }
+
     // 1. Marca como pendente ANTES do flushSync para bloquear o useEffect
     pendingIds.current.add(draggableId)
 
