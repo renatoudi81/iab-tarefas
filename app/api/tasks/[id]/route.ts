@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { todayStr } from '@/types'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -154,7 +155,7 @@ export async function PATCH(req: Request, { params }: Params) {
   // Mesma derivação aplicada no GET — status='Atrasada' quando vencida
   // e não-concluída. Garante consistência entre POST/PATCH e GET; o user
   // não vê a tarefa "saltar" entre status diferentes após cada operação.
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
   const isOverdue =
     updatedData.data_prazo &&
     updatedData.data_prazo < today &&

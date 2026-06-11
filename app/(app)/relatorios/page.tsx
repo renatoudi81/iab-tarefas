@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, formatNumberBR, weekdayBR, currentMonthRange, taskInPeriod } from '@/types'
+import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, formatNumberBR, weekdayBR, currentMonthRange, taskInPeriod, todayStr } from '@/types'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import { PrintReport } from '@/components/PrintReport'
@@ -353,7 +353,7 @@ export default function RelatoriosPage() {
       .slice(0, 8)
 
     // Top 5 tarefas mais atrasadas (mais antigas no status Atrasada)
-    const today = new Date().toISOString().split('T')[0]
+    const today = todayStr()
     const topAtrasadas = tasks
       .filter((t) => t.status === 'Atrasada' && t.data_prazo)
       .map((t) => {
@@ -385,7 +385,7 @@ export default function RelatoriosPage() {
       .filter(Boolean) as string[]
     const oldestDate = datesAll.length > 0 ? datesAll.sort()[0] : ''
     const burnStart = dateFrom || oldestDate
-    const burnEnd = dateTo || new Date().toISOString().split('T')[0]
+    const burnEnd = dateTo || todayStr()
     const burndownData: { label: string; Criadas: number; Concluídas: number }[] = []
     if (burnStart && burnEnd && burnStart <= burnEnd) {
       const startMs = new Date(burnStart + 'T00:00:00').getTime()
@@ -549,7 +549,7 @@ export default function RelatoriosPage() {
 
   // Intervalo efetivo pro PDF: se o usuário filtrou, usa o filtro;
   // senão calcula o range natural dos dados (criado_em mais antigo → hoje).
-  const todayStrLocal = new Date().toISOString().split('T')[0]
+  const todayStrLocal = todayStr()
   const isFiltered = !!(dateFrom || dateTo)
   let effectiveFrom = dateFrom
   let effectiveTo = dateTo || todayStrLocal

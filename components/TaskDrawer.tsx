@@ -14,7 +14,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
 import type { Task, Project, TimeEntry } from '@/types'
 import {
-  getInitials, formatMinutes,
+  getInitials, formatMinutes, todayStr,
   STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS,
   formatDateBR, formatDateTimeBR, ATIVIDADES_TEMPO,
 } from '@/types'
@@ -417,7 +417,7 @@ export function TempoTab({ task }: { task: Task }) {
   const { confirm } = useConfirm()
 
   // Lançamento manual (data + duração em minutos + atividade + comentário)
-  const hojeStr = new Date().toISOString().split('T')[0]
+  const hojeStr = todayStr()
   const [novoData, setNovoData] = useState(hojeStr)
   const [novoMinutos, setNovoMinutos] = useState('')
   const [novoComentario, setNovoComentario] = useState('')

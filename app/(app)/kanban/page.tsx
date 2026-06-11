@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
-import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange, taskInPeriod } from '@/types'
+import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange, taskInPeriod, todayStr } from '@/types'
 import type { Status, Task } from '@/types'
 import { Calendar, CheckSquare, Clock, Plus, LayoutGrid, MoreHorizontal, Pencil, Search, Trash2, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -221,7 +221,7 @@ export default function KanbanPage() {
       })
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayStr()
 
   if (isInitialLoad || (isLoading && swrTasks.length === 0)) {
     return <KanbanSkeleton />
