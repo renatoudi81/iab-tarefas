@@ -22,9 +22,14 @@ export async function GET(req: Request) {
 
   const isAdmin = user.perfil === 'Administrador'
 
-  // Collection group query: pega todos os time_entries de todas as tasks
+  // Collection group query: pega os time_entries de todas as tasks.
+  // limit(2000) é um guarda-corpo de quota (Spark ~50k reads/dia): sem ele,
+  // cada GET varre TODOS os lançamentos do banco — foi o que estourou a
+  // quota em junho/2026. 2000 cobre ~1 ano de uso no volume atual; quando
+  // chegar perto disso, paginar por período (?from=&to=).
   const snap = await adminDb.collectionGroup('time_entries')
     .orderBy('criado_em', 'desc')
+    .limit(2000)
     .get()
 
   const allEntries = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]
