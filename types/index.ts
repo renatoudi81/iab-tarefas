@@ -62,29 +62,6 @@ export interface Task {
   criado_em: string
   atualizado_em: string
   responsavel?: User | null
-  /** Contagens retornadas pela API de listagem */
-  _count?: { subtasks: number; comments: number }
-  /** Subtarefas (somente campo concluída) retornadas na listagem */
-  subtasks?: { concluida: boolean }[]
-}
-
-export interface Comment {
-  id: string
-  tarefa_id: string
-  usuario_id: string
-  texto: string
-  criado_em: string
-  editado_em: string
-  usuario: { nome: string; avatar_color: string }
-}
-
-export interface Subtask {
-  id: string
-  tarefa_id: string
-  titulo: string
-  concluida: boolean
-  ordem: number
-  criado_em: string
 }
 
 export interface Notification {

@@ -179,6 +179,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           </div>
                           <div className="text-[0.68rem] text-[#71717A]">
                             {new Date(n.criado_em).toLocaleString('pt-BR', {
+                              timeZone: 'America/Sao_Paulo',
                               day: '2-digit',
                               month: '2-digit',
                               hour: '2-digit',

@@ -5,7 +5,8 @@ import { apiFetcher } from '@/lib/api-fetch'
 export function useTaskHistory(taskId: string | null) {
   const { data, isLoading, mutate } = useSWR<{ history: TaskHistory[] }>(
     taskId ? `/api/tasks/${taskId}/history` : null,
-    apiFetcher
+    apiFetcher,
+    { revalidateOnFocus: false }
   )
 
   const history = data?.history ?? []

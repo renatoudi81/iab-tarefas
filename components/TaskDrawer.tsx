@@ -3,11 +3,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import {
-  X, Edit2, CheckSquare, MessageSquare, Clock, History,
-  Plus, Trash2, ChevronRight, Loader2, Check, Maximize2
+  X, Edit2, Plus, Trash2, ChevronRight, Loader2, Check, Maximize2
 } from 'lucide-react'
-import { useComments } from '@/hooks/useComments'
-import { useSubtasks } from '@/hooks/useSubtasks'
 import { useTaskTimeEntries } from '@/hooks/useTimeEntries'
 import { useTaskHistory } from '@/hooks/useTaskHistory'
 import { useUsers } from '@/hooks/useUsers'
@@ -23,11 +20,9 @@ import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -202,211 +197,6 @@ export function DetalhesTab({ task, users, projects }: { task: Task; users: Retu
           </div>
         </>
       )}
-    </div>
-  )
-}
-
-export function SubtarefasTab({ taskId }: { taskId: string }) {
-  const { subtasks, addSubtask, toggleSubtask, deleteSubtask, isLoading, completedCount, totalCount } = useSubtasks(taskId)
-  const [newTitulo, setNewTitulo] = useState('')
-  const [adding, setAdding] = useState(false)
-  const { toast } = useToast()
-  const { confirm } = useConfirm()
-
-  const handleAdd = async () => {
-    const t = newTitulo.trim()
-    if (!t) return
-    setAdding(true)
-    try {
-      await addSubtask(t)
-      setNewTitulo('')
-    } finally {
-      setAdding(false)
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') { e.preventDefault(); handleAdd() }
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Progress */}
-      {totalCount > 0 && (
-        <div className="text-[0.8125rem] text-[#71717A] font-medium">
-          {completedCount} de {totalCount} concluída{totalCount !== 1 ? 's' : ''}
-        </div>
-      )}
-
-      {/* Lista */}
-      {isLoading ? (
-        <div className="text-[#71717A] text-sm">Carregando...</div>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          <AnimatePresence>
-            {subtasks.map(s => (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 8 }}
-                className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-[#F7F8FA]"
-              >
-                <Checkbox
-                  checked={s.concluida}
-                  onCheckedChange={() => toggleSubtask(s.id)}
-                  className="shrink-0"
-                />
-                <span className={cn(
-                  'flex-1 text-sm',
-                  s.concluida ? 'text-[#71717A] line-through' : 'text-foreground'
-                )}>
-                  {s.titulo}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-[26px] h-[26px] opacity-50 hover:opacity-100"
-                  onClick={async () => {
-                    const ok = await confirm({
-                      title: 'Remover subtarefa?',
-                      confirmText: 'Remover',
-                      variant: 'destructive',
-                    })
-                    if (!ok) return
-                    try { await deleteSubtask(s.id); toast.success('Subtarefa removida') }
-                    catch (err: any) { toast.error('Erro ao remover subtarefa', err.message) }
-                  }}
-                  title="Remover"
-                >
-                  <X size={12} />
-                </Button>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {subtasks.length === 0 && (
-            <div className="text-[#71717A] text-sm py-1">Nenhuma subtarefa ainda.</div>
-          )}
-        </div>
-      )}
-
-      {/* Adicionar */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Nova subtarefa... (Enter para confirmar)"
-          value={newTitulo}
-          onChange={e => setNewTitulo(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={adding}
-          className="flex-1"
-        />
-        <Button
-          size="icon"
-          className="w-9 h-9 shrink-0"
-          onClick={handleAdd}
-          disabled={adding || !newTitulo.trim()}
-        >
-          {adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-export function ComentariosTab({ taskId }: { taskId: string }) {
-  const { comments, addComment, deleteComment, isLoading } = useComments(taskId)
-  const [texto, setTexto] = useState('')
-  const [sending, setSending] = useState(false)
-  const { toast } = useToast()
-  const { confirm } = useConfirm()
-
-  const handleSend = async () => {
-    const t = texto.trim()
-    if (!t) return
-    setSending(true)
-    try {
-      await addComment(t)
-      setTexto('')
-    } finally {
-      setSending(false)
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Lista */}
-      {isLoading ? (
-        <div className="text-[#71717A] text-sm">Carregando...</div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {comments.length === 0 && (
-            <div className="text-[#71717A] text-sm">Nenhum comentário ainda.</div>
-          )}
-          <AnimatePresence>
-            {comments.map(c => (
-              <motion.div
-                key={c.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className="flex gap-2.5 items-start"
-              >
-                <Avatar className="w-[30px] h-[30px] shrink-0 mt-0.5">
-                  <AvatarFallback
-                    className="text-[11px] font-semibold text-white"
-                    style={{ background: c.usuario.avatar_color }}
-                  >
-                    {getInitials(c.usuario.nome)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 rounded-lg bg-[#F7F8FA] p-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-[0.8125rem]">{c.usuario.nome}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[0.72rem] text-[#71717A]">{fmtDateTime(c.criado_em)}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-[22px] h-[22px] opacity-50 hover:opacity-100"
-                        onClick={async () => {
-                          const ok = await confirm({
-                            title: 'Excluir comentário?',
-                            confirmText: 'Excluir',
-                            variant: 'destructive',
-                          })
-                          if (!ok) return
-                          try { await deleteComment(c.id); toast.success('Comentário excluído') }
-                          catch (err: any) { toast.error('Erro ao excluir comentário', err.message) }
-                        }}
-                        title="Excluir"
-                      >
-                        <Trash2 size={11} />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="text-sm text-[#71717A] leading-relaxed whitespace-pre-wrap">{c.texto}</div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Adicionar comentário */}
-      <div className="flex flex-col gap-2">
-        <Textarea
-          rows={3}
-          placeholder="Escreva um comentário..."
-          value={texto}
-          onChange={e => setTexto(e.target.value)}
-          disabled={sending}
-        />
-        <div className="flex justify-end">
-          <Button onClick={handleSend} disabled={sending || !texto.trim()} className="gap-1.5">
-            {sending ? <><Loader2 size={14} className="animate-spin" /> Enviando...</> : 'Comentar'}
-          </Button>
-        </div>
-      </div>
     </div>
   )
 }
