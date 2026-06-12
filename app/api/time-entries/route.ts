@@ -2,19 +2,8 @@ import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
 import { loadTaskAndCheck } from '@/lib/task-access'
+import { recomputeTaskTotal } from '@/lib/recompute-task-total'
 import { todayStr } from '@/types'
-
-// Recomputa tempo_gasto_total da tarefa somando todos os time_entries
-async function recomputeTaskTotal(tarefaId: string) {
-  const ref = adminDb.collection('tasks').doc(tarefaId).collection('time_entries')
-  const snap = await ref.get()
-  const total = snap.docs.reduce((sum, d) => sum + Number((d.data() as any).duracao || 0), 0)
-  await adminDb.collection('tasks').doc(tarefaId).update({
-    tempo_gasto_total: total,
-    atualizado_em: new Date().toISOString(),
-  })
-  return total
-}
 
 export async function GET(req: Request) {
   const user = await verifyAuth(req)
