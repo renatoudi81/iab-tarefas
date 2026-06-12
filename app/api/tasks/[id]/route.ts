@@ -51,6 +51,16 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Status inválido' }, { status: 400 })
   }
 
+  // Coerência de datas (mesma regra do POST): início não pode ser depois do
+  // prazo. Compara os valores EFETIVOS pós-edição (body quando presente,
+  // senão o que já está gravado) — antes essa validação só existia no POST
+  // e a edição conseguia criar estado inválido.
+  const effInicio = body.data_inicio !== undefined ? body.data_inicio : existing.data_inicio
+  const effPrazo = body.data_prazo !== undefined ? body.data_prazo : existing.data_prazo
+  if (effInicio && effPrazo && effInicio > effPrazo) {
+    return NextResponse.json({ error: 'Data de início não pode ser posterior ao prazo' }, { status: 400 })
+  }
+
   // Responsável é obrigatório — não pode ser removido em uma edição.
   // (Se o campo estiver no body e vier vazio/null, rejeita.)
   if (body.responsavel_id !== undefined) {
@@ -185,21 +195,10 @@ export async function DELETE(req: Request, { params }: Params) {
     }
   }
 
-  // Deleta subcoleções (Firestore não faz cascade automático)
-  const subcollections = ['subtasks', 'comments', 'time_entries', 'history'] as const
-  for (const sub of subcollections) {
-    const subSnap = await ref.collection(sub).get()
-    if (subSnap.empty) continue
-    let batch = adminDb.batch()
-    let count = 0
-    for (const doc of subSnap.docs) {
-      batch.delete(doc.ref)
-      count++
-      if (count >= 400) { await batch.commit(); batch = adminDb.batch(); count = 0 }
-    }
-    if (count > 0) await batch.commit()
-  }
-
-  await ref.delete()
+  // recursiveDelete: apaga o doc e TODAS as subcoleções (subtasks, comments,
+  // time_entries, history) com batching e retry internos do Admin SDK.
+  // Substitui o loop manual de batches, que podia deixar órfãos se falhasse
+  // no meio (ex.: timeout) — e descobria as subcoleções por lista fixa.
+  await adminDb.recursiveDelete(ref)
   return NextResponse.json({ ok: true })
 }

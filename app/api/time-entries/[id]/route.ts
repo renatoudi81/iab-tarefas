@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server'
 import { verifyAuth } from '@/lib/verify-auth'
 import { adminDb } from '@/lib/firebase-admin'
+import { recomputeTaskTotal } from '@/lib/recompute-task-total'
 
 type Params = { params: Promise<{ id: string }> }
-
-// Recomputa tempo_gasto_total da tarefa somando os lançamentos restantes
-async function recomputeTaskTotal(tarefaId: string) {
-  const ref = adminDb.collection('tasks').doc(tarefaId).collection('time_entries')
-  const snap = await ref.get()
-  const total = snap.docs.reduce((sum, d) => sum + Number((d.data() as { duracao?: number }).duracao || 0), 0)
-  await adminDb.collection('tasks').doc(tarefaId).update({
-    tempo_gasto_total: total,
-    atualizado_em: new Date().toISOString(),
-  })
-}
 
 /**
  * Localiza o lançamento e valida permissão (admin OU dono).
