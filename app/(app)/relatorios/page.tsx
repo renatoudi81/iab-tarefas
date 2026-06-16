@@ -491,6 +491,18 @@ export default function RelatoriosPage() {
       })
       .sort((a, b) => b.data.localeCompare(a.data)) // mais recente primeiro
 
+    // ──── Média de horas por DIA TRABALHADO ────────────────────────
+    // Denominador = dias COM atividade (byDay.length), não dias corridos do
+    // período: fins de semana/feriados/dias sem registro não diluem a média.
+    // Mede o ritmo real de trabalho num dia em que houve tempo lançado.
+    // Já respeita os filtros (período/usuário/projeto), pois deriva do byDay.
+    const diasTrabalhados = byDay.length
+    const minutosTrabalhados = byDay.reduce((s, d) => s + d.totalMin, 0)
+    const mediaHorasDia =
+      diasTrabalhados > 0
+        ? Math.round((minutosTrabalhados / diasTrabalhados / 60) * 10) / 10
+        : 0
+
     return {
       byStatus,
       byDay,
@@ -508,6 +520,8 @@ export default function RelatoriosPage() {
       burndownData,
       heatmapData,
       totalHoras,
+      mediaHorasDia,
+      diasTrabalhados,
       concluidas,
       pctConcluidas,
       pendentes,
@@ -880,6 +894,19 @@ export default function RelatoriosPage() {
             title="Tarefas executadas por dia"
             subtitle="Clique em um dia para ver as tarefas — projeto, chamado e duração, com total diário"
           >
+            {stats.byDay.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 px-5 py-3 border-b border-[#F4F4F5] bg-[#FAFAFA]">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[0.78rem] text-[#71717A]">Média por dia trabalhado:</span>
+                  <span className="text-[0.95rem] font-bold text-[#2563EB] tabular-nums">
+                    {formatNumberBR(stats.mediaHorasDia)}h
+                  </span>
+                </div>
+                <div className="text-[0.72rem] text-[#A1A1AA]">
+                  {stats.diasTrabalhados} {stats.diasTrabalhados === 1 ? 'dia' : 'dias'} com atividade no período
+                </div>
+              </div>
+            )}
             {stats.byDay.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-[#71717A] gap-2">
                 <CalendarDays size={32} className="opacity-30" />
