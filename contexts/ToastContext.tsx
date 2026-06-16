@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Info, X, AlertTriangle } from 'lucide-react'
 
@@ -52,6 +52,14 @@ const ToastContext = createContext<ToastContextValue | null>(null)
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
+  // Timers de auto-dismiss pendentes — limpos no unmount do provider para
+  // não disparar setState em árvore desmontada.
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+
+  useEffect(() => {
+    const timers = timersRef.current
+    return () => { timers.forEach(clearTimeout); timers.clear() }
+  }, [])
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
@@ -62,7 +70,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const duration = data.duration ?? 4000
     setToasts((prev) => [{ id, ...data }, ...prev].slice(0, 5))
     if (duration > 0) {
-      setTimeout(() => dismiss(id), duration)
+      const timer = setTimeout(() => { timersRef.current.delete(timer); dismiss(id) }, duration)
+      timersRef.current.add(timer)
     }
   }, [dismiss])
 
