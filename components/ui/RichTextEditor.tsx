@@ -1,10 +1,8 @@
 'use client'
 import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
-import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Bold, Italic, UnderlineIcon, Strikethrough,
   List, ListOrdered, Heading2, Heading3, Quote, Code, Undo2, Redo2,
@@ -37,21 +35,28 @@ interface Props {
 export function RichTextEditor({
   value, onChange, placeholder = 'Comece a digitar...', minHeight = 110, className,
 }: Props) {
+  // Marca quando a próxima mudança de `value` é eco da NOSSA emissão (onUpdate),
+  // pra não re-aplicar setContent — que destruiria a seleção e os "stored marks".
+  const isInternalUpdate = useRef(false)
+
   const editor = useEditor({
     extensions: [
+      // StarterKit v3 já inclui Underline e Link como sub-extensões. Adicioná-los
+      // de novo registrava os marks `underline`/`link` DUPLICADOS no schema do
+      // ProseMirror — fonte de comportamento errático ao aplicar formatação
+      // (warning "Duplicate extension names found"). Configuramos o Link aqui.
       StarterKit.configure({
         heading: { levels: [2, 3] },
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
-      }),
-      Underline,
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: {
-          class: 'text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]',
-          rel: 'noopener noreferrer',
-          target: '_blank',
+        link: {
+          openOnClick: false,
+          autolink: true,
+          HTMLAttributes: {
+            class: 'text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]',
+            rel: 'noopener noreferrer',
+            target: '_blank',
+          },
         },
       }),
       Placeholder.configure({ placeholder }),
@@ -68,19 +73,27 @@ export function RichTextEditor({
       },
     },
     onUpdate: ({ editor }) => {
+      isInternalUpdate.current = true
       const html = editor.getHTML()
       // TipTap retorna '<p></p>' para conteúdo vazio — normalize pra string vazia
       onChange(html === '<p></p>' ? '' : html)
     },
   })
 
-  // Sincroniza conteúdo quando o `value` muda externamente (ex.: ao abrir modal de edição)
+  // Sincroniza conteúdo quando o `value` muda EXTERNAMENTE (ex.: ao abrir modal
+  // de edição). Mudanças vindas do próprio editor não devem disparar setContent:
+  // isso reposiciona o cursor e os stored marks, fazendo a formatação "saltar"
+  // de linha. O ref distingue eco-da-própria-edição de mudança externa.
   useEffect(() => {
     if (!editor) return
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false
+      return
+    }
     const current = editor.getHTML()
+    const currentNorm = current === '<p></p>' ? '' : current
     const incoming = value || ''
-    // Evita loop e perda de cursor: só atualiza se for diferente
-    if (current !== incoming && current !== '<p></p>' || (incoming && current === '<p></p>')) {
+    if (incoming !== currentNorm) {
       editor.commands.setContent(incoming, { emitUpdate: false })
     }
   }, [value, editor])
