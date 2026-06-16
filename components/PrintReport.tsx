@@ -48,6 +48,8 @@ interface PrintReportProps {
     orphan: { id: string; titulo: string; categoria: string; status: string; data_prazo?: string | null }[]
     pctAderencia: number
     totalHoras: number
+    mediaHorasDia: number
+    diasTrabalhados: number
     concluidas: number
     pctConcluidas: number
     pendentes: number
@@ -164,6 +166,10 @@ export function PrintReport({
       {stats.byDay.length > 0 && (
         <section className="pr-section">
           <h2>Tarefas executadas por dia</h2>
+          <p className="pr-sub" style={{ marginBottom: 4 }}>
+            Média por dia trabalhado: <strong>{formatNumberBR(stats.mediaHorasDia)}h</strong>
+            {' · '}{stats.diasTrabalhados} {stats.diasTrabalhados === 1 ? 'dia' : 'dias'} com atividade no período
+          </p>
           <table className="pr-table">
             <thead>
               <tr>
