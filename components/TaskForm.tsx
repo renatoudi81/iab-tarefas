@@ -311,7 +311,19 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
               <Label>Status</Label>
               <Select
                 value={form.status}
-                onValueChange={(v) => setForm((p) => ({ ...p, status: v as Status }))}
+                onValueChange={(v) =>
+                  setForm((p) => {
+                    const status = v as Status
+                    // Ao marcar Concluída, pré-preenche a data de conclusão com
+                    // hoje (data em que o usuário concluiu) — editável depois.
+                    // Só preenche se ainda estiver vazia, pra não sobrescrever
+                    // uma data que o usuário já tenha ajustado.
+                    if (status === 'Concluída') {
+                      return { ...p, status, data_conclusao: p.data_conclusao || todayStr() }
+                    }
+                    return { ...p, status }
+                  })
+                }
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
