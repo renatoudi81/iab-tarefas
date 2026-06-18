@@ -29,6 +29,14 @@ export async function PATCH(req: Request, { params }: Params) {
   try { body = await req.json() }
   catch { return NextResponse.json({ error: 'JSON inválido' }, { status: 400 }) }
 
+  // 'Atrasada' é estado DERIVADO (prazo vencido + não concluída), nunca uma
+  // intenção persistida. O GET devolve esse status efetivo, então o formulário
+  // o herda e o reenvia no save — o que "congelava" Atrasada no banco e fazia
+  // a tarefa continuar Atrasada mesmo após o prazo ser estendido. Descartamos
+  // o campo: o status-base já gravado (Pendente/Em andamento/...) é preservado
+  // e a derivação volta a calcular Atrasada só quando realmente vencida.
+  if (body.status === 'Atrasada') delete body.status
+
   const ref = adminDb.collection('tasks').doc(id)
   const snap = await ref.get()
   if (!snap.exists) return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 })
