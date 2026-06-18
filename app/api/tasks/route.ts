@@ -106,6 +106,10 @@ export async function POST(req: Request) {
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: `Status inválido. Use: ${VALID_STATUSES.join(', ')}` }, { status: 400 })
   }
+  // 'Atrasada' é estado derivado (ver derivação no fim), nunca persistido. Se
+  // vier na criação, cai pro status-base 'Pendente'; a derivação re-aplica
+  // Atrasada na resposta caso a tarefa já nasça com prazo vencido.
+  const statusBase = status === 'Atrasada' ? 'Pendente' : status
 
   // Projeto precisa existir
   const projSnap = await adminDb.collection('projects').doc(projeto_id).get()
@@ -143,7 +147,7 @@ export async function POST(req: Request) {
     tipo_publico: tipo_publico === 'Externo' || tipo_publico === 'Interno' ? tipo_publico : null,
     canal: canal || null,
     prioridade: prioridade || 'Média',
-    status: status || 'Pendente',
+    status: statusBase || 'Pendente',
     responsavel_id: responsavel_id || null,
     equipe: equipe || [],
     data_inicio: data_inicio || null,
