@@ -2,13 +2,20 @@
 import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect, useRef, useState } from 'react'
+import Image from '@tiptap/extension-image'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Bold, Italic, UnderlineIcon, Strikethrough,
   List, ListOrdered, Heading2, Heading3, Quote, Code, Undo2, Redo2,
-  Link as LinkIcon, Unlink,
+  Link as LinkIcon, Unlink, ImageIcon, Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { apiFetch } from '@/lib/api-fetch'
+import { resizeImageForUpload } from '@/lib/image-utils'
+
+// Tamanho-limite do arquivo ORIGINAL antes do resize (o canvas carregaria
+// arquivos gigantes na memória). Após o resize cai pra ~150–300 KB.
+const MAX_INPUT_BYTES = 25 * 1024 * 1024
 
 /**
  * Editor de texto rico baseado em TipTap (ProseMirror).
@@ -38,9 +45,47 @@ export function RichTextEditor({
   // Marca quando a próxima mudança de `value` é eco da NOSSA emissão (onUpdate),
   // pra não re-aplicar setContent — que destruiria a seleção e os "stored marks".
   const isInternalUpdate = useRef(false)
+  // Ref pro editor: os handlers de paste/drop são criados junto do editor
+  // (antes de `editor` existir), então acessam a instância por aqui.
+  const editorRef = useRef<Editor | null>(null)
+  const [uploadingImg, setUploadingImg] = useState(false)
+  const [imgError, setImgError] = useState<string | null>(null)
+
+  // Redimensiona (preservando proporção), sobe ao Vercel Blob via /api/upload
+  // e insere a imagem pela URL. Guardamos só a URL no HTML — nunca base64,
+  // que estouraria o limite de 1 MB/doc do Firestore e a quota de leitura.
+  const handleImageFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) return
+    setImgError(null)
+    if (file.size > MAX_INPUT_BYTES) {
+      setImgError('Imagem muito grande (máx. 25 MB).')
+      return
+    }
+    setUploadingImg(true)
+    try {
+      const resized = await resizeImageForUpload(file)
+      const fd = new FormData()
+      fd.append('file', resized)
+      const res = await apiFetch('/api/upload', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || 'Falha no upload da imagem')
+      }
+      const { url } = await res.json()
+      editorRef.current?.chain().focus().setImage({ src: url }).run()
+    } catch (e) {
+      setImgError(e instanceof Error ? e.message : 'Erro ao enviar imagem')
+    } finally {
+      setUploadingImg(false)
+    }
+  }, [])
 
   const editor = useEditor({
     extensions: [
+      Image.configure({
+        inline: false,
+        HTMLAttributes: { class: 'rounded-lg max-w-full h-auto' },
+      }),
       // StarterKit v3 já inclui Underline e Link como sub-extensões. Adicioná-los
       // de novo registrava os marks `underline`/`link` DUPLICADOS no schema do
       // ProseMirror — fonte de comportamento errático ao aplicar formatação
@@ -71,6 +116,25 @@ export function RichTextEditor({
         ),
         style: `min-height: ${minHeight}px`,
       },
+      // Colar (Ctrl+V) e arrastar imagens direto pro editor
+      handlePaste: (_view, event) => {
+        const files = Array.from(event.clipboardData?.files || []).filter((f) =>
+          f.type.startsWith('image/'),
+        )
+        if (files.length === 0) return false
+        event.preventDefault()
+        files.forEach((f) => handleImageFile(f))
+        return true
+      },
+      handleDrop: (_view, event) => {
+        const files = Array.from(event.dataTransfer?.files || []).filter((f) =>
+          f.type.startsWith('image/'),
+        )
+        if (files.length === 0) return false
+        event.preventDefault()
+        files.forEach((f) => handleImageFile(f))
+        return true
+      },
     },
     onUpdate: ({ editor }) => {
       isInternalUpdate.current = true
@@ -98,6 +162,9 @@ export function RichTextEditor({
     }
   }, [value, editor])
 
+  // Mantém a ref do editor pros handlers de paste/drop
+  useEffect(() => { editorRef.current = editor }, [editor])
+
   if (!editor) {
     return (
       <div
@@ -119,7 +186,12 @@ export function RichTextEditor({
         className,
       )}
     >
-      <Toolbar editor={editor} />
+      <Toolbar editor={editor} onPickImage={handleImageFile} uploadingImg={uploadingImg} />
+      {imgError && (
+        <div className="px-3 py-1.5 text-[0.72rem] text-[#DC2626] bg-[#FEF2F2] border-t border-[#FECACA]">
+          {imgError}
+        </div>
+      )}
       <div className="border-t border-[#F4F4F5]">
         <EditorContent editor={editor} />
       </div>
@@ -129,8 +201,15 @@ export function RichTextEditor({
 
 /* ─── Toolbar ─────────────────────────────────────────────────── */
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({
+  editor, onPickImage, uploadingImg,
+}: {
+  editor: Editor
+  onPickImage: (file: File) => void
+  uploadingImg: boolean
+}) {
   const [, force] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Re-renderiza a toolbar quando o estado do editor muda (active marks etc.)
   useEffect(() => {
@@ -259,6 +338,24 @@ function Toolbar({ editor }: { editor: Editor }) {
             <Unlink size={13} />
           </Btn>
         )}
+        <Btn
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingImg}
+          title="Inserir imagem (também aceita colar/arrastar)"
+        >
+          {uploadingImg ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} />}
+        </Btn>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) onPickImage(f)
+            e.target.value = '' // permite re-selecionar o mesmo arquivo
+          }}
+        />
       </Group>
 
       <Divider />
