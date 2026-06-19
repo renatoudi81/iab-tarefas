@@ -62,6 +62,57 @@ export async function resizeAndCropImage(
   }
 }
 
+/**
+ * Redimensiona uma imagem para uso em texto rico (descrição/observações),
+ * PRESERVANDO a proporção, e devolve um File WebP comprimido pronto pra upload.
+ *
+ * Diferente de `resizeAndCropImage` (avatar quadrado → data URL), aqui:
+ *   - não corta nem força quadrado — mantém o aspecto original
+ *   - limita só a maior dimensão a `maxDim` (downscale; nunca amplia)
+ *   - retorna File (não data URL) pra subir ao Vercel Blob via /api/upload
+ *   - WebP preserva texto de prints nítido e pesa menos que JPEG
+ *
+ * GIF é devolvido intacto (canvas perderia a animação).
+ * Saída típica: print/foto de vários MB → ~150–300 KB.
+ */
+export async function resizeImageForUpload(
+  file: File,
+  maxDim = 1600,
+  quality = 0.82,
+): Promise<File> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('O arquivo selecionado não é uma imagem')
+  }
+  if (file.type === 'image/gif') return file // preserva animação
+
+  const url = URL.createObjectURL(file)
+  try {
+    const img = await loadImage(url)
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+    const w = Math.max(1, Math.round(img.width * scale))
+    const h = Math.max(1, Math.round(img.height * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas indisponível')
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(img, 0, 0, w, h)
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/webp', quality),
+    )
+    if (!blob) throw new Error('Falha ao processar a imagem')
+
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'imagem'
+    return new File([blob], `${baseName}.webp`, { type: 'image/webp' })
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()

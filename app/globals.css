@@ -527,6 +527,15 @@ html { scroll-behavior: smooth; }
 .prose-rich em { font-style: italic; }
 .prose-rich u { text-decoration: underline; text-underline-offset: 2px; }
 .prose-rich s { text-decoration: line-through; color: #71717A; }
+.prose-rich img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  border: 1px solid #EDEEF1;
+}
+/* Imagem selecionada dentro do editor (TipTap aplica esta classe) */
+.prose-rich img.ProseMirror-selectednode { outline: 2px solid #2563EB; outline-offset: 2px; }
 .prose-rich a {
   color: #2563EB;
   text-decoration: underline;
@@ -924,4 +933,5 @@ html { scroll-behavior: smooth; }
 .dark .prose-rich s { color: #9CA3AF; }
 .dark .prose-rich a { color: #60A5FA; }
 .dark .prose-rich code { background: #2A2A2E; color: #FCA5A5; }
+.dark .prose-rich img { border-color: #2A2A2E; }
 .dark .prose-rich p.is-editor-empty:first-child::before { color: #6B7280; }
