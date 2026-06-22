@@ -404,7 +404,19 @@ export default function DashboardPage() {
   const [dateFrom, setDateFrom] = useState(() => currentMonthRange().from)
   const [dateTo, setDateTo] = useState(() => currentMonthRange().to)
 
+  // Datas EFETIVAS para os cálculos. O <input type="date"> emite '' quando o
+  // campo é limpo (inclusive durante a digitação de uma nova data); sem isso,
+  // new Date('').toISOString() lança RangeError e DERRUBA a página inteira.
+  // Enquanto a data estiver vazia/inválida, cai pro mês corrente. O valor
+  // BRUTO (dateFrom/dateTo) continua indo só pro input, pra refletir o que o
+  // usuário digita.
+  const isYMD = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
+  const safeFrom = isYMD(dateFrom) ? dateFrom : currentMonthRange().from
+  const safeTo = isYMD(dateTo) ? dateTo : currentMonthRange().to
+
   const metrics = useMemo(() => {
+    const dateFrom = safeFrom
+    const dateTo = safeTo
     // inPeriod = tarefas que TOCARAM o intervalo (regra hibrida): foram
     // criadas, concluidas OU tem prazo no periodo. Cobertura ampla pra
     // responder "o que aconteceu nesse periodo?" — ver taskInPeriod.
@@ -505,9 +517,11 @@ export default function DashboardPage() {
       upcoming,
       topOverdue,
     }
-  }, [tasks, entries, dateFrom, dateTo])
+  }, [tasks, entries, safeFrom, safeTo])
 
   const chartData = useMemo(() => {
+    const dateFrom = safeFrom
+    const dateTo = safeTo
     // Agrupa por SEMANA DE CALENDÁRIO (domingo → sábado), recortada ao período
     // filtrado: a 1ª e a última semana podem ser parciais (contam só os dias
     // dentro do intervalo). Rótulo = "DD/MM–DD/MM" (início–fim de cada semana).
@@ -547,7 +561,7 @@ export default function DashboardPage() {
         Horas: Math.round((b.minutos / 60) * 10) / 10,
       }
     })
-  }, [tasks, entries, dateFrom, dateTo])
+  }, [tasks, entries, safeFrom, safeTo])
 
   // Usa a paleta canônica STATUS_COLORS (mesma de Lista/Kanban/Gantt/Relatórios)
   const STATUS_DIST = [
@@ -575,8 +589,8 @@ export default function DashboardPage() {
           Fica oculto na tela (.print-report tem display:none) e SUBSTITUI o
           conteudo quando o usuario imprime. Reaproveita o CSS @media print. */}
       <PrintDashboard
-        dateFrom={dateFrom}
-        dateTo={dateTo}
+        dateFrom={safeFrom}
+        dateTo={safeTo}
         filterLabel={effectiveUserId === 'all' ? 'Todos os usuários' : (users.find((u) => u.id === effectiveUserId)?.nome || 'Usuário')}
         projectLabel={filterProject === 'all' ? 'Todos os projetos' : (projects.find((p) => p.id === filterProject)?.nome || 'Projeto')}
         metrics={metrics}
