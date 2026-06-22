@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { usePersistentState } from '@/hooks/usePersistentState'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTasks } from '@/hooks/useTasks'
@@ -65,13 +66,15 @@ export default function ListaPage() {
 
   const router = useRouter()
   const mesAtual = currentMonthRange()
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterPriority, setFilterPriority] = useState('')
-  const [filterUser, setFilterUser] = useState('')
-  const [filterProject, setFilterProject] = useState('')
-  const [dateFrom, setDateFrom] = useState(mesAtual.from)
-  const [dateTo, setDateTo] = useState(mesAtual.to)
+  // Filtros PERSISTIDOS (localStorage): sobrevivem a navegação/reload; só
+  // voltam ao default pelo botão "Limpar".
+  const [search, setSearch] = usePersistentState('iab:lista:search', '')
+  const [filterStatus, setFilterStatus] = usePersistentState('iab:lista:status', '')
+  const [filterPriority, setFilterPriority] = usePersistentState('iab:lista:priority', '')
+  const [filterUser, setFilterUser] = usePersistentState('iab:lista:user', '')
+  const [filterProject, setFilterProject] = usePersistentState('iab:lista:project', '')
+  const [dateFrom, setDateFrom] = usePersistentState('iab:lista:from', mesAtual.from)
+  const [dateTo, setDateTo] = usePersistentState('iab:lista:to', mesAtual.to)
   const [modal, setModal] = useState<{ open: boolean; task: Task | null; initialData?: Partial<TaskFormData> }>({ open: false, task: null })
   // IA: modal de criação automatizada
   const [aiOpen, setAiOpen] = useState(false)
