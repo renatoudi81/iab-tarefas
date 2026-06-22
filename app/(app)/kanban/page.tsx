@@ -5,6 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { useTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useProjects } from '@/hooks/useProjects'
+import { usePersistentState } from '@/hooks/usePersistentState'
 import { registrarAprendizadoIA, type AIContext } from '@/lib/ai-feedback'
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, currentMonthRange, taskInPeriod, todayStr } from '@/types'
 import type { Status, Task } from '@/types'
@@ -64,12 +65,14 @@ export default function KanbanPage() {
 
   // Filtros — date range (data_prazo) e usuário responsável (admin-only)
   const mesAtual = currentMonthRange()
-  const [dateFrom, setDateFrom] = useState(mesAtual.from)
-  const [dateTo, setDateTo] = useState(mesAtual.to)
-  const [filterUserId, setFilterUserId] = useState<string>('all')
-  const [filterProject, setFilterProject] = useState<string>('all')
+  // Filtros PERSISTIDOS (localStorage): sobrevivem a navegação/reload; só
+  // voltam ao default pelo botão "Limpar filtros".
+  const [dateFrom, setDateFrom] = usePersistentState('iab:kanban:from', mesAtual.from)
+  const [dateTo, setDateTo] = usePersistentState('iab:kanban:to', mesAtual.to)
+  const [filterUserId, setFilterUserId] = usePersistentState<string>('iab:kanban:user', 'all')
+  const [filterProject, setFilterProject] = usePersistentState<string>('iab:kanban:project', 'all')
   // Busca por titulo OU descricao (mesma logica da Lista de Tarefas)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = usePersistentState('iab:kanban:search', '')
   // Coluna Concluida mostra so as 10 mais recentes por default; clique
   // em "Ver todas" expande para o historico completo.
   const [showAllDone, setShowAllDone] = useState(false)
