@@ -377,11 +377,17 @@ export default function RelatoriosPage() {
     // ──── Tarefas órfãs (sem responsável atribuído)
     const orphan = tasks.filter((t) => !t.responsavel_id)
 
-    // ──── Burndown: concluídas acumuladas vs criadas acumuladas no período
-    // Determina o range: usa dateFrom/dateTo se setado; senão data mais antiga
-    // até hoje. Limita a 60 pontos pra não sobrecarregar o chart.
+    // ──── Burndown: concluídas acumuladas vs INICIADAS acumuladas no período
+    // Usa data_inicio (e não criado_em) como "nascimento" da atividade:
+    // criado_em é o instante de inserção no sistema e pode ser POSTERIOR à
+    // conclusão (tarefas lançadas retroativamente), o que fazia a linha de
+    // concluídas ultrapassar a de criadas — backlog negativo, impossível.
+    // Como data_inicio <= data_conclusao, a invariante volta a valer.
+    // Fallback p/ criado_em caso data_inicio falte.
+    const refInicio = (t: { data_inicio?: string | null; criado_em?: string | null }) =>
+      (t.data_inicio || t.criado_em || '').slice(0, 10)
     const datesAll = tasks
-      .map((t) => t.criado_em?.slice(0, 10))
+      .map((t) => refInicio(t))
       .filter(Boolean) as string[]
     const oldestDate = datesAll.length > 0 ? datesAll.sort()[0] : ''
     const burnStart = dateFrom || oldestDate
@@ -399,24 +405,25 @@ export default function RelatoriosPage() {
         if (dms > endMs) break
         const ds = new Date(dms).toISOString().split('T')[0]
         const [, mm, dd] = ds.split('-')
-        acc = tasks.filter(t => (t.criado_em || '').slice(0, 10) <= ds).length
+        acc = tasks.filter(t => refInicio(t) !== '' && refInicio(t) <= ds).length
         accDone = tasks.filter(t => t.status === 'Concluída' && (t.data_conclusao || '') <= ds).length
         burndownData.push({ label: `${dd}/${mm}`, Criadas: acc, Concluídas: accDone })
       }
     }
 
     // ──── Heatmap atividade por dia da semana
-    // Eixo X: dia da semana (Dom..Sáb). Valor: nº de tarefas criadas
-    // naquele dia da semana, DENTRO do intervalo selecionado (dateFrom/
-    // dateTo). Se não há filtro, usa todo o range natural dos dados.
+    // Eixo X: dia da semana (Dom..Sáb). Valor: nº de tarefas pela DATA DE
+    // INÍCIO naquele dia da semana, DENTRO do intervalo selecionado. Usa
+    // data_inicio (não criado_em): criado_em é a inserção no sistema e pode
+    // ser retroativa; data_inicio reflete quando a atividade começou.
     const heatmapData = (() => {
       const counts: number[] = [0, 0, 0, 0, 0, 0, 0] // dom..sab
       tasks.forEach((t) => {
-        const created = t.criado_em?.slice(0, 10)
-        if (!created) return
-        if (dateFrom && created < dateFrom) return
-        if (dateTo && created > dateTo) return
-        const d = new Date(created + 'T00:00:00').getDay()
+        const ini = refInicio(t)
+        if (!ini) return
+        if (dateFrom && ini < dateFrom) return
+        if (dateTo && ini > dateTo) return
+        const d = new Date(ini + 'T00:00:00').getDay()
         counts[d]++
       })
       const max = Math.max(1, ...counts)
@@ -1243,8 +1250,8 @@ export default function RelatoriosPage() {
               icon={Activity}
               iconColor="#2563EB"
               iconBg="#EFF6FF"
-              title="Burndown — Criadas vs Concluídas"
-              subtitle="Quantidades acumuladas ao longo do tempo. Distância entre as linhas indica backlog em aberto."
+              title="Burndown — Iniciadas vs Concluídas"
+              subtitle="Acumuladas ao longo do tempo (pela data de início). Distância entre as barras indica backlog em aberto."
             >
               <div className="p-5" style={{ height: 280 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -1258,15 +1265,15 @@ export default function RelatoriosPage() {
                   </BarChart>
                 </ResponsiveContainer>
                 <ChartDataTable
-                  caption="Burndown: tarefas criadas e concluídas acumuladas no período"
-                  headers={['Data', 'Criadas', 'Concluídas']}
+                  caption="Burndown: tarefas iniciadas e concluídas acumuladas no período"
+                  headers={['Data', 'Iniciadas', 'Concluídas']}
                   rows={stats.burndownData.map(b => [b.label, String(b.Criadas), String(b.Concluídas)])}
                 />
               </div>
               <div className="px-5 pb-4 flex items-center gap-4 text-[0.72rem] text-[#71717A]">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded" style={{ background: 'rgba(37,99,235,0.35)' }} />
-                  Criadas (acumulado)
+                  Iniciadas (acumulado)
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded" style={{ background: '#16A34A' }} />
@@ -1284,10 +1291,10 @@ export default function RelatoriosPage() {
             iconColor="#7C3AED"
             iconBg="#F5F3FF"
             title="Atividade por dia da semana"
-            subtitle={`Distribuição das tarefas criadas — ${isFiltered ? 'período filtrado' : 'todo o período analisado'}`}
+            subtitle={`Distribuição das tarefas por data de início — ${isFiltered ? 'período filtrado' : 'todo o período analisado'}`}
           >
             <div className="p-5">
-              <div className="grid grid-cols-7 gap-2" role="group" aria-label={`Tarefas criadas por dia da semana — ${isFiltered ? 'período filtrado' : 'todo o período'}`}>
+              <div className="grid grid-cols-7 gap-2" role="group" aria-label={`Tarefas por data de início e dia da semana — ${isFiltered ? 'período filtrado' : 'todo o período'}`}>
                 {stats.heatmapData.map((d) => (
                   <div key={d.label} className="flex flex-col items-center gap-1.5">
                     <span className="text-[0.65rem] uppercase font-semibold tracking-wider text-[#71717A]" aria-hidden>
@@ -1295,7 +1302,7 @@ export default function RelatoriosPage() {
                     </span>
                     <div
                       role="img"
-                      aria-label={`${d.label}: ${d.value} tarefa${d.value !== 1 ? 's' : ''} criada${d.value !== 1 ? 's' : ''}`}
+                      aria-label={`${d.label}: ${d.value} tarefa${d.value !== 1 ? 's' : ''} iniciada${d.value !== 1 ? 's' : ''}`}
                       tabIndex={0}
                       className="w-full h-16 rounded-md flex items-center justify-center transition-all focus-visible:outline-2 focus-visible:outline-[#2563EB] focus-visible:outline-offset-2"
                       style={{
@@ -1330,8 +1337,8 @@ export default function RelatoriosPage() {
                 <span>Mais</span>
               </div>
               <ChartDataTable
-                caption={`Tarefas criadas por dia da semana — ${isFiltered ? `${formatDateBR(effectiveFrom)} a ${formatDateBR(effectiveTo)}` : 'todo o período analisado'}`}
-                headers={['Dia da semana', 'Tarefas criadas']}
+                caption={`Tarefas por data de início e dia da semana — ${isFiltered ? `${formatDateBR(effectiveFrom)} a ${formatDateBR(effectiveTo)}` : 'todo o período analisado'}`}
+                headers={['Dia da semana', 'Tarefas']}
                 rows={stats.heatmapData.map(d => [d.label, String(d.value)])}
               />
             </div>
