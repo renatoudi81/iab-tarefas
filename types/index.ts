@@ -107,6 +107,7 @@ export interface TimeEntry {
 export const ATIVIDADES_TEMPO = [
   'Análise',
   'Desenvolvimento',
+  'Teste',
   'Atendimento',
   'Reunião',
   'Documentação',
