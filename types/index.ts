@@ -104,14 +104,15 @@ export interface TimeEntry {
 
 /** Catálogo de atividades para lançamento de tempo (estilo Redmine).
  *  Lista fixa, editável aqui — pode virar coleção configurável no futuro. */
+// Ordem alfabética (A→Z); "Outro" fica por último por ser a opção coringa.
 export const ATIVIDADES_TEMPO = [
   'Análise',
-  'Desenvolvimento',
-  'Teste',
   'Atendimento',
-  'Reunião',
+  'Desenvolvimento',
   'Documentação',
   'Planejamento',
+  'Reunião',
+  'Teste',
   'Outro',
 ] as const
 
