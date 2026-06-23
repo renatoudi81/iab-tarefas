@@ -150,6 +150,17 @@ export function TaskForm({ task, initialStatus, initialData, onSaved, onCancel, 
       return
     }
 
+    // Regra de negócio: só pode concluir com tempo lançado (tempo_gasto_total
+    // é a soma dos lançamentos). Valida só na TRANSIÇÃO para Concluída — não
+    // trava a edição de uma tarefa que já estava concluída.
+    const concluindoAgora = form.status === 'Concluída' && task?.status !== 'Concluída'
+    if (concluindoAgora && Number(task?.tempo_gasto_total || 0) <= 0) {
+      const msg = 'Lance o tempo gasto (aba Tempo) antes de marcar como Concluída.'
+      setSaveError(msg)
+      toast.error('Tempo não lançado', msg)
+      return
+    }
+
     setSaving(true)
     try {
       if (task) {
