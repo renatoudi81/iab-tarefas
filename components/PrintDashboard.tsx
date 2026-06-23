@@ -143,7 +143,7 @@ export function PrintDashboard({
       {chartData.length > 0 && (
         <section className="pr-section">
           <h2>Produtividade no período</h2>
-          <p className="pr-section-sub">Tarefas criadas vs concluídas por semana (Dom–Sáb)</p>
+          <p className="pr-section-sub">Tarefas iniciadas vs concluídas por semana (Dom–Sáb)</p>
           <div className="pr-chart">
             <AreaChart width={CHART_WIDTH} height={CHART_HEIGHT} data={chartData} margin={{ top: 22, right: 12, bottom: 0, left: -16 }}>
               <defs>
@@ -168,7 +168,7 @@ export function PrintDashboard({
             </AreaChart>
             <div className="pr-chart-legend">
               <span><span className="pr-dot" style={{ background: '#16A34A' }} /> Concluídas</span>
-              <span><span className="pr-dot" style={{ background: '#2563EB' }} /> Criadas</span>
+              <span><span className="pr-dot" style={{ background: '#2563EB' }} /> Iniciadas</span>
             </div>
           </div>
         </section>
