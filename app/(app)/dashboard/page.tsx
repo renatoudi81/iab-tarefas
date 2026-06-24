@@ -541,7 +541,10 @@ export default function DashboardPage() {
       const b = buckets[buckets.length - 1]
       b.finish = new Date(cur)
       const ds = cur.toISOString().split('T')[0] // YYYY-MM-DD
-      b.Criadas += tasks.filter(t => t.criado_em.startsWith(ds)).length
+      // "Iniciadas" pela data_inicio (não criado_em): criado_em é o instante
+      // de inserção no sistema e pode ser posterior à conclusão (tarefas
+      // lançadas retroativamente), o que fazia concluídas > criadas na semana.
+      b.Criadas += tasks.filter(t => (t.data_inicio || t.criado_em || '').slice(0, 10) === ds).length
       b.Concluídas += tasks.filter(t => t.data_conclusao?.startsWith(ds)).length
       // Horas (híbrido): lançamentos de tempo do dia + tempo das tarefas
       // concluídas no dia que não têm lançamento (tempo gravado no campo).
@@ -732,13 +735,13 @@ export default function DashboardPage() {
           iconColor="#2563EB"
           iconBg="#EFF6FF"
           title="Produtividade no período"
-          subtitle="Tarefas criadas vs concluídas por semana (Dom–Sáb)"
+          subtitle="Tarefas iniciadas vs concluídas por semana (Dom–Sáb)"
           className="lg:col-span-3"
           action={
             <div className="flex items-center gap-3 text-[0.72rem] text-[#71717A]">
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-0.5 bg-[#2563EB] inline-block rounded-full" />
-                Criadas
+                Iniciadas
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-0.5 bg-[#16A34A] inline-block rounded-full" />
@@ -767,14 +770,14 @@ export default function DashboardPage() {
                 <Area isAnimationActive={false} type="monotone" dataKey="Concluídas" stroke="#16A34A" strokeWidth={2} fill="url(#grad-concluidas)" dot={{ r: 3, fill: '#16A34A', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#16A34A', strokeWidth: 0 }}>
                   <LabelList dataKey="Concluídas" position="top" fill="#15803D" fontSize={11} fontWeight={700} formatter={(v) => Number(v) > 0 ? String(v) : ''} />
                 </Area>
-                <Area isAnimationActive={false} type="monotone" dataKey="Criadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={{ r: 3, fill: '#2563EB', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#2563EB', strokeWidth: 0 }}>
+                <Area isAnimationActive={false} type="monotone" dataKey="Criadas" name="Iniciadas" stroke="#2563EB" strokeWidth={2} strokeDasharray="4 2" fill="url(#grad-criadas)" dot={{ r: 3, fill: '#2563EB', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#2563EB', strokeWidth: 0 }}>
                   <LabelList dataKey="Criadas" position="bottom" fill="#1D4ED8" fontSize={11} fontWeight={700} formatter={(v) => Number(v) > 0 ? String(v) : ''} />
                 </Area>
               </AreaChart>
             </ResponsiveContainer>
             <ChartDataTable
-              caption="Tarefas criadas e concluídas por semana no período"
-              headers={['Data', 'Criadas', 'Concluídas']}
+              caption="Tarefas iniciadas e concluídas por semana no período"
+              headers={['Data', 'Iniciadas', 'Concluídas']}
               rows={chartData.map(d => [d.label, String(d.Criadas ?? 0), String(d.Concluídas ?? 0)])}
             />
           </div>

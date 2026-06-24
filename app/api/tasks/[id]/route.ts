@@ -111,6 +111,17 @@ export async function PATCH(req: Request, { params }: Params) {
         { status: 400 },
       )
     }
+    // Regra de negócio: só conclui com tempo lançado. tempo_gasto_total é a
+    // soma dos lançamentos (read-only aqui), então reflete se há registro.
+    // Validamos só na TRANSIÇÃO para Concluída (existing != Concluída) — assim
+    // editar outros campos de uma tarefa já concluída (legada sem tempo) não
+    // fica travado.
+    if (existing.status !== 'Concluída' && Number(existing.tempo_gasto_total || 0) <= 0) {
+      return NextResponse.json(
+        { error: 'Lance o tempo gasto antes de concluir a tarefa' },
+        { status: 400 },
+      )
+    }
   }
   // tempo_* com fallback + validação (evita gravar NaN/negativo)
   if (body.tempo_estimado !== undefined) {

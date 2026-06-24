@@ -136,6 +136,14 @@ export async function POST(req: Request) {
       { status: 400 },
     )
   }
+  // Regra de negócio: só conclui com tempo lançado. Na criação não há
+  // lançamentos ainda, então não se pode nascer Concluída sem tempo.
+  if (status === 'Concluída' && (Number(tempo_gasto_total) || 0) <= 0) {
+    return NextResponse.json(
+      { error: 'Lance o tempo gasto antes de concluir a tarefa' },
+      { status: 400 },
+    )
+  }
 
   const now = new Date().toISOString()
   const baseTaskData = {
