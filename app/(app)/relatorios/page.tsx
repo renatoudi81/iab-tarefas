@@ -11,6 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { STATUSES, STATUS_COLORS, PRIORITY_COLORS, formatMinutes, formatDateBR, formatNumberBR, weekdayBR, currentMonthRange, taskInPeriod, todayStr } from '@/types'
+import { isDiaUtil } from '@/lib/feriados'
 import { DateRangeFilter } from '@/components/ui/DateRangeFilter'
 import { ChartDataTable } from '@/components/ui/ChartDataTable'
 import { PrintReport } from '@/components/PrintReport'
@@ -21,7 +22,7 @@ import {
 import {
   Printer, AlertTriangle, Users, Tag, Clock,
   Download, PieChart as PieChartIcon, BarChart2,
-  ListChecks, TrendingUp, Activity, CheckCircle2, FolderKanban, CalendarDays, ChevronDown,
+  ListChecks, TrendingUp, Activity, CheckCircle2, FolderKanban, CalendarDays, ChevronDown, Briefcase,
 } from 'lucide-react'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Progress } from '@/components/ui/progress'
@@ -319,6 +320,16 @@ export default function RelatoriosPage() {
     const minutesFromTasks = tasks.reduce((s, t) => s + (t.tempo_gasto_total || 0), 0)
     const minutesTotal = minutesFromEntries > 0 ? minutesFromEntries : minutesFromTasks
     const totalHoras = Math.round((minutesTotal / 60) * 10) / 10
+
+    // Capacidade de horas de trabalho: 8h por DIA ÚTIL com tempo lançado.
+    // Conta os dias distintos com lançamento (entries), exclui fim de semana
+    // e feriados nacionais, e multiplica por 8.
+    const diasComLancamento = new Set(
+      entries.map((e) => (e.data || '').slice(0, 10)).filter(Boolean),
+    )
+    const diasUteisTrabalho = [...diasComLancamento].filter(isDiaUtil).length
+    const horasTrabalho = diasUteisTrabalho * 8
+
     const concluidas = tasks.filter((t) => t.status === 'Concluída').length
     const pctConcluidas =
       tasks.length > 0 ? Math.round((concluidas / tasks.length) * 100) : 0
@@ -527,6 +538,8 @@ export default function RelatoriosPage() {
       burndownData,
       heatmapData,
       totalHoras,
+      horasTrabalho,
+      diasUteisTrabalho,
       mediaHorasDia,
       diasTrabalhados,
       concluidas,
@@ -694,7 +707,7 @@ export default function RelatoriosPage() {
         className="flex flex-col gap-6"
       >
         {/* ──────────────── KPIs row ──────────────── */}
-        <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <Kpi
             icon={ListChecks}
             label="Total de tarefas"
@@ -722,6 +735,16 @@ export default function RelatoriosPage() {
             hint={`${entries.length} lançamento${entries.length !== 1 ? 's' : ''}`}
             accentColor="#A855F7"
             accentBg="#FAF5FF"
+          />
+          <Kpi
+            icon={Briefcase}
+            label="Horas de trabalho"
+            value={`${formatNumberBR(stats.horasTrabalho)}h`}
+            numericValue={stats.horasTrabalho}
+            suffix="h"
+            hint={`8h × ${stats.diasUteisTrabalho} dia${stats.diasUteisTrabalho !== 1 ? 's' : ''} útil${stats.diasUteisTrabalho !== 1 ? 'eis' : ''} (sem fim de semana/feriado)`}
+            accentColor="#0891B2"
+            accentBg="#ECFEFF"
           />
           <Kpi
             icon={AlertTriangle}
